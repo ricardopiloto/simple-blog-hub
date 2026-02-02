@@ -1,0 +1,41 @@
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+
+export type AppRole = 'admin' | 'editor' | 'author';
+
+export function useUserRole() {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['user-roles', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      return data.map(r => r.role as AppRole);
+    },
+    enabled: !!user,
+  });
+}
+
+export function useIsAdmin() {
+  const { data: roles = [], isLoading } = useUserRole();
+  return {
+    isAdmin: roles.includes('admin'),
+    isLoading,
+  };
+}
+
+export function useCanManagePosts() {
+  const { data: roles = [], isLoading } = useUserRole();
+  return {
+    canManage: roles.some(r => ['admin', 'editor', 'author'].includes(r)),
+    isLoading,
+  };
+}

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, Reorder } from 'framer-motion';
 import { GripVertical, BookOpen, ArrowRight } from 'lucide-react';
@@ -11,6 +11,10 @@ export default function StoryIndex() {
   const { posts, updatePostOrder } = usePostsStore();
   const [items, setItems] = useState<Post[]>(posts);
   const [hasChanges, setHasChanges] = useState(false);
+
+  useEffect(() => {
+    if (posts.length > 0 && items.length === 0) setItems(posts);
+  }, [posts, items.length]);
   const { toast } = useToast();
 
   const handleReorder = (newOrder: Post[]) => {

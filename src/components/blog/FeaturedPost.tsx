@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Post } from '@/data/mockPosts';
+import type { Post } from '@/api/types';
 
 interface FeaturedPostProps {
   post: Post;

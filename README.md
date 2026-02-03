@@ -1,73 +1,75 @@
-# Welcome to your Lovable project
+# 1noDado RPG
 
-## Project info
+Blog de leitura para **contos e aventuras** de RPG. Interface em português, com página inicial, lista de posts, post por slug e índice em ordem de história. Os dados vêm do **BFF** (Backend-for-Frontend), que consome uma API interna .NET com persistência em **SQLite**.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Arquitetura
 
-## How can I edit this code?
+- **Frontend** (React, Vite) → chama apenas o **BFF** (`VITE_BFF_URL`, ex.: `http://localhost:5000`).
+- **BFF** (.NET 8) → único ponto de entrada público; repassa requisições para a API interna.
+- **API** (.NET 8) → acesso a **SQLite** via Entity Framework Core; não exposta à internet.
 
-There are several ways of editing your application.
+## O que o projeto faz
 
-**Use Lovable**
+- **Página inicial**: destaque do post mais recente e grid de artigos recentes.
+- **Lista de posts**: visualização dos artigos em ordem de publicação.
+- **Post individual**: leitura por slug (ex.: `/post/o-inicio-da-jornada`).
+- **Índice**: posts ordenados por ordem narrativa (`/indice`).
+- **Tema**: alternância entre modo claro e escuro (persistido em `localStorage`).
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+## Requisitos
 
-Changes made via Lovable will be committed automatically to this repo.
+- **Node.js** e **npm** (frontend) — [instalar com nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+- **.NET 8 SDK** (backend) — [download](https://dotnet.microsoft.com/download/dotnet/8.0).
 
-**Use your preferred IDE**
+## Como executar
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+### 1. Backend (API + BFF)
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# Terminal 1: API (porta 5001, SQLite em backend/api/blog.db)
+cd backend/api
+dotnet run
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Terminal 2: BFF (porta 5000)
+cd backend/bff
+dotnet run
+```
 
-# Step 3: Install the necessary dependencies.
-npm i
+### 2. Frontend
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```sh
+# Na raiz do repositório
+npm install
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+Abra no navegador o endereço indicado (em geral `http://localhost:5173`). O frontend usa por padrão `http://localhost:5000` como BFF; se o BFF não estiver rodando, a UI exibirá mensagem de erro ao carregar os posts.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Variáveis de ambiente (opcional)
 
-**Use GitHub Codespaces**
+| Variável        | Onde   | Descrição |
+|-----------------|--------|-----------|
+| `VITE_BFF_URL`  | Frontend | URL do BFF (padrão: `http://localhost:5000`) |
+| `API__BaseUrl`  | BFF    | URL da API interna (padrão em `appsettings.json`: `http://localhost:5001`) |
+| Connection string | API  | SQLite (padrão: `Data Source=blog.db`) |
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### Outros comandos
 
-## What technologies are used for this project?
+| Comando            | Descrição                    |
+|--------------------|------------------------------|
+| `npm run build`    | Build de produção do frontend (`dist/`) |
+| `npm run preview`  | Servir o build localmente    |
+| `npm run test`     | Rodar testes do frontend (Vitest) |
+| `npm run test:watch` | Testes em modo watch      |
+| `npm run lint`     | Verificar código com ESLint  |
 
-This project is built with:
+## Tecnologias
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+- **Frontend**: Vite 5, React 18, TypeScript, React Router DOM, Tailwind CSS, shadcn/ui, Framer Motion, TanStack React Query. Dados via `src/api/` (cliente BFF) e `src/hooks/usePosts.ts`.
+- **Backend**: .NET 8 — API em `backend/api` (EF Core + SQLite), BFF em `backend/bff` (proxy para a API).
+- **Testes**: Vitest, Testing Library, jsdom.
+- **Lint**: ESLint 9.
 
-## How can I deploy this project?
+---
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Este projeto foi criado com [Lovable](https://lovable.dev).

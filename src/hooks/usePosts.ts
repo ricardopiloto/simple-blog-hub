@@ -1,61 +1,94 @@
-import { useState, useCallback } from 'react';
-import { mockPosts, Post, getPostsByStoryOrder, getPostsByDate } from '@/data/mockPosts';
-
-// Store for posts (simulates state management)
-let postsStore = [...mockPosts];
+import { useState, useCallback, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { fetchPosts, fetchPostBySlug } from '@/api/client';
+import type { Post } from '@/api/types';
 
 export type { Post };
 
 export function usePublishedPosts() {
-  const publishedPosts = postsStore.filter(p => p.published);
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ['posts', 'date'],
+    queryFn: () => fetchPosts('date'),
+  });
   return {
-    data: getPostsByDate(publishedPosts),
-    isLoading: false,
+    data: data ?? undefined,
+    isLoading,
+    error: isError ? (error as Error) : undefined,
   };
 }
 
 export function usePostsByStoryOrder() {
-  const publishedPosts = postsStore.filter(p => p.published);
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ['posts', 'story'],
+    queryFn: () => fetchPosts('story'),
+  });
   return {
-    data: getPostsByStoryOrder(publishedPosts),
-    isLoading: false,
+    data: data ?? undefined,
+    isLoading,
+    error: isError ? (error as Error) : undefined,
   };
 }
 
 export function usePost(slug: string) {
-  const post = postsStore.find(p => p.slug === slug);
+  const enabled = Boolean(slug?.trim());
+  const { data, isLoading, isError, error, isFetched } = useQuery({
+    queryKey: ['post', slug],
+    queryFn: async () => {
+      const post = await fetchPostBySlug(slug);
+      if (post == null) throw new Error('Post not found');
+      return post;
+    },
+    enabled,
+  });
   return {
-    data: post || null,
-    isLoading: false,
-    error: post ? null : new Error('Post not found'),
+    data: data ?? null,
+    isLoading: enabled ? isLoading : false,
+    error: isError ? (error as Error) : (enabled && isFetched && !data ? new Error('Post not found') : null),
   };
 }
 
 export function useAllPosts() {
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ['posts', 'date'],
+    queryFn: () => fetchPosts('date'),
+  });
   return {
-    data: [...postsStore],
-    isLoading: false,
+    data: data ?? [],
+    isLoading,
+    error: isError ? (error as Error) : undefined,
   };
 }
 
+function sortByStoryOrder(posts: Post[]) {
+  return [...posts].sort((a, b) => a.story_order - b.story_order);
+}
+
 export function usePostsStore() {
-  const [posts, setPosts] = useState<Post[]>([...postsStore]);
+  const { data: fetchedPosts = [] } = useQuery({
+    queryKey: ['posts', 'story'],
+    queryFn: () => fetchPosts('story'),
+  });
+
+  const [posts, setPosts] = useState<Post[]>(() => sortByStoryOrder(fetchedPosts));
+
+  useEffect(() => {
+    if (fetchedPosts.length > 0) setPosts(sortByStoryOrder(fetchedPosts));
+  }, [fetchedPosts]);
 
   const updatePostOrder = useCallback((reorderedPosts: Post[]) => {
-    const updatedPosts = reorderedPosts.map((post, index) => ({
+    const updated = reorderedPosts.map((post, index) => ({
       ...post,
       story_order: index + 1,
     }));
-    postsStore = updatedPosts;
-    setPosts(updatedPosts);
+    setPosts(updated);
   }, []);
 
   const refreshPosts = useCallback(() => {
-    setPosts([...postsStore]);
-  }, []);
+    setPosts(sortByStoryOrder(fetchedPosts));
+  }, [fetchedPosts]);
 
   return {
-    posts: getPostsByStoryOrder(posts),
+    posts,
     updatePostOrder,
     refreshPosts,
   };

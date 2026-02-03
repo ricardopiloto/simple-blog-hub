@@ -6,7 +6,7 @@ import { usePublishedPosts } from '@/hooks/usePosts';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Index() {
-  const { data: posts, isLoading } = usePublishedPosts();
+  const { data: posts, isLoading, error } = usePublishedPosts();
 
   const featuredPost = posts?.[0];
   const recentPosts = posts?.slice(1, 7);
@@ -23,18 +23,25 @@ export default function Index() {
             className="text-center max-w-3xl mx-auto"
           >
             <h1 className="font-serif text-4xl md:text-6xl font-bold text-foreground mb-6">
-              Histórias & Ideias
+              Contos & aventuras
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground">
-              Um espaço para compartilhar conhecimento, reflexões e descobertas.
-              Explore artigos sobre tecnologia, design e criatividade.
+              Um espaço para publicar aventuras e contos relacionados ao universo de RPG aonde os jogos do nosso grupo se passam. Os contos e aventuras são alimentados todos os finais de semana, conforme eles ocorrem :)
             </p>
           </motion.div>
         </div>
       </section>
 
       {/* Featured Post */}
-      {isLoading ? (
+      {error ? (
+        <section className="py-16">
+          <div className="container-wide text-center">
+            <p className="text-muted-foreground">
+              Não foi possível carregar os artigos. Verifique se o BFF está rodando (ex.: <code className="text-sm bg-muted px-1 rounded">backend/bff</code>).
+            </p>
+          </div>
+        </section>
+      ) : isLoading ? (
         <section className="py-16">
           <div className="container-wide">
             <div className="grid md:grid-cols-2 gap-8">

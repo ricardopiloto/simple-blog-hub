@@ -5,7 +5,7 @@ import { usePublishedPosts } from '@/hooks/usePosts';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Posts() {
-  const { data: posts, isLoading } = usePublishedPosts();
+  const { data: posts, isLoading, error } = usePublishedPosts();
 
   return (
     <Layout>
@@ -25,7 +25,13 @@ export default function Posts() {
             </p>
           </motion.div>
 
-          {isLoading ? (
+          {error ? (
+            <div className="text-center py-20">
+              <p className="text-muted-foreground text-lg">
+                Não foi possível carregar os artigos. Verifique se o BFF está rodando.
+              </p>
+            </div>
+          ) : isLoading ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
               {[...Array(9)].map((_, i) => (
                 <div key={i} className="space-y-4">

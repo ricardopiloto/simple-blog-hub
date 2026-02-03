@@ -1,28 +1,13 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Menu, X, Sun, Moon, User, LogOut } from 'lucide-react';
+import { Menu, X, Sun, Moon, BookOpen } from 'lucide-react';
 import { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const navigate = useNavigate();
-
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/');
-  };
 
   return (
     <motion.header
@@ -54,6 +39,13 @@ export function Header() {
             >
               Artigos
             </Link>
+            <Link
+              to="/indice"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <BookOpen className="h-4 w-4 inline mr-1" />
+              Índice da História
+            </Link>
           </nav>
 
           {/* Desktop Actions */}
@@ -70,32 +62,6 @@ export function Header() {
                 <Sun className="h-5 w-5" />
               )}
             </Button>
-
-            {user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <User className="h-5 w-5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem asChild>
-                    <Link to="/admin" className="cursor-pointer">
-                      Painel Admin
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Sair
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <Button asChild variant="default">
-                <Link to="/auth">Entrar</Link>
-              </Button>
-            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -149,34 +115,14 @@ export function Header() {
               >
                 Artigos
               </Link>
-              {user ? (
-                <>
-                  <Link
-                    to="/admin"
-                    onClick={() => setIsMenuOpen(false)}
-                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    Painel Admin
-                  </Link>
-                  <button
-                    onClick={() => {
-                      handleSignOut();
-                      setIsMenuOpen(false);
-                    }}
-                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors text-left"
-                  >
-                    Sair
-                  </button>
-                </>
-              ) : (
-                <Link
-                  to="/auth"
-                  onClick={() => setIsMenuOpen(false)}
-                  className="text-sm font-medium text-accent hover:text-accent/80 transition-colors"
-                >
-                  Entrar
-                </Link>
-              )}
+              <Link
+                to="/indice"
+                onClick={() => setIsMenuOpen(false)}
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <BookOpen className="h-4 w-4 inline mr-1" />
+                Índice da História
+              </Link>
             </nav>
           </motion.div>
         )}

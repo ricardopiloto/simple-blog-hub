@@ -1,12 +1,24 @@
+using System.Net.Http.Json;
+using BlogBff.Models;
+
 namespace BlogBff.Services;
 
 public class ApiClient
 {
+    private const string AuthorIdHeader = "X-Author-Id";
     private readonly HttpClient _http;
 
     public ApiClient(HttpClient http)
     {
         _http = http;
+    }
+
+    public async Task<LoginResponse?> LoginAsync(string email, string password, CancellationToken cancellationToken = default)
+    {
+        var response = await _http.PostAsJsonAsync("api/auth/login", new { email, password }, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+            return null;
+        return await response.Content.ReadFromJsonAsync<LoginResponse>(cancellationToken);
     }
 
     public async Task<HttpResponseMessage> GetPostsAsync(bool? published = true, string order = "date", CancellationToken cancellationToken = default)
@@ -23,5 +35,67 @@ public class ApiClient
     public async Task<HttpResponseMessage> GetPostBySlugAsync(string slug, CancellationToken cancellationToken = default)
     {
         return await _http.GetAsync($"api/posts/{Uri.EscapeDataString(slug)}", cancellationToken);
+    }
+
+    private HttpRequestMessage WithAuthorId(HttpRequestMessage req, Guid authorId)
+    {
+        req.Headers.TryAddWithoutValidation(AuthorIdHeader, authorId.ToString());
+        return req;
+    }
+
+    public async Task<HttpResponseMessage> GetEditablePostsAsync(Guid authorId, CancellationToken cancellationToken = default)
+    {
+        var req = new HttpRequestMessage(HttpMethod.Get, "api/posts?editable=true");
+        WithAuthorId(req, authorId);
+        return await _http.SendAsync(req, cancellationToken);
+    }
+
+    public async Task<HttpResponseMessage> GetPostByIdForEditAsync(Guid postId, Guid authorId, CancellationToken cancellationToken = default)
+    {
+        var req = new HttpRequestMessage(HttpMethod.Get, $"api/posts/edit/{postId}");
+        WithAuthorId(req, authorId);
+        return await _http.SendAsync(req, cancellationToken);
+    }
+
+    public async Task<HttpResponseMessage> CreatePostAsync(object body, Guid authorId, CancellationToken cancellationToken = default)
+    {
+        var req = new HttpRequestMessage(HttpMethod.Post, "api/posts") { Content = JsonContent.Create(body) };
+        WithAuthorId(req, authorId);
+        return await _http.SendAsync(req, cancellationToken);
+    }
+
+    public async Task<HttpResponseMessage> UpdatePostAsync(Guid postId, object body, Guid authorId, CancellationToken cancellationToken = default)
+    {
+        var req = new HttpRequestMessage(HttpMethod.Put, $"api/posts/{postId}") { Content = JsonContent.Create(body) };
+        WithAuthorId(req, authorId);
+        return await _http.SendAsync(req, cancellationToken);
+    }
+
+    public async Task<HttpResponseMessage> DeletePostAsync(Guid postId, Guid authorId, CancellationToken cancellationToken = default)
+    {
+        var req = new HttpRequestMessage(HttpMethod.Delete, $"api/posts/{postId}");
+        WithAuthorId(req, authorId);
+        return await _http.SendAsync(req, cancellationToken);
+    }
+
+    public async Task<HttpResponseMessage> GetAuthorsAsync(Guid authorId, CancellationToken cancellationToken = default)
+    {
+        var req = new HttpRequestMessage(HttpMethod.Get, "api/authors");
+        WithAuthorId(req, authorId);
+        return await _http.SendAsync(req, cancellationToken);
+    }
+
+    public async Task<HttpResponseMessage> AddCollaboratorAsync(Guid postId, Guid collaboratorAuthorId, Guid callerAuthorId, CancellationToken cancellationToken = default)
+    {
+        var req = new HttpRequestMessage(HttpMethod.Post, $"api/posts/{postId}/collaborators") { Content = JsonContent.Create(new { author_id = collaboratorAuthorId.ToString() }) };
+        WithAuthorId(req, callerAuthorId);
+        return await _http.SendAsync(req, cancellationToken);
+    }
+
+    public async Task<HttpResponseMessage> RemoveCollaboratorAsync(Guid postId, Guid collaboratorAuthorId, Guid callerAuthorId, CancellationToken cancellationToken = default)
+    {
+        var req = new HttpRequestMessage(HttpMethod.Delete, $"api/posts/{postId}/collaborators/{collaboratorAuthorId}");
+        WithAuthorId(req, callerAuthorId);
+        return await _http.SendAsync(req, cancellationToken);
     }
 }

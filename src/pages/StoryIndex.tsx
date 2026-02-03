@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion, Reorder } from 'framer-motion';
 import { GripVertical, BookOpen, ArrowRight } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
+import { DEFAULT_POST_COVER_IMAGE } from '@/lib/constants';
 import { usePostsStore, Post } from '@/hooks/usePosts';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -102,15 +103,13 @@ export default function StoryIndex() {
                   </div>
 
                   {/* Cover image thumbnail */}
-                  {post.cover_image && (
-                    <div className="hidden sm:block w-20 h-14 rounded-lg overflow-hidden flex-shrink-0">
-                      <img
-                        src={post.cover_image}
-                        alt=""
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  )}
+                  <div className="hidden sm:block w-20 h-14 rounded-lg overflow-hidden flex-shrink-0">
+                    <img
+                      src={post.cover_image || DEFAULT_POST_COVER_IMAGE}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
 
                   {/* Post info */}
                   <div className="flex-1 min-w-0">

@@ -127,3 +127,5 @@
 /Users/rafaelaluiz/Documents/Ricardo-Desenvolvimento/simple-blog-hub/backend/api/obj/Debug/net8.0/BlogApi.pdb
 /Users/rafaelaluiz/Documents/Ricardo-Desenvolvimento/simple-blog-hub/backend/api/obj/Debug/net8.0/BlogApi.genruntimeconfig.cache
 /Users/rafaelaluiz/Documents/Ricardo-Desenvolvimento/simple-blog-hub/backend/api/obj/Debug/net8.0/ref/BlogApi.dll
+/Users/rafaelaluiz/Documents/Ricardo-Desenvolvimento/simple-blog-hub/backend/api/bin/Debug/net8.0/BCrypt.Net-Next.dll
+/Users/rafaelaluiz/Documents/Ricardo-Desenvolvimento/simple-blog-hub/backend/api/bin/Debug/net8.0/Markdig.dll

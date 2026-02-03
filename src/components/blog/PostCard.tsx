@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { DEFAULT_POST_COVER_IMAGE } from '@/lib/constants';
 import type { Post } from '@/api/types';
 
 interface PostCardProps {
@@ -22,15 +23,13 @@ export function PostCard({ post, index = 0 }: PostCardProps) {
       className="group"
     >
       <Link to={`/post/${post.slug}`} className="block">
-        {post.cover_image && (
-          <div className="aspect-[16/9] overflow-hidden rounded-lg mb-4">
-            <img
-              src={post.cover_image}
-              alt={post.title}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-            />
-          </div>
-        )}
+        <div className="aspect-[16/9] overflow-hidden rounded-lg mb-4">
+          <img
+            src={post.cover_image || DEFAULT_POST_COVER_IMAGE}
+            alt={post.title}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        </div>
         <div className="space-y-3">
           <div className="flex items-center gap-3 text-sm text-muted-foreground">
             {formattedDate && <span>{formattedDate}</span>}

@@ -5,11 +5,14 @@ namespace BlogApi.Data;
 
 public static class SeedData
 {
+    /// <summary>Default seed user: ana@example.com / senha123</summary>
+    public const string SeedUserEmail = "ana@example.com";
+    public const string SeedUserPassword = "senha123";
+
     public static async Task EnsureSeedAsync(BlogDbContext db, CancellationToken cancellationToken = default)
     {
-        if (await db.Authors.AnyAsync(cancellationToken))
-            return;
-
+        if (!await db.Authors.AnyAsync(cancellationToken))
+        {
         var authorId = Guid.NewGuid();
         var author = new Author
         {
@@ -21,6 +24,17 @@ public static class SeedData
             UpdatedAt = new DateTime(2024, 1, 15, 10, 0, 0, DateTimeKind.Utc)
         };
         db.Authors.Add(author);
+
+        var userId = Guid.NewGuid();
+        var user = new User
+        {
+            Id = userId,
+            Email = SeedUserEmail,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(SeedUserPassword),
+            AuthorId = authorId,
+            CreatedAt = new DateTime(2024, 1, 15, 10, 0, 0, DateTimeKind.Utc)
+        };
+        db.Users.Add(user);
 
         var posts = new[]
         {
@@ -105,5 +119,22 @@ public static class SeedData
             db.Posts.Add(post);
 
         await db.SaveChangesAsync(cancellationToken);
+        return;
+        }
+
+        // Ensure at least one user for existing DBs (e.g. after adding User table)
+        if (!await db.Users.AnyAsync(cancellationToken))
+        {
+            var firstAuthor = await db.Authors.OrderBy(a => a.CreatedAt).FirstAsync(cancellationToken);
+            db.Users.Add(new User
+            {
+                Id = Guid.NewGuid(),
+                Email = SeedUserEmail,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(SeedUserPassword),
+                AuthorId = firstAuthor.Id,
+                CreatedAt = DateTime.UtcNow
+            });
+            await db.SaveChangesAsync(cancellationToken);
+        }
     }
 }

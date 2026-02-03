@@ -96,6 +96,52 @@ namespace BlogApi.Migrations
                     b.ToTable("Posts");
                 });
 
+            modelBuilder.Entity("BlogApi.Models.PostCollaborator", b =>
+                {
+                    b.Property<Guid>("PostId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("AuthorId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("PostId", "AuthorId");
+
+                    b.HasIndex("AuthorId");
+
+                    b.ToTable("PostCollaborators");
+                });
+
+            modelBuilder.Entity("BlogApi.Models.User", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("AuthorId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuthorId")
+                        .IsUnique();
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.ToTable("Users");
+                });
+
             modelBuilder.Entity("BlogApi.Models.Post", b =>
                 {
                     b.HasOne("BlogApi.Models.Author", "Author")
@@ -107,9 +153,48 @@ namespace BlogApi.Migrations
                     b.Navigation("Author");
                 });
 
+            modelBuilder.Entity("BlogApi.Models.PostCollaborator", b =>
+                {
+                    b.HasOne("BlogApi.Models.Author", "Author")
+                        .WithMany("Collaborations")
+                        .HasForeignKey("AuthorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BlogApi.Models.Post", "Post")
+                        .WithMany("Collaborators")
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Author");
+
+                    b.Navigation("Post");
+                });
+
+            modelBuilder.Entity("BlogApi.Models.User", b =>
+                {
+                    b.HasOne("BlogApi.Models.Author", "Author")
+                        .WithOne("User")
+                        .HasForeignKey("BlogApi.Models.User", "AuthorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Author");
+                });
+
             modelBuilder.Entity("BlogApi.Models.Author", b =>
                 {
+                    b.Navigation("Collaborations");
+
                     b.Navigation("Posts");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("BlogApi.Models.Post", b =>
+                {
+                    b.Navigation("Collaborators");
                 });
 #pragma warning restore 612, 618
         }

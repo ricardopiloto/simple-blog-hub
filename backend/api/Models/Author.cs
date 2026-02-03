@@ -9,5 +9,7 @@ public class Author
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 
+    public User? User { get; set; }
     public ICollection<Post> Posts { get; set; } = new List<Post>();
+    public ICollection<PostCollaborator> Collaborations { get; set; } = new List<PostCollaborator>();
 }

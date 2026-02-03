@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { DEFAULT_POST_COVER_IMAGE } from '@/lib/constants';
 import type { Post } from '@/api/types';
 
 interface FeaturedPostProps {
@@ -22,15 +23,13 @@ export function FeaturedPost({ post }: FeaturedPostProps) {
     >
       <Link to={`/post/${post.slug}`} className="block">
         <div className="grid md:grid-cols-2 gap-8 items-center">
-          {post.cover_image && (
-            <div className="aspect-[4/3] overflow-hidden rounded-xl">
-              <img
-                src={post.cover_image}
-                alt={post.title}
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-              />
-            </div>
-          )}
+          <div className="aspect-[4/3] overflow-hidden rounded-xl">
+            <img
+              src={post.cover_image || DEFAULT_POST_COVER_IMAGE}
+              alt={post.title}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+          </div>
           <div className="space-y-4">
             <span className="inline-block px-3 py-1 bg-accent/10 text-accent text-xs font-medium rounded-full uppercase tracking-wider">
               Destaque

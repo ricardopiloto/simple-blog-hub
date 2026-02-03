@@ -12,9 +12,14 @@ Blog de leitura para **contos e aventuras** de RPG. Interface em português, com
 
 - **Página inicial**: destaque do post mais recente e grid de artigos recentes.
 - **Lista de posts**: visualização dos artigos em ordem de publicação.
-- **Post individual**: leitura por slug (ex.: `/post/o-inicio-da-jornada`).
+- **Post individual**: leitura por slug (ex.: `/post/o-inicio-da-jornada`); conteúdo exibido em HTML (convertido de Markdown no backend).
 - **Índice**: posts ordenados por ordem narrativa (`/indice`).
 - **Tema**: alternância entre modo claro e escuro (persistido em `localStorage`).
+- **Área logada (autores)**:
+  - **Login** (`/login`): e-mail e senha; o BFF valida na API e retorna JWT. Usuário de exemplo no seed: `ana@example.com` / `senha123`.
+  - **Área do autor** (`/area-autor`): dashboard com posts que o autor pode editar (dono ou colaborador); botão "Novo post"; por post: "Editar" (quem tem permissão), "Excluir" (apenas dono do post).
+  - **Edição de posts** (`/area-autor/posts/novo`, `/area-autor/posts/:id/editar`): formulário com título, slug, resumo, conteúdo em **Markdown**, capa, publicado e ordem. O conteúdo é armazenado em Markdown e convertido para HTML na leitura pública.
+  - **Permissões**: dono (autor que criou o post) pode editar e excluir; colaborador (autor adicionado ao post) pode apenas editar.
 
 ## Requisitos
 
@@ -50,7 +55,8 @@ Abra no navegador o endereço indicado (em geral `http://localhost:5173`). O fro
 | Variável        | Onde   | Descrição |
 |-----------------|--------|-----------|
 | `VITE_BFF_URL`  | Frontend | URL do BFF (padrão: `http://localhost:5000`) |
-| `API__BaseUrl`  | BFF    | URL da API interna (padrão em `appsettings.json`: `http://localhost:5001`) |
+| `API:BaseUrl`   | BFF    | URL da API interna (padrão em `appsettings.json`: `http://localhost:5001`) |
+| `Jwt:Secret`    | BFF    | Chave para assinar o JWT (alterar em produção) |
 | Connection string | API  | SQLite (padrão: `Data Source=blog.db`) |
 
 ### Outros comandos
@@ -66,7 +72,7 @@ Abra no navegador o endereço indicado (em geral `http://localhost:5173`). O fro
 ## Tecnologias
 
 - **Frontend**: Vite 5, React 18, TypeScript, React Router DOM, Tailwind CSS, shadcn/ui, Framer Motion, TanStack React Query. Dados via `src/api/` (cliente BFF) e `src/hooks/usePosts.ts`.
-- **Backend**: .NET 8 — API em `backend/api` (EF Core + SQLite), BFF em `backend/bff` (proxy para a API).
+- **Backend**: .NET 8 — API em `backend/api` (EF Core + SQLite, modelos User/Author/Post/PostCollaborator, auth por e-mail/senha com BCrypt, CRUD de posts com permissões, Markdown→HTML com Markdig); BFF em `backend/bff` (login com JWT, endpoints protegidos que repassam identidade para a API).
 - **Testes**: Vitest, Testing Library, jsdom.
 - **Lint**: ESLint 9.
 

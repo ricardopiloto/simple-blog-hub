@@ -16,4 +16,5 @@ public class Post
     public Guid AuthorId { get; set; }
 
     public Author Author { get; set; } = null!;
+    public ICollection<PostCollaborator> Collaborators { get; set; } = new List<PostCollaborator>();
 }

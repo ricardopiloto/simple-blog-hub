@@ -40,8 +40,53 @@ public class PostDto
     [JsonPropertyName("story_order")]
     public int StoryOrder { get; set; }
 
+    [JsonPropertyName("author_id")]
+    public string? AuthorId { get; set; }
+
     [JsonPropertyName("author")]
     public AuthorDto Author { get; set; } = null!;
+
+    [JsonPropertyName("collaborators")]
+    public List<CollaboratorDto>? Collaborators { get; set; }
+}
+
+public class CollaboratorDto
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = string.Empty;
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = string.Empty;
+}
+
+public class AddCollaboratorRequest
+{
+    [JsonPropertyName("author_id")]
+    public string AuthorId { get; set; } = string.Empty;
+}
+
+public class CreateOrUpdatePostRequest
+{
+    [JsonPropertyName("title")]
+    public string Title { get; set; } = string.Empty;
+
+    [JsonPropertyName("slug")]
+    public string Slug { get; set; } = string.Empty;
+
+    [JsonPropertyName("excerpt")]
+    public string? Excerpt { get; set; }
+
+    [JsonPropertyName("content")]
+    public string Content { get; set; } = string.Empty;
+
+    [JsonPropertyName("cover_image")]
+    public string? CoverImage { get; set; }
+
+    [JsonPropertyName("published")]
+    public bool Published { get; set; }
+
+    [JsonPropertyName("story_order")]
+    public int StoryOrder { get; set; }
 }
 
 public class AuthorDto

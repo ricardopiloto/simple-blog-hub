@@ -4,6 +4,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ArrowLeft } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
+import { DEFAULT_POST_COVER_IMAGE } from '@/lib/constants';
 import { usePost } from '@/hooks/usePosts';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -118,20 +119,18 @@ export default function PostPage() {
           </motion.header>
 
           {/* Cover Image */}
-          {post.cover_image && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="mb-12"
-            >
-              <img
-                src={post.cover_image}
-                alt={post.title}
-                className="w-full aspect-[16/9] object-cover rounded-xl"
-              />
-            </motion.div>
-          )}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="mb-12"
+          >
+            <img
+              src={post.cover_image || DEFAULT_POST_COVER_IMAGE}
+              alt={post.title}
+              className="w-full aspect-[16/9] object-cover rounded-xl"
+            />
+          </motion.div>
 
           {/* Content */}
           <motion.div

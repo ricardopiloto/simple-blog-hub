@@ -1,14 +1,16 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Menu, X, Sun, Moon, BookOpen } from 'lucide-react';
+import { Menu, X, Sun, Moon, BookOpen, LogIn, User } from 'lucide-react';
 import { useState } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { DiceIcon } from '@/components/layout/DiceIcon';
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
+  const { isAuthenticated } = useAuth();
 
   return (
     <motion.header
@@ -48,6 +50,23 @@ export function Header() {
               <BookOpen className="h-4 w-4 inline mr-1" />
               Índice da História
             </Link>
+            {isAuthenticated ? (
+              <Link
+                to="/area-autor"
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+              >
+                <User className="h-4 w-4" />
+                Área do autor
+              </Link>
+            ) : (
+              <Link
+                to="/login"
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+              >
+                <LogIn className="h-4 w-4" />
+                Login
+              </Link>
+            )}
           </nav>
 
           {/* Desktop Actions */}
@@ -125,6 +144,25 @@ export function Header() {
                 <BookOpen className="h-4 w-4 inline mr-1" />
                 Índice da História
               </Link>
+              {isAuthenticated ? (
+                <Link
+                  to="/area-autor"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                >
+                  <User className="h-4 w-4" />
+                  Área do autor
+                </Link>
+              ) : (
+                <Link
+                  to="/login"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                >
+                  <LogIn className="h-4 w-4" />
+                  Login
+                </Link>
+              )}
             </nav>
           </motion.div>
         )}

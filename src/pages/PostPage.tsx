@@ -88,23 +88,23 @@ export default function PostPage() {
             </h1>
 
             <div className="flex items-center gap-4 text-muted-foreground">
-              {post.profiles && (
+              {post.author && (
                 <div className="flex items-center gap-3">
-                  {post.profiles.avatar_url ? (
+                  {post.author.avatar ? (
                     <img
-                      src={post.profiles.avatar_url}
-                      alt={post.profiles.full_name || 'Author'}
+                      src={post.author.avatar}
+                      alt={post.author.name || 'Author'}
                       className="w-10 h-10 rounded-full object-cover"
                     />
                   ) : (
                     <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
                       <span className="text-sm font-medium">
-                        {post.profiles.full_name?.[0] || 'A'}
+                        {post.author.name?.[0] || 'A'}
                       </span>
                     </div>
                   )}
                   <span className="font-medium text-foreground">
-                    {post.profiles.full_name || 'Autor'}
+                    {post.author.name || 'Autor'}
                   </span>
                 </div>
               )}
@@ -143,7 +143,7 @@ export default function PostPage() {
           />
 
           {/* Author Bio */}
-          {post.profiles?.bio && (
+          {post.author?.bio && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -151,24 +151,24 @@ export default function PostPage() {
               className="mt-16 pt-8 border-t"
             >
               <div className="flex items-start gap-4">
-                {post.profiles.avatar_url ? (
+                {post.author.avatar ? (
                   <img
-                    src={post.profiles.avatar_url}
-                    alt={post.profiles.full_name || 'Author'}
+                    src={post.author.avatar}
+                    alt={post.author.name || 'Author'}
                     className="w-16 h-16 rounded-full object-cover"
                   />
                 ) : (
                   <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center">
                     <span className="text-xl font-medium">
-                      {post.profiles.full_name?.[0] || 'A'}
+                      {post.author.name?.[0] || 'A'}
                     </span>
                   </div>
                 )}
                 <div>
                   <h3 className="font-serif text-xl font-semibold mb-2">
-                    {post.profiles.full_name || 'Autor'}
+                    {post.author.name || 'Autor'}
                   </h3>
-                  <p className="text-muted-foreground">{post.profiles.bio}</p>
+                  <p className="text-muted-foreground">{post.author.bio}</p>
                 </div>
               </div>
             </motion.div>

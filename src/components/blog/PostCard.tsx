@@ -2,19 +2,10 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Post } from '@/data/mockPosts';
 
 interface PostCardProps {
-  post: {
-    id: string;
-    title: string;
-    slug: string;
-    excerpt: string | null;
-    cover_image: string | null;
-    published_at: string | null;
-    profiles?: {
-      full_name: string | null;
-    } | null;
-  };
+  post: Post;
   index?: number;
 }
 
@@ -43,10 +34,10 @@ export function PostCard({ post, index = 0 }: PostCardProps) {
         <div className="space-y-3">
           <div className="flex items-center gap-3 text-sm text-muted-foreground">
             {formattedDate && <span>{formattedDate}</span>}
-            {post.profiles?.full_name && (
+            {post.author?.name && (
               <>
                 <span>•</span>
-                <span>{post.profiles.full_name}</span>
+                <span>{post.author.name}</span>
               </>
             )}
           </div>

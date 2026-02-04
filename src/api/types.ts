@@ -48,7 +48,8 @@ export interface UserListItem {
 
 export interface CreateUserPayload {
   email: string;
-  password: string;
+  /** Optional; when omitted, API uses default password (senha123). User should change on first login. */
+  password?: string;
   author_name: string;
 }
 

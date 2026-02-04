@@ -58,7 +58,7 @@ Abra no navegador o endereço indicado (em geral `http://localhost:5173`). O fro
 | `API:BaseUrl`   | BFF    | URL da API interna (padrão em `appsettings.json`: `http://localhost:5001`) |
 | `Jwt:Secret`    | BFF    | Chave para assinar o JWT (alterar em produção) |
 | Connection string | API  | SQLite (padrão: `Data Source=blog.db`) |
-| `Admin__Email`  | API    | E-mail da conta **Admin**. Apenas essa conta pode criar, alterar e excluir outras contas; os demais autores só podem alterar a própria senha. Exemplo: `Admin__Email=ac.ricardosobral@gmail.com` (definir no ambiente ao rodar a API, ex.: `Admin__Email=... dotnet run` ou em `appsettings.Development.json`). |
+| `Admin__Email`  | API    | E-mail da conta **Admin**. Somente o Admin pode criar e excluir autores; na criação de autor informa-se apenas e-mail e nome (senha padrão `senha123`). Os demais autores só podem alterar a própria senha. Exemplo: `Admin__Email=ac.ricardosobral@gmail.com` (definir no ambiente ao rodar a API, ex.: `Admin__Email=... dotnet run` ou em `appsettings.Development.json`). |
 
 Para identificar qual usuário é o Admin, configure o e-mail em `Admin:Email` (appsettings) ou `Admin__Email` (variável de ambiente). **Configuração inicial:** na primeira execução da API, se `Admin:Email` estiver definido e não existir usuário com esse e-mail, a conta é criada automaticamente com senha padrão `senha123`. O usuário deve trocar a senha no primeiro acesso (seção **"Alterar minha senha"** na área do autor). O usuário com esse e-mail terá acesso à área **Contas** (gestão de usuários); os outros autores só conseguem alterar a própria senha na área do autor.
 

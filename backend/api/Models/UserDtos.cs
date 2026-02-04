@@ -23,7 +23,7 @@ public class CreateUserRequest
     public string Email { get; set; } = string.Empty;
 
     [JsonPropertyName("password")]
-    public string Password { get; set; } = string.Empty;
+    public string? Password { get; set; }
 
     [JsonPropertyName("author_name")]
     public string AuthorName { get; set; } = string.Empty;

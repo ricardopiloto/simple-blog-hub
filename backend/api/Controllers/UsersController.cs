@@ -62,8 +62,8 @@ public class UsersController : ControllerBase
 
         var email = request.Email?.Trim() ?? string.Empty;
         var authorName = request.AuthorName?.Trim() ?? string.Empty;
-        var password = request.Password ?? string.Empty;
-        if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password) || string.IsNullOrEmpty(authorName))
+        var password = string.IsNullOrWhiteSpace(request.Password) ? SeedData.InitialAdminDefaultPassword : request.Password!.Trim();
+        if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(authorName))
             return BadRequest();
 
         if (await _db.Users.AnyAsync(u => u.Email == email, cancellationToken))

@@ -75,9 +75,8 @@ export default function AreaContas() {
     e.preventDefault();
     const form = e.currentTarget;
     const email = (form.elements.namedItem('new-email') as HTMLInputElement)?.value?.trim();
-    const password = (form.elements.namedItem('new-password') as HTMLInputElement)?.value;
     const authorName = (form.elements.namedItem('new-author-name') as HTMLInputElement)?.value?.trim();
-    if (email && password && authorName) createMutation.mutate({ email, password, author_name: authorName });
+    if (email && authorName) createMutation.mutate({ email, author_name: authorName });
   }
 
   function handleEditSubmit(e: React.FormEvent) {
@@ -178,14 +177,13 @@ export default function AreaContas() {
           <DialogHeader>
             <DialogTitle>Nova conta</DialogTitle>
           </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            O novo autor receberá a senha padrão e deve alterá-la no primeiro acesso (área do autor → Alterar minha senha).
+          </p>
           <form onSubmit={handleCreateSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="new-email">E-mail</Label>
               <Input id="new-email" name="new-email" type="email" required placeholder="autor@exemplo.com" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="new-password">Senha</Label>
-              <Input id="new-password" name="new-password" type="password" required placeholder="••••••••" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="new-author-name">Nome do autor</Label>

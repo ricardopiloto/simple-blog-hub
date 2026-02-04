@@ -1,5 +1,6 @@
 using BlogApi.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace BlogApi.Data;
 
@@ -8,6 +9,9 @@ public static class SeedData
     /// <summary>Default seed user: ana@example.com / senha123</summary>
     public const string SeedUserEmail = "ana@example.com";
     public const string SeedUserPassword = "senha123";
+
+    /// <summary>Default password for the initial admin account created from Admin:Email.</summary>
+    public const string InitialAdminDefaultPassword = "senha123";
 
     public static async Task EnsureSeedAsync(BlogDbContext db, CancellationToken cancellationToken = default)
     {
@@ -136,5 +140,36 @@ public static class SeedData
             });
             await db.SaveChangesAsync(cancellationToken);
         }
+    }
+
+    /// <summary>Ensures the admin user from Admin:Email exists with default password. Call after EnsureSeedAsync.</summary>
+    public static async Task EnsureInitialAdminUserAsync(BlogDbContext db, IConfiguration configuration, CancellationToken cancellationToken = default)
+    {
+        var adminEmail = configuration["Admin:Email"]?.Trim();
+        if (string.IsNullOrEmpty(adminEmail))
+            return;
+        if (await db.Users.AnyAsync(u => u.Email == adminEmail, cancellationToken))
+            return;
+
+        var authorId = Guid.NewGuid();
+        var author = new Author
+        {
+            Id = authorId,
+            Name = "Admin",
+            AvatarUrl = null,
+            Bio = null,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+        db.Authors.Add(author);
+        db.Users.Add(new User
+        {
+            Id = Guid.NewGuid(),
+            Email = adminEmail,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(InitialAdminDefaultPassword),
+            AuthorId = authorId,
+            CreatedAt = DateTime.UtcNow
+        });
+        await db.SaveChangesAsync(cancellationToken);
     }
 }

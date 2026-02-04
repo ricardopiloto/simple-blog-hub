@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BlogApi.Data;
 using BlogApi.Models;
+using BlogApi.Services;
 
 namespace BlogApi.Controllers;
 
@@ -10,10 +11,12 @@ namespace BlogApi.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly BlogDbContext _db;
+    private readonly IAdminService _adminService;
 
-    public AuthController(BlogDbContext db)
+    public AuthController(BlogDbContext db, IAdminService adminService)
     {
         _db = db;
+        _adminService = adminService;
     }
 
     /// <summary>
@@ -32,11 +35,14 @@ public class AuthController : ControllerBase
         if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
             return Unauthorized();
 
+        var isAdmin = await _adminService.IsAdminAsync(user.AuthorId, cancellationToken);
+
         return Ok(new LoginResponse
         {
             UserId = user.Id.ToString(),
             AuthorId = user.AuthorId.ToString(),
             Email = user.Email,
+            IsAdmin = isAdmin,
             Author = new AuthorDto
             {
                 Name = user.Author.Name,

@@ -38,3 +38,21 @@ export interface CreateOrUpdatePostPayload {
   published: boolean;
   story_order: number;
 }
+
+export interface UserListItem {
+  id: string;
+  email: string;
+  author_id: string;
+  author_name: string;
+}
+
+export interface CreateUserPayload {
+  email: string;
+  password: string;
+  author_name: string;
+}
+
+export interface UpdateUserPayload {
+  email?: string;
+  password?: string;
+}

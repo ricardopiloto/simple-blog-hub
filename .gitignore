@@ -1,4 +1,15 @@
-# Logs
+# Dependências
+node_modules
+
+# Build
+dist
+dist-ssr
+
+# Ambiente e secrets
+.env
+*.local
+
+# Logs e temporários
 logs
 *.log
 npm-debug.log*
@@ -7,22 +18,18 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
-
-# Editor directories and files
+# Editor e OS
 .vscode/*
 !.vscode/extensions.json
 .idea
 .DS_Store
 *.suo
 *.ntvs*
-*.njsproj
-*.sln
 *.sw?
 
-# SQLite (backend)
+# Backend (.NET e SQLite)
+backend/**/bin/
+backend/**/obj/
+backend/**/.vs/
 backend/api/*.db
 backend/api/*.db-*

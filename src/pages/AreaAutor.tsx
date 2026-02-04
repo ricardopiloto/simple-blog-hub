@@ -1,10 +1,12 @@
-import { useEffect } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
-import { fetchEditablePosts, deletePost } from '@/api/client';
+import { fetchEditablePosts, deletePost, updateUser } from '@/api/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   AlertDialog,
@@ -21,7 +23,9 @@ import {
 export default function AreaAutor() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { author, logout } = useAuth();
+  const { author, logout, userId, isAdmin } = useAuth();
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const { data: posts, isLoading, error } = useQuery({
     queryKey: ['posts', 'editable'],
     queryFn: () => fetchEditablePosts(),
@@ -49,6 +53,21 @@ export default function AreaAutor() {
   const isOwner = (post: { author_id?: string }) =>
     author && post.author_id && post.author_id === author.id;
 
+  const changePasswordMutation = useMutation({
+    mutationFn: (password: string) => updateUser(userId ?? '', { password }),
+    onSuccess: () => {
+      setNewPassword('');
+      setConfirmPassword('');
+    },
+  });
+
+  function handleChangePassword(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (newPassword.trim() && newPassword === confirmPassword && userId) {
+      changePasswordMutation.mutate(newPassword.trim());
+    }
+  }
+
   return (
     <Layout>
       <section className="py-16">
@@ -62,9 +81,16 @@ export default function AreaAutor() {
                 Gerencie seus artigos e colaborações.
               </p>
             </div>
-            <Button asChild>
-              <Link to="/area-autor/posts/novo">Novo post</Link>
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              {isAdmin && (
+                <Button variant="outline" asChild>
+                  <Link to="/area-autor/contas">Contas</Link>
+                </Button>
+              )}
+              <Button asChild>
+                <Link to="/area-autor/posts/novo">Novo post</Link>
+              </Button>
+            </div>
           </div>
 
           {error && (
@@ -146,6 +172,39 @@ export default function AreaAutor() {
               Você ainda não tem posts. Crie um novo para começar.
             </p>
           )}
+
+          <div className="mt-12 pt-8 border-t">
+            <h2 className="font-serif text-xl font-semibold text-foreground mb-4">Alterar minha senha</h2>
+            <form onSubmit={handleChangePassword} className="flex flex-wrap items-end gap-4 max-w-md">
+              <div className="space-y-2 flex-1 min-w-[180px]">
+                <Label htmlFor="new-password-area">Nova senha</Label>
+                <Input
+                  id="new-password-area"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="••••••••"
+                  disabled={changePasswordMutation.isPending}
+                />
+              </div>
+              <div className="space-y-2 flex-1 min-w-[180px]">
+                <Label htmlFor="confirm-password-area">Confirmar senha</Label>
+                <Input
+                  id="confirm-password-area"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="••••••••"
+                  disabled={changePasswordMutation.isPending}
+                />
+              </div>
+              <Button type="submit" disabled={!userId || !newPassword.trim() || newPassword !== confirmPassword || changePasswordMutation.isPending}>
+                {changePasswordMutation.isPending ? 'Salvando…' : 'Alterar senha'}
+              </Button>
+            </form>
+            {changePasswordMutation.isSuccess && <p className="text-sm text-green-600 dark:text-green-400 mt-2">Senha alterada com sucesso.</p>}
+            {changePasswordMutation.error && <p className="text-sm text-destructive mt-2">{changePasswordMutation.error instanceof Error ? changePasswordMutation.error.message : 'Erro ao alterar senha.'}</p>}
+          </div>
         </div>
       </section>
     </Layout>

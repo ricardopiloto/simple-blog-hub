@@ -23,6 +23,9 @@ public class LoginResponse
     [JsonPropertyName("email")]
     public string Email { get; set; } = string.Empty;
 
+    [JsonPropertyName("is_admin")]
+    public bool IsAdmin { get; set; }
+
     [JsonPropertyName("author")]
     public AuthorDto Author { get; set; } = null!;
 }

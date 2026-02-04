@@ -10,7 +10,7 @@ import { DiceIcon } from '@/components/layout/DiceIcon';
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isAdmin } = useAuth();
 
   return (
     <motion.header
@@ -145,14 +145,25 @@ export function Header() {
                 Índice da História
               </Link>
               {isAuthenticated ? (
-                <Link
-                  to="/area-autor"
-                  onClick={() => setIsMenuOpen(false)}
-                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
-                >
-                  <User className="h-4 w-4" />
-                  Área do autor
-                </Link>
+                <>
+                  <Link
+                    to="/area-autor"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                  >
+                    <User className="h-4 w-4" />
+                    Área do autor
+                  </Link>
+                  {isAdmin && (
+                    <Link
+                      to="/area-autor/contas"
+                      onClick={() => setIsMenuOpen(false)}
+                      className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      Contas
+                    </Link>
+                  )}
+                </>
               ) : (
                 <Link
                   to="/login"

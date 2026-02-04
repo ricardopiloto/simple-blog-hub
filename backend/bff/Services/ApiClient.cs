@@ -98,4 +98,32 @@ public class ApiClient
         WithAuthorId(req, callerAuthorId);
         return await _http.SendAsync(req, cancellationToken);
     }
+
+    public async Task<HttpResponseMessage> GetUsersAsync(Guid authorId, CancellationToken cancellationToken = default)
+    {
+        var req = new HttpRequestMessage(HttpMethod.Get, "api/users");
+        WithAuthorId(req, authorId);
+        return await _http.SendAsync(req, cancellationToken);
+    }
+
+    public async Task<HttpResponseMessage> CreateUserAsync(object body, Guid authorId, CancellationToken cancellationToken = default)
+    {
+        var req = new HttpRequestMessage(HttpMethod.Post, "api/users") { Content = JsonContent.Create(body) };
+        WithAuthorId(req, authorId);
+        return await _http.SendAsync(req, cancellationToken);
+    }
+
+    public async Task<HttpResponseMessage> UpdateUserAsync(Guid userId, object body, Guid authorId, CancellationToken cancellationToken = default)
+    {
+        var req = new HttpRequestMessage(HttpMethod.Put, $"api/users/{userId}") { Content = JsonContent.Create(body) };
+        WithAuthorId(req, authorId);
+        return await _http.SendAsync(req, cancellationToken);
+    }
+
+    public async Task<HttpResponseMessage> DeleteUserAsync(Guid userId, Guid authorId, CancellationToken cancellationToken = default)
+    {
+        var req = new HttpRequestMessage(HttpMethod.Delete, $"api/users/{userId}");
+        WithAuthorId(req, authorId);
+        return await _http.SendAsync(req, cancellationToken);
+    }
 }

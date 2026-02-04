@@ -55,7 +55,7 @@
 
 ## Important Constraints
 
-- **Variáveis de ambiente**: Não commitar `.env`. Frontend: `VITE_BFF_URL` (opcional; padrão em dev `http://localhost:5000`). BFF: `API__BaseUrl` para a API interna. API: connection string SQLite. Build e testes do frontend rodam sem obrigatoriedade de backend; a UI trata BFF indisponível (mensagem de erro).
+- **Variáveis de ambiente**: Não commitar `.env`. O `.env` na raiz é **opcional**; o projeto roda sem ele (frontend usa padrão em código `http://localhost:5000`; backend usa appsettings e variáveis de ambiente do processo). A única variável de frontend usada é `VITE_BFF_URL` (opcional; padrão em código). O backend (API e BFF) **não lê o `.env` da raiz**; configuração vem de `appsettings.json` e das variáveis de ambiente do processo ao rodar `dotnet run`. BFF: `API__BaseUrl` para a API interna. API: connection string SQLite, `Admin__Email` para a conta Admin. Build e testes do frontend rodam sem obrigatoriedade de backend; a UI trata BFF indisponível (mensagem de erro).
 
 ## External Dependencies
 

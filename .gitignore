@@ -8,6 +8,8 @@ dist-ssr
 # Ambiente e secrets
 .env
 *.local
+api.env
+bff.env
 
 # Logs e temporários
 logs

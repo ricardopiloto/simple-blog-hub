@@ -6,7 +6,7 @@
 
 ## 2. Update DEPLOY-UBUNTU-CADDY.md
 
-- [x] 2.1 Ensure all frontend build and copy steps use the **`frontend/`** directory: clone repo, then run `cd frontend && npm install` and `cd frontend && VITE_BFF_URL=... npm run build`; copy `repo/frontend/dist` to the Caddy document root (e.g. `/var/www/blog.1nodado/dist`). Update sections "Clonar e build do frontend", "Copiar estáticos do frontend", and "Atualizar a aplicação (deploy posterior)" so paths reference `frontend/` and `frontend/dist`.
+- [x] 2.1 Ensure all frontend build and copy steps use the **`frontend/`** directory: clone repo, then run `cd frontend && npm install` and `cd frontend && VITE_BFF_URL=... npm run build`; copy `repo/frontend/dist` to the Caddy document root (e.g. `/var/www/blog/dist`). Update sections "Clonar e build do frontend", "Copiar estáticos do frontend", and "Atualizar a aplicação (deploy posterior)" so paths reference `frontend/` and `frontend/dist`.
 - [x] 2.2 In "Resumo rápido", set "Build frontend" to something like `cd frontend && VITE_BFF_URL=https://blog.1nodado.com.br npm run build` and note that static files come from `frontend/dist`.
 
 ## 3. Optional: verification script

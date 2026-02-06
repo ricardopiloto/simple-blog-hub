@@ -9,7 +9,7 @@ Validate the Caddy configuration described in **DEPLOY-UBUNTU-CADDY.md** and cla
 The Caddy snippet in the deploy doc (section 7) is **valid Caddy v2** syntax and consistent with the rest of the deploy:
 
 - **blog.1nodado.com.br** as site address.
-- **root * /var/www/blog.1nodado/dist** — matches the deploy path where static files are copied (step 5).
+- **root * /var/www/blog/dist** — matches the deploy path where static files are copied (step 5).
 - **file_server** + **try_files {path} /index.html** — serves the SPA and fallback for client-side routing.
 - **handle /bff/* { reverse_proxy 127.0.0.1:5000 }** — proxies BFF requests to the backend; path is preserved so the BFF receives e.g. `/bff/posts`.
 

@@ -1,0 +1,46 @@
+# 1noDado Blog — API e BFF para uso com Caddy no host.
+# Frontend: build no host e servir por Caddy (ver DEPLOY-DOCKER-CADDY.md).
+# Só o BFF é exposto no host (porta 5000) para o Caddy fazer reverse proxy.
+
+services:
+  api:
+    build:
+      context: ./backend/api
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:5001
+      - ConnectionStrings__DefaultConnection=Data Source=/data/blog.db
+      - Admin__PasswordResetTriggerPath=/data/admin-password-reset.trigger
+    env_file:
+      - api.env
+    volumes:
+      - blog_api_data:/data
+    networks:
+      - blog
+
+  bff:
+    build:
+      context: ./backend/bff
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:5000
+      - API__BaseUrl=http://api:5001
+    env_file:
+      - bff.env
+    ports:
+      - "127.0.0.1:5000:5000"
+    networks:
+      - blog
+
+volumes:
+  blog_api_data:
+
+networks:
+  blog:
+    driver: bridge

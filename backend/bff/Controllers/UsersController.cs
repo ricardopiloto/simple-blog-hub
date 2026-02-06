@@ -39,6 +39,21 @@ public class UsersController : ControllerBase
         return Content(content, "application/json");
     }
 
+    /// <summary>GET /bff/users/me — current user (any authenticated user).</summary>
+    [HttpGet("me")]
+    [Authorize]
+    public async Task<IActionResult> GetCurrentUser(CancellationToken cancellationToken = default)
+    {
+        var authorId = GetAuthorId(User);
+        if (authorId == null)
+            return Unauthorized();
+        var response = await _api.GetCurrentUserAsync(authorId.Value, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+            return StatusCode((int)response.StatusCode);
+        var content = await response.Content.ReadAsStringAsync(cancellationToken);
+        return Content(content, "application/json");
+    }
+
     /// <summary>POST /bff/users — create user (Admin only).</summary>
     [HttpPost]
     [Authorize]
@@ -73,6 +88,24 @@ public class UsersController : ControllerBase
             return Forbid();
         if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
             return Conflict();
+        if (!response.IsSuccessStatusCode)
+            return StatusCode((int)response.StatusCode);
+        return NoContent();
+    }
+
+    /// <summary>POST /bff/users/{id}/reset-password — reset user password to default (Admin only).</summary>
+    [HttpPost("{id:guid}/reset-password")]
+    [Authorize]
+    public async Task<IActionResult> ResetPassword(Guid id, CancellationToken cancellationToken = default)
+    {
+        var authorId = GetAuthorId(User);
+        if (authorId == null)
+            return Unauthorized();
+        var response = await _api.ResetUserPasswordAsync(id, authorId.Value, cancellationToken);
+        if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            return NotFound();
+        if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+            return Forbid();
         if (!response.IsSuccessStatusCode)
             return StatusCode((int)response.StatusCode);
         return NoContent();

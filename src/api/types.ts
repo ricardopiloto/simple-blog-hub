@@ -29,6 +29,11 @@ export interface AuthorListItem {
 
 export type OrderBy = 'date' | 'story';
 
+/** Response from GET /bff/posts/next-story-order */
+export interface NextStoryOrderResponse {
+  next_story_order: number;
+}
+
 export interface CreateOrUpdatePostPayload {
   title: string;
   slug: string;
@@ -44,6 +49,8 @@ export interface UserListItem {
   email: string;
   author_id: string;
   author_name: string;
+  /** Breve descrição do autor (ex.: "Sonhador e amante de contos e RPG"). */
+  author_bio?: string | null;
 }
 
 export interface CreateUserPayload {
@@ -56,4 +63,7 @@ export interface CreateUserPayload {
 export interface UpdateUserPayload {
   email?: string;
   password?: string;
+  author_name?: string;
+  /** Breve descrição do autor. */
+  author_bio?: string | null;
 }

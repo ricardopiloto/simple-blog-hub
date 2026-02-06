@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/select';
 import {
   fetchPostByIdForEdit,
+  fetchNextStoryOrder,
   createPost,
   updatePost,
   fetchAuthors,
@@ -54,7 +55,7 @@ export default function PostEdit() {
   const [excerpt, setExcerpt] = useState('');
   const [content, setContent] = useState('');
   const [coverImage, setCoverImage] = useState('');
-  const [published, setPublished] = useState(false);
+  const [published, setPublished] = useState(true);
   const [storyOrder, setStoryOrder] = useState(1);
   const [selectedAuthorId, setSelectedAuthorId] = useState('');
 
@@ -70,6 +71,12 @@ export default function PostEdit() {
     queryKey: ['authors'],
     queryFn: fetchAuthors,
     enabled: isOwner,
+  });
+
+  const { data: nextStoryOrder } = useQuery({
+    queryKey: ['posts', 'next-story-order'],
+    queryFn: fetchNextStoryOrder,
+    enabled: isNew,
   });
 
   const addCollabMutation = useMutation({
@@ -99,6 +106,10 @@ export default function PostEdit() {
       setStoryOrder(post.story_order);
     }
   }, [post]);
+
+  useEffect(() => {
+    if (isNew && nextStoryOrder != null) setStoryOrder(nextStoryOrder);
+  }, [isNew, nextStoryOrder]);
 
   const createMutation = useMutation({
     mutationFn: (payload: CreateOrUpdatePostPayload) => createPost(payload),

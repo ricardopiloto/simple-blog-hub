@@ -5,8 +5,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ForceChangePasswordGate } from "@/components/ForceChangePasswordGate";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { AdminRoute } from "@/components/AdminRoute";
 import Index from "./pages/Index";
 import Posts from "./pages/Posts";
 import PostPage from "./pages/PostPage";
@@ -27,6 +27,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
+          <ForceChangePasswordGate>
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/posts" element={<Posts />} />
@@ -34,12 +35,13 @@ const App = () => (
             <Route path="/indice" element={<StoryIndex />} />
             <Route path="/login" element={<Login />} />
             <Route path="/area-autor" element={<ProtectedRoute><AreaAutor /></ProtectedRoute>} />
-            <Route path="/area-autor/contas" element={<AdminRoute><AreaContas /></AdminRoute>} />
+            <Route path="/area-autor/contas" element={<ProtectedRoute><AreaContas /></ProtectedRoute>} />
             <Route path="/area-autor/posts/novo" element={<ProtectedRoute><PostEdit /></ProtectedRoute>} />
             <Route path="/area-autor/posts/:id/editar" element={<ProtectedRoute><PostEdit /></ProtectedRoute>} />
             <Route path="/area-autor/posts" element={<Navigate to="/area-autor" replace />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </ForceChangePasswordGate>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>

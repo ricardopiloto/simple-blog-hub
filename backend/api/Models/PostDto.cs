@@ -50,6 +50,15 @@ public class PostDto
     public List<CollaboratorDto>? Collaborators { get; set; }
 }
 
+/// <summary>
+/// Response for GET /api/posts/next-story-order (snake_case in JSON).
+/// </summary>
+public class NextStoryOrderResponse
+{
+    [JsonPropertyName("next_story_order")]
+    public int NextStoryOrder { get; set; }
+}
+
 public class CollaboratorDto
 {
     [JsonPropertyName("id")]
@@ -63,6 +72,15 @@ public class AddCollaboratorRequest
 {
     [JsonPropertyName("author_id")]
     public string AuthorId { get; set; } = string.Empty;
+}
+
+public class StoryOrderItemRequest
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = string.Empty;
+
+    [JsonPropertyName("story_order")]
+    public int StoryOrder { get; set; }
 }
 
 public class CreateOrUpdatePostRequest

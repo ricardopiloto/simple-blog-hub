@@ -1,72 +1,137 @@
 # 1noDado RPG
 
-Blog de leitura para **contos e aventuras** de RPG. Interface em português, com página inicial, lista de posts, post por slug e índice em ordem de história. Os dados vêm do **BFF** (Backend-for-Frontend), que consome uma API interna .NET com persistência em **SQLite**.
+Blog de leitura para **contos e aventuras** de RPG. Interface em português. Os dados vêm do **BFF** (Backend-for-Frontend), que consome uma API interna .NET com persistência em **SQLite**.
 
-## Arquitetura
+## Funcionalidades
 
-- **Frontend** (React, Vite) → chama apenas o **BFF** (`VITE_BFF_URL`, ex.: `http://localhost:5000`).
-- **BFF** (.NET 8) → único ponto de entrada público; repassa requisições para a API interna.
-- **API** (.NET 8) → acesso a **SQLite** via Entity Framework Core; não exposta à internet.
-
-## O que o projeto faz
-
-- **Página inicial**: destaque do post mais recente e grid de artigos recentes.
-- **Lista de posts**: visualização dos artigos em ordem de publicação.
-- **Post individual**: leitura por slug (ex.: `/post/o-inicio-da-jornada`); conteúdo exibido em HTML (convertido de Markdown no backend).
-- **Índice**: posts ordenados por ordem narrativa (`/indice`).
+- **Página inicial**: ordenada por **data de criação** — Destaque = último post criado (entre publicados), grid de artigos recentes na mesma ordem. Apenas posts **publicados** aparecem aqui e no Índice; rascunhos só na Área do autor.
+- **Lista de posts**: visualização dos artigos em ordem de criação (somente publicados).
+- **Post individual**: leitura por slug; conteúdo em HTML (convertido de Markdown no backend). No final da página: **descrição do autor** (configurável em Contas), quando existir, e **navegação anterior/próximo** (links para o post anterior e o próximo na ordem da história).
+- **Índice da história** (`/indice`): posts em ordem narrativa (`story_order`), com **paginação** (6 itens por página), **filtro em tempo real** (por número da ordem ou título) e cards compactos (título e imagem, sem resumo). Utilizadores **autenticados** podem editar a ordem por **número** (input no card) ou **arrastando** os cards; "Salvar ordem" persiste no backend. Visitantes só visualizam a lista.
 - **Tema**: alternância entre modo claro e escuro (persistido em `localStorage`).
-- **Área logada (autores)**:
-  - **Login** (`/login`): e-mail e senha; o BFF valida na API e retorna JWT. Usuário de exemplo no seed: `ana@example.com` / `senha123`.
-  - **Área do autor** (`/area-autor`): dashboard com posts que o autor pode editar (dono ou colaborador); botão "Novo post"; por post: "Editar" (quem tem permissão), "Excluir" (apenas dono do post).
-  - **Edição de posts** (`/area-autor/posts/novo`, `/area-autor/posts/:id/editar`): formulário com título, slug, resumo, conteúdo em **Markdown**, capa, publicado e ordem. O conteúdo é armazenado em Markdown e convertido para HTML na leitura pública.
-  - **Permissões**: dono (autor que criou o post) pode editar e excluir; colaborador (autor adicionado ao post) pode apenas editar.
+- **Login** (`/login`): e-mail e senha; o BFF valida na API e retorna JWT. Por defeito (sem configuração), o admin é **admin@admin.com** com senha **senha123**; com `Seed:EnableDemoData` ativo existe também o utilizador de exemplo `ana@example.com` / `senha123`.
+- **Troca obrigatória de senha**: no primeiro acesso com senha padrão (`senha123`), um **modal bloqueante** exige a alteração da senha antes de usar o restante da área logada.
+- **Área do autor** (`/area-autor`): dashboard com todos os posts; botão "Novo post". O autor vê "Editar" nos posts em que é dono, colaborador ou Admin, e "Excluir" nos que é dono ou Admin.
+- **Menu superior** (autenticado): link "Área do autor", link "Contas" e botão **Sair** (logout).
+- **Contas** (`/area-autor/contas`): qualquer autor logado acessa. Autores não-Admin veem e editam apenas o **próprio perfil** (nome do autor, **descrição do autor**, senha). O **Admin** vê todas as contas e pode criar (e-mail e nome; senha padrão `senha123`), editar (nome, descrição, e-mail, senha), resetar senha e excluir usuários.
+- **Critério mínimo de senha**: 6 caracteres, uma letra maiúscula e um número (aplicado ao definir ou alterar senha).
+- **Edição de posts** (`/area-autor/posts/novo`, `/area-autor/posts/:id/editar`): título, slug, resumo, conteúdo em **Markdown**, capa, **Publicado** e ordem. Ao criar **novo post**, o campo **Ordem** é pré-preenchido com a próxima posição sugerida (último publicado + 1), editável pelo utilizador. Conteúdo armazenado em Markdown e convertido para HTML na leitura pública.
+- **Permissões por post**: o **Admin** pode editar e excluir qualquer post; dono pode editar e excluir; colaborador pode apenas editar.
+- **Recuperação da senha do Admin**: via **ficheiro de trigger** no servidor (criar ficheiro, reiniciar API, login com senha padrão e trocar novamente). Ver secção "Recuperar senha do Admin" mais abaixo.
+
+## Arquitetura e estrutura dos serviços
+
+Fluxo: **Frontend (React)** → **BFF** (único ponto de entrada público) → **API** (interna) → **SQLite**.
+
+- **Frontend** chama apenas o BFF (`VITE_BFF_URL`, ex.: `http://localhost:5000`). Não acessa a API diretamente.
+- **BFF** (.NET 9) repassa requisições para a API interna e emite JWT no login.
+- **API** (.NET 9) acessa **SQLite** via Entity Framework Core; não é exposta à internet.
+
+**Estrutura de pastas:**
+
+- **Raiz**: frontend em `src/` (páginas, componentes, hooks, `src/api/` cliente BFF, `src/auth/`, `src/contexts/`).
+- **Backend API** (`backend/api/`): `Controllers/` (Auth, Authors, Posts, Users), `Data/` (DbContext, SeedData), `Models/`, `Services/` (Admin, Markdown, PasswordValidation), `Migrations/`. Ficheiro de dados SQLite: `blog.db` (gerado ao rodar).
+- **Backend BFF** (`backend/bff/`): `Controllers/` (Auth, Authors, BffPosts, Users), `Services/` (ApiClient, JwtService), `Models/`.
+
+## Stack de desenvolvimento
+
+- **Frontend**: Node.js, npm, **Vite 5**, **React 18**, **TypeScript**, React Router DOM, Tailwind CSS, shadcn/ui (Radix UI), Framer Motion, TanStack React Query. Cliente BFF em `src/api/client.ts`; tipos em `src/api/types.ts`; hooks em `src/hooks/usePosts.ts`.
+- **Backend**: **.NET 9 SDK**. API: Entity Framework Core, SQLite, BCrypt (senhas), Markdig (Markdown→HTML). BFF: JWT para autenticação, HttpClient para a API.
+- **Testes**: Vitest, Testing Library, jsdom (`npm run test`, `npm run test:watch`).
+- **Lint**: ESLint 9 (`npm run lint`).
+
+**Comandos de build:**
+
+- Frontend: `npm run build` (produz `dist/`).
+- API: `dotnet build` em `backend/api`.
+- BFF: `dotnet build` em `backend/bff`.
+
+**Scripts principais (raiz):** `npm run dev` (frontend em desenvolvimento), `npm run build`, `npm run test`, `npm run lint`, `npm run preview` (servir o build).
 
 ## Requisitos
 
 - **Node.js** e **npm** (frontend) — [instalar com nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
-- **.NET 8 SDK** (backend) — [download](https://dotnet.microsoft.com/download/dotnet/8.0).
+- **.NET 9 SDK** (backend) — [download](https://dotnet.microsoft.com/download/dotnet/9.0).
 
-## Como executar
+## Configuração passo a passo
 
-### 1. Backend (API + BFF)
+Seguir esta ordem para pôr o projeto a funcionar do zero até ao primeiro acesso (e opcionalmente ao reset de senha do Admin).
 
-```sh
-# Terminal 1: API (porta 5001, SQLite em backend/api/blog.db)
-cd backend/api
-dotnet run
+1. **Clonar e instalar dependências do frontend**  
+   Na raiz do repositório: `npm install`.
 
-# Terminal 2: BFF (porta 5000)
-cd backend/bff
-dotnet run
-```
+2. **Build e execução do backend**  
+   - Build: `dotnet build` em `backend/api` e em `backend/bff`.  
+   - Executar a **API** (porta 5001, SQLite em `backend/api/blog.db`): `cd backend/api && dotnet run`.  
+   - Noutro terminal, executar o **BFF** (porta 5000): `cd backend/bff && dotnet run`.
 
-### 2. Frontend
+3. **Executar o frontend**  
+   Na raiz: `npm run dev`. Abrir no navegador o endereço indicado (em geral `http://localhost:5173`). O frontend usa por padrão `http://localhost:5000` como BFF.
 
-```sh
-# Na raiz do repositório
-npm install
-npm run dev
-```
+4. **Configurar o Admin (opcional)**  
+   Sem configuração, a API usa por defeito o admin **admin@admin.com** (criado na primeira execução com senha `senha123`). Para usar outro e-mail, definir `Admin:Email` em `backend/api/appsettings.json` ou a variável `Admin__Email`; reiniciar a API para criar essa conta.
 
-Abra no navegador o endereço indicado (em geral `http://localhost:5173`). O frontend usa por padrão `http://localhost:5000` como BFF; se o BFF não estiver rodando, a UI exibirá mensagem de erro ao carregar os posts.
+5. **Primeiro acesso**  
+   No frontend, ir a Login e entrar com o e-mail do Admin (por defeito **admin@admin.com**) e senha **senha123**. O sistema exibe um **modal obrigatório** para troca de senha; concluir a alteração. A partir daí pode usar a Área do autor e Contas. Por defeito o banco não tem dados de demonstração (apenas o admin); para carregar autores e posts de exemplo, definir `Seed:EnableDemoData: true` em `backend/api/appsettings.json` e reiniciar a API.
 
-### Variáveis de ambiente (opcional)
+6. **(Opcional) Recuperar senha do Admin**  
+   Se o Admin esquecer a senha: no servidor onde a API corre, criar um ficheiro **`admin-password-reset.trigger`** no **diretório de execução da API** (ex.: `backend/api` ao fazer `dotnet run` a partir daí). Reiniciar a API. A API repõe a senha do utilizador com e-mail `Admin:Email` para `senha123`, define "troca obrigatória no próximo login" e apaga o ficheiro. Fazer login com `senha123` e alterar a senha no modal. O caminho do ficheiro pode ser alterado com `Admin:PasswordResetTriggerPath` (appsettings) ou `Admin__PasswordResetTriggerPath` (variável de ambiente).
+
+## Variáveis de ambiente (opcional)
 
 | Variável        | Onde   | Descrição |
 |-----------------|--------|-----------|
 | `VITE_BFF_URL`  | Frontend | URL do BFF (padrão: `http://localhost:5000`) |
-| `API:BaseUrl`   | BFF    | URL da API interna (padrão em `appsettings.json`: `http://localhost:5001`) |
+| `API__BaseUrl`  | BFF    | URL da API interna (padrão em appsettings: `http://localhost:5001`) |
 | `Jwt:Secret`    | BFF    | Chave para assinar o JWT (alterar em produção) |
 | Connection string | API  | SQLite (padrão: `Data Source=blog.db`) |
-| `Admin__Email`  | API    | E-mail da conta **Admin**. Somente o Admin pode criar e excluir autores; na criação de autor informa-se apenas e-mail e nome (senha padrão `senha123`). Os demais autores só podem alterar a própria senha. Exemplo: `Admin__Email=ac.ricardosobral@gmail.com` (definir no ambiente ao rodar a API, ex.: `Admin__Email=... dotnet run` ou em `appsettings.Development.json`). |
+| `Admin__Email`  | API    | E-mail da conta Admin. Se não definido, usa **admin@admin.com**. Na primeira execução cria a conta com senha `senha123`. |
+| `Seed:EnableDemoData` | API | Se `true`, cria autores e posts de exemplo. Por defeito `false` (banco "zerado", só o admin). |
+| `Admin__PasswordResetTriggerPath` | API | (Opcional) Caminho do ficheiro de trigger para recuperar a senha do Admin. Por defeito: `admin-password-reset.trigger` no diretório de execução da API. |
 
-Para identificar qual usuário é o Admin, configure o e-mail em `Admin:Email` (appsettings) ou `Admin__Email` (variável de ambiente). **Configuração inicial:** na primeira execução da API, se `Admin:Email` estiver definido e não existir usuário com esse e-mail, a conta é criada automaticamente com senha padrão `senha123`. O usuário deve trocar a senha no primeiro acesso (seção **"Alterar minha senha"** na área do autor). O usuário com esse e-mail terá acesso à área **Contas** (gestão de usuários); os outros autores só conseguem alterar a própria senha na área do autor.
+O projeto **roda sem `.env`**: o frontend usa padrão em código para o BFF; a API e o BFF usam `appsettings.json` e variáveis de ambiente do processo. O **`.env` na raiz é opcional** e é lido apenas pelo Vite para `VITE_*`; a única usada é `VITE_BFF_URL`. O backend não lê o `.env` da raiz.
 
-### Sobre o arquivo .env
+## Instalação em ambientes de nuvem (Linux)
 
-O projeto **roda sem `.env`**: o frontend usa por padrão `http://localhost:5000` para o BFF; a API e o BFF usam `appsettings.json` e variáveis de ambiente do processo. O arquivo **`.env` na raiz é opcional** e é lido apenas pelo **Vite** (frontend) para variáveis `VITE_*`; a única usada no código é `VITE_BFF_URL`. O backend **não lê o `.env` da raiz**; variáveis como `Admin__Email` devem ser definidas no ambiente ao rodar a API (ex.: `Admin__Email=ac.ricardosobral@gmail.com dotnet run` ou em `appsettings.Development.json`). Variáveis **Supabase** (`VITE_SUPABASE_*`) **não são utilizadas** pelo projeto atual; se existirem no seu `.env` local, podem ser removidas.
+Para instalar e executar a aplicação num servidor Linux (ou VM em cloud):
 
-### Outros comandos
+1. **Instalar dependências no servidor**  
+   Node.js e npm (ex.: [nvm](https://github.com/nvm-sh/nvm) ou pacote do distro) e [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0).
+
+2. **Clonar o repositório**  
+   `git clone <url-do-repo>` e entrar na pasta do projeto.
+
+3. **Build**  
+   Na raiz: `npm install` e `npm run build` (produz `dist/`).  
+   Em `backend/api`: `dotnet build`.  
+   Em `backend/bff`: `dotnet build`.
+
+4. **Configuração**  
+   Definir variáveis de ambiente ou editar `appsettings.json` na API e no BFF: connection string da API (SQLite, ex.: `Data Source=blog.db`), no BFF `API__BaseUrl` com o URL da API (ex.: `http://localhost:5001`). Para produção, definir `Jwt:Secret` no BFF. Opcionalmente `Admin__Email` na API para usar um e-mail de admin diferente de **admin@admin.com**. Por defeito o banco inicia sem dados de demonstração; para carregar exemplos, definir `Seed:EnableDemoData: true` na API.
+
+5. **Executar a API**  
+   Em `backend/api`: `dotnet run` (ou publicar com `dotnet publish` e executar o binário). A API escuta na porta 5001 (ou a configurada). Garantir que o ficheiro SQLite (ex.: `blog.db`) tem permissões de escrita.
+
+6. **Executar o BFF**  
+   Em `backend/bff`: `dotnet run` (ou publicar e executar). O BFF escuta na porta 5000 e deve conseguir alcançar a API (API__BaseUrl).
+
+7. **Servir o frontend**  
+   Copiar o conteúdo da pasta `dist/` para um servidor web (ex.: nginx) configurado como raiz do site, ou usar um reverse proxy que sirva os estáticos e faça proxy de `/bff` para o BFF. Configurar no frontend a URL do BFF (variável de ambiente `VITE_BFF_URL` no build, ou valor em código).
+
+8. **Primeiro acesso**  
+   Abrir no browser a URL do frontend. Em Login, usar **admin@admin.com** e senha **senha123** (ou o e-mail configurado em `Admin__Email`). Concluir a **troca obrigatória de senha** no modal. A partir daí o admin pode usar a Área do autor e Contas.
+
+Por defeito, o banco não tem dados de demonstração e o admin padrão é **admin@admin.com** quando `Admin__Email` não está definido.
+
+## Recuperar senha do Admin (detalhe)
+
+Se o Admin esquecer a senha:
+
+1. No servidor onde a API corre, crie o ficheiro **`admin-password-reset.trigger`** no **diretório de execução da API** (ex.: `backend/api` quando corre `dotnet run` a partir daí). Pode usar outro caminho com `Admin:PasswordResetTriggerPath` ou `Admin__PasswordResetTriggerPath`.
+2. Reinicie a API. Na inicialização, a API localiza o utilizador com e-mail `Admin:Email`, repõe a senha para `senha123`, define troca obrigatória no próximo login e **apaga o ficheiro** de trigger.
+3. O Admin faz login com `senha123`; o modal de troca de senha é exibido e deve alterar a senha.
+
+## Outros comandos
 
 | Comando            | Descrição                    |
 |--------------------|------------------------------|
@@ -76,13 +141,6 @@ O projeto **roda sem `.env`**: o frontend usa por padrão `http://localhost:5000
 | `npm run test:watch` | Testes em modo watch      |
 | `npm run lint`     | Verificar código com ESLint  |
 
-## Tecnologias
-
-- **Frontend**: Vite 5, React 18, TypeScript, React Router DOM, Tailwind CSS, shadcn/ui, Framer Motion, TanStack React Query. Dados via `src/api/` (cliente BFF) e `src/hooks/usePosts.ts`.
-- **Backend**: .NET 8 — API em `backend/api` (EF Core + SQLite, modelos User/Author/Post/PostCollaborator, auth por e-mail/senha com BCrypt, CRUD de posts com permissões, Markdown→HTML com Markdig); BFF em `backend/bff` (login com JWT, endpoints protegidos que repassam identidade para a API).
-- **Testes**: Vitest, Testing Library, jsdom.
-- **Lint**: ESLint 9.
-
 ---
 
-Este projeto foi criado com [Lovable](https://lovable.dev).
+O frontend foi criado com [Lovable](https://lovable.dev).

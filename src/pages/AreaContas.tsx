@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
-import { fetchUsers, createUser, updateUser, deleteUser } from '@/api/client';
+import { fetchUsers, fetchCurrentUser, createUser, updateUser, deleteUser, resetUserPassword } from '@/api/client';
+import { PASSWORD_CRITERIA_HELP, isValidPassword } from '@/lib/constants';
 import type { CreateUserPayload, UpdateUserPayload } from '@/api/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -31,15 +32,17 @@ import {
 export default function AreaContas() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { logout, userId: currentUserId } = useAuth();
+  const { logout, userId: currentUserId, isAdmin } = useAuth();
   const [createOpen, setCreateOpen] = useState(false);
   const [editUserId, setEditUserId] = useState<string | null>(null);
   const [editEmail, setEditEmail] = useState('');
   const [editPassword, setEditPassword] = useState('');
+  const [editAuthorName, setEditAuthorName] = useState('');
+  const [editAuthorBio, setEditAuthorBio] = useState('');
 
   const { data: users, isLoading, error } = useQuery({
-    queryKey: ['users'],
-    queryFn: () => fetchUsers(),
+    queryKey: ['users', isAdmin],
+    queryFn: () => (isAdmin ? fetchUsers() : fetchCurrentUser().then((u) => [u])),
   });
 
   const createMutation = useMutation({
@@ -57,11 +60,18 @@ export default function AreaContas() {
       setEditUserId(null);
       setEditEmail('');
       setEditPassword('');
+      setEditAuthorName('');
+      setEditAuthorBio('');
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteUser(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
+  });
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: (id: string) => resetUserPassword(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
   });
 
@@ -82,10 +92,19 @@ export default function AreaContas() {
   function handleEditSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!editUserId) return;
-    const payload: UpdateUserPayload = {};
-    if (editEmail.trim()) payload.email = editEmail.trim();
+    const payload: UpdateUserPayload = {
+      author_name: editAuthorName.trim() || undefined,
+      author_bio: editAuthorBio.trim() || null,
+    };
+    if (isAdmin && editEmail.trim()) payload.email = editEmail.trim();
     if (editPassword.trim()) payload.password = editPassword.trim();
-    if (Object.keys(payload).length > 0) updateMutation.mutate({ id: editUserId, payload });
+    if (payload.password !== undefined && !isValidPassword(payload.password)) return;
+    const hasChanges =
+      payload.author_name !== undefined ||
+      payload.author_bio !== undefined ||
+      payload.email !== undefined ||
+      payload.password !== undefined;
+    if (hasChanges) updateMutation.mutate({ id: editUserId, payload });
     else setEditUserId(null);
   }
 
@@ -99,13 +118,15 @@ export default function AreaContas() {
                 <Link to="/area-autor">← Voltar à área do autor</Link>
               </Button>
               <h1 className="font-serif text-3xl md:text-4xl font-bold text-foreground mt-2">
-                Gestão de contas
+                {isAdmin ? 'Gestão de contas' : 'Meu perfil'}
               </h1>
               <p className="text-muted-foreground mt-1">
-                Apenas o Admin pode criar, alterar e excluir contas.
+                {isAdmin
+                  ? 'Apenas o Admin pode criar, alterar e excluir outras contas.'
+                  : 'Edite seu nome e descrição de autor e altere sua senha.'}
               </p>
             </div>
-            <Button onClick={() => setCreateOpen(true)}>Nova conta</Button>
+            {isAdmin && <Button onClick={() => setCreateOpen(true)}>Nova conta</Button>}
           </div>
 
           {error && (
@@ -127,39 +148,64 @@ export default function AreaContas() {
                   key={u.id}
                   className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-card p-4"
                 >
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <span className="font-medium text-foreground block">{u.email}</span>
-                    <span className="text-sm text-muted-foreground">{u.author_name}</span>
+                    <span className="text-sm text-muted-foreground block">{u.author_name}</span>
+                    {u.author_bio && (
+                      <p className="text-sm text-muted-foreground mt-1 italic">&ldquo;{u.author_bio}&rdquo;</p>
+                    )}
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <Button variant="outline" size="sm" onClick={() => { setEditUserId(u.id); setEditEmail(u.email); setEditPassword(''); }}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setEditUserId(u.id);
+                        setEditEmail(u.email);
+                        setEditPassword('');
+                        setEditAuthorName(u.author_name);
+                        setEditAuthorBio(u.author_bio ?? '');
+                      }}
+                    >
                       Editar
                     </Button>
-                    {u.id !== currentUserId && (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="destructive" size="sm" disabled={deleteMutation.isPending}>
-                            Excluir
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Excluir esta conta?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              O usuário não poderá mais fazer login. Esta ação não pode ser desfeita.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              onClick={() => deleteMutation.mutate(u.id)}
-                            >
-                              Excluir
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                    {isAdmin && (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => resetPasswordMutation.mutate(u.id)}
+                          disabled={resetPasswordMutation.isPending}
+                        >
+                          {resetPasswordMutation.isPending ? 'Resetando…' : 'Resetar senha'}
+                        </Button>
+                        {u.id !== currentUserId && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="destructive" size="sm" disabled={deleteMutation.isPending}>
+                                Excluir
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Excluir esta conta?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  O usuário não poderá mais fazer login. Esta ação não pode ser desfeita.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  onClick={() => deleteMutation.mutate(u.id)}
+                                >
+                                  Excluir
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                      </>
                     )}
                   </div>
                 </li>
@@ -201,26 +247,85 @@ export default function AreaContas() {
       </Dialog>
 
       {/* Dialog: Editar usuário */}
-      <Dialog open={!!editUserId} onOpenChange={(open) => { if (!open) { setEditUserId(null); setEditEmail(''); setEditPassword(''); } }}>
+      <Dialog
+        open={!!editUserId}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditUserId(null);
+            setEditEmail('');
+            setEditPassword('');
+            setEditAuthorName('');
+            setEditAuthorBio('');
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Editar conta</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleEditSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="edit-email">E-mail</Label>
-              <Input id="edit-email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} type="email" placeholder="autor@exemplo.com" />
+              <Label htmlFor="edit-author-name">Nome do autor</Label>
+              <Input
+                id="edit-author-name"
+                value={editAuthorName}
+                onChange={(e) => setEditAuthorName(e.target.value)}
+                placeholder="Nome exibido ao publicar"
+              />
             </div>
             <div className="space-y-2">
+              <Label htmlFor="edit-author-bio">Descrição do autor</Label>
+              <Input
+                id="edit-author-bio"
+                value={editAuthorBio}
+                onChange={(e) => setEditAuthorBio(e.target.value)}
+                placeholder='Ex.: Sonhador e amante de contos e RPG'
+              />
+              <p className="text-xs text-muted-foreground">
+                Breve frase exibida no seu perfil (ex.: &quot;&lt;Nome&gt; Sonhador e amante de contos e RPG&quot;).
+              </p>
+            </div>
+            {isAdmin && (
+              <div className="space-y-2">
+                <Label htmlFor="edit-email">E-mail</Label>
+                <Input
+                  id="edit-email"
+                  value={editEmail}
+                  onChange={(e) => setEditEmail(e.target.value)}
+                  type="email"
+                  placeholder="autor@exemplo.com"
+                />
+              </div>
+            )}
+            <div className="space-y-2">
               <Label htmlFor="edit-password">Nova senha (deixe em branco para não alterar)</Label>
-              <Input id="edit-password" type="password" value={editPassword} onChange={(e) => setEditPassword(e.target.value)} placeholder="••••••••" />
+              <Input
+                id="edit-password"
+                type="password"
+                value={editPassword}
+                onChange={(e) => setEditPassword(e.target.value)}
+                placeholder="••••••••"
+              />
+              <p className="text-xs text-muted-foreground">{PASSWORD_CRITERIA_HELP}</p>
             </div>
             {updateMutation.error && (
-              <p className="text-sm text-destructive">{updateMutation.error instanceof Error ? updateMutation.error.message : 'Erro ao atualizar.'}</p>
+              <p className="text-sm text-destructive">
+                {updateMutation.error instanceof Error ? updateMutation.error.message : 'Erro ao atualizar.'}
+              </p>
             )}
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setEditUserId(null)}>Cancelar</Button>
-              <Button type="submit" disabled={updateMutation.isPending}>Salvar</Button>
+              <Button type="button" variant="outline" onClick={() => setEditUserId(null)}>
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                disabled={
+                  updateMutation.isPending ||
+                  (editPassword.trim().length > 0 && !isValidPassword(editPassword))
+                }
+              >
+                Salvar
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

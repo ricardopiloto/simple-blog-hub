@@ -15,6 +15,9 @@ public class UserListDto
 
     [JsonPropertyName("author_name")]
     public string AuthorName { get; set; } = string.Empty;
+
+    [JsonPropertyName("author_bio")]
+    public string? AuthorBio { get; set; }
 }
 
 public class CreateUserRequest
@@ -36,4 +39,10 @@ public class UpdateUserRequest
 
     [JsonPropertyName("password")]
     public string? Password { get; set; }
+
+    [JsonPropertyName("author_name")]
+    public string? AuthorName { get; set; }
+
+    [JsonPropertyName("author_bio")]
+    public string? Bio { get; set; }
 }

@@ -35,7 +35,7 @@ export default function Login() {
         avatar: result.author.avatar ?? null,
         bio: result.author.bio ?? null,
         is_admin: result.is_admin,
-      }, result.user_id);
+      }, result.user_id, result.must_change_password);
       navigate('/area-autor', { replace: true });
     } catch {
       setError('Erro ao conectar. Tente novamente.');

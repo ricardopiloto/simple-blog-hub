@@ -2,15 +2,16 @@ import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { DEFAULT_POST_COVER_IMAGE } from '@/lib/constants';
-import { usePost } from '@/hooks/usePosts';
+import { usePost, usePostsByStoryOrder } from '@/hooks/usePosts';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function PostPage() {
   const { slug } = useParams<{ slug: string }>();
   const { data: post, isLoading, error } = usePost(slug || '');
+  const { data: storyOrderedPosts = [] } = usePostsByStoryOrder();
 
   if (isLoading) {
     return (
@@ -57,6 +58,14 @@ export default function PostPage() {
   const formattedDate = post.published_at
     ? format(new Date(post.published_at), "d 'de' MMMM, yyyy", { locale: ptBR })
     : null;
+
+  const currentIndex = storyOrderedPosts.findIndex((p) => p.slug === post.slug);
+  const prevPost = currentIndex > 0 ? storyOrderedPosts[currentIndex - 1] : null;
+  const nextPost =
+    currentIndex >= 0 && currentIndex < storyOrderedPosts.length - 1
+      ? storyOrderedPosts[currentIndex + 1]
+      : null;
+  const showPrevNextNav = currentIndex >= 0 && (prevPost != null || nextPost != null);
 
   return (
     <Layout>
@@ -171,6 +180,44 @@ export default function PostPage() {
                 </div>
               </div>
             </motion.div>
+          )}
+
+          {/* Prev/Next navigation (story order) */}
+          {showPrevNextNav && (
+            <motion.nav
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="mt-16 pt-8 border-t flex flex-wrap items-center justify-between gap-6"
+              aria-label="Navegação entre artigos"
+            >
+              {prevPost ? (
+                <Link
+                  to={`/post/${prevPost.slug}`}
+                  className="inline-flex flex-col gap-1 text-left max-w-[min(100%,16rem)] text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <span className="text-sm font-medium">Post anterior</span>
+                  <span className="inline-flex items-center gap-2 font-serif text-lg truncate">
+                    <ArrowLeft className="h-4 w-4 shrink-0" />
+                    {prevPost.title}
+                  </span>
+                </Link>
+              ) : (
+                <span />
+              )}
+              {nextPost ? (
+                <Link
+                  to={`/post/${nextPost.slug}`}
+                  className="inline-flex flex-col gap-1 text-right max-w-[min(100%,16rem)] ml-auto text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <span className="text-sm font-medium">Próximo post</span>
+                  <span className="inline-flex items-center gap-2 font-serif text-lg truncate justify-end">
+                    {nextPost.title}
+                    <ArrowRight className="h-4 w-4 shrink-0" />
+                  </span>
+                </Link>
+              ) : null}
+            </motion.nav>
           )}
         </div>
       </article>

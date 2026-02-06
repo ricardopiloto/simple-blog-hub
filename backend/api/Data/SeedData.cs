@@ -1,11 +1,15 @@
+using System.IO;
 using BlogApi.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace BlogApi.Data;
 
 public static class SeedData
 {
+    /// <summary>Default filename for admin password reset trigger (placed in current directory if path not configured).</summary>
+    public const string DefaultAdminPasswordResetTriggerFileName = "admin-password-reset.trigger";
     /// <summary>Default seed user: ana@example.com / senha123</summary>
     public const string SeedUserEmail = "ana@example.com";
     public const string SeedUserPassword = "senha123";
@@ -13,8 +17,13 @@ public static class SeedData
     /// <summary>Default password for the initial admin account created from Admin:Email.</summary>
     public const string InitialAdminDefaultPassword = "senha123";
 
-    public static async Task EnsureSeedAsync(BlogDbContext db, CancellationToken cancellationToken = default)
+    /// <summary>Default admin email when Admin:Email is not configured (e.g. first-time deploy).</summary>
+    public const string DefaultAdminEmail = "admin@admin.com";
+
+    public static async Task EnsureSeedAsync(BlogDbContext db, IConfiguration configuration, CancellationToken cancellationToken = default)
     {
+        if (!configuration.GetValue<bool>("Seed:EnableDemoData"))
+            return;
         if (!await db.Authors.AnyAsync(cancellationToken))
         {
         var authorId = Guid.NewGuid();
@@ -36,7 +45,8 @@ public static class SeedData
             Email = SeedUserEmail,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(SeedUserPassword),
             AuthorId = authorId,
-            CreatedAt = new DateTime(2024, 1, 15, 10, 0, 0, DateTimeKind.Utc)
+            CreatedAt = new DateTime(2024, 1, 15, 10, 0, 0, DateTimeKind.Utc),
+            MustChangePassword = true
         };
         db.Users.Add(user);
 
@@ -136,18 +146,19 @@ public static class SeedData
                 Email = SeedUserEmail,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(SeedUserPassword),
                 AuthorId = firstAuthor.Id,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                MustChangePassword = true
             });
             await db.SaveChangesAsync(cancellationToken);
         }
     }
 
-    /// <summary>Ensures the admin user from Admin:Email exists with default password. Call after EnsureSeedAsync.</summary>
+    /// <summary>Ensures the admin user from Admin:Email (or default admin@admin.com) exists with default password. Call after EnsureSeedAsync.</summary>
     public static async Task EnsureInitialAdminUserAsync(BlogDbContext db, IConfiguration configuration, CancellationToken cancellationToken = default)
     {
         var adminEmail = configuration["Admin:Email"]?.Trim();
         if (string.IsNullOrEmpty(adminEmail))
-            return;
+            adminEmail = DefaultAdminEmail;
         if (await db.Users.AnyAsync(u => u.Email == adminEmail, cancellationToken))
             return;
 
@@ -168,8 +179,54 @@ public static class SeedData
             Email = adminEmail,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(InitialAdminDefaultPassword),
             AuthorId = authorId,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            MustChangePassword = true
         });
         await db.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// If the admin password reset trigger file exists: resets the Admin user's password to the default,
+    /// sets MustChangePassword = true, then deletes the file. Safe: I/O exceptions are caught and logged; startup does not fail.
+    /// </summary>
+    public static async Task TryResetAdminPasswordByTriggerFileAsync(
+        BlogDbContext db,
+        IConfiguration configuration,
+        ILogger? logger = null,
+        CancellationToken cancellationToken = default)
+    {
+        string? triggerPath = configuration["Admin:PasswordResetTriggerPath"]?.Trim();
+        if (string.IsNullOrEmpty(triggerPath))
+            triggerPath = Path.Combine(Directory.GetCurrentDirectory(), DefaultAdminPasswordResetTriggerFileName);
+        else if (!Path.IsPathRooted(triggerPath))
+            triggerPath = Path.Combine(Directory.GetCurrentDirectory(), triggerPath);
+
+        if (!File.Exists(triggerPath))
+            return;
+
+        try
+        {
+            var adminEmail = configuration["Admin:Email"]?.Trim();
+            if (string.IsNullOrEmpty(adminEmail))
+                adminEmail = DefaultAdminEmail;
+
+            var user = await db.Users.FirstOrDefaultAsync(u => u.Email == adminEmail, cancellationToken);
+            if (user == null)
+            {
+                logger?.LogWarning("Admin password reset trigger file found but no user with Admin email {Email}; skipping reset.", adminEmail);
+                return;
+            }
+
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(InitialAdminDefaultPassword);
+            user.MustChangePassword = true;
+            await db.SaveChangesAsync(cancellationToken);
+
+            File.Delete(triggerPath);
+            logger?.LogInformation("Admin password has been reset to default (trigger file removed). User must change password on next login.");
+        }
+        catch (Exception ex)
+        {
+            logger?.LogError(ex, "Error while processing admin password reset trigger file at {Path}; file not deleted.", triggerPath);
+        }
     }
 }

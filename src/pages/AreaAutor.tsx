@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
-import { fetchEditablePosts, deletePost, updateUser } from '@/api/client';
+import { fetchAllPostsForAuthorArea, deletePost, updateUser } from '@/api/client';
+import { PASSWORD_CRITERIA_HELP, isValidPassword } from '@/lib/constants';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   AlertDialog,
@@ -23,12 +24,12 @@ import {
 export default function AreaAutor() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { author, logout, userId, isAdmin } = useAuth();
+  const { author, logout, userId, isAdmin, setMustChangePassword } = useAuth();
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const { data: posts, isLoading, error } = useQuery({
-    queryKey: ['posts', 'editable'],
-    queryFn: () => fetchEditablePosts(),
+    queryKey: ['posts', 'author-area'],
+    queryFn: () => fetchAllPostsForAuthorArea(),
   });
 
   useEffect(() => {
@@ -41,7 +42,7 @@ export default function AreaAutor() {
   async function handleDelete(id: string) {
     try {
       await deletePost(id);
-      queryClient.invalidateQueries({ queryKey: ['posts', 'editable'] });
+      queryClient.invalidateQueries({ queryKey: ['posts', 'author-area'] });
     } catch (e) {
       if (e instanceof Error && e.message === 'Unauthorized') {
         logout();
@@ -53,11 +54,20 @@ export default function AreaAutor() {
   const isOwner = (post: { author_id?: string }) =>
     author && post.author_id && post.author_id === author.id;
 
+  const canEdit = (post: { author_id?: string; collaborators?: { id: string; name: string }[] }) => {
+    if (!author) return false;
+    if (isAdmin) return true;
+    if (post.author_id && post.author_id === author.id) return true;
+    if (post.collaborators && post.collaborators.some((c) => c.id === author.id)) return true;
+    return false;
+  };
+
   const changePasswordMutation = useMutation({
     mutationFn: (password: string) => updateUser(userId ?? '', { password }),
     onSuccess: () => {
       setNewPassword('');
       setConfirmPassword('');
+      setMustChangePassword(false);
     },
   });
 
@@ -132,12 +142,14 @@ export default function AreaAutor() {
                     </span>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <Button variant="outline" size="sm" asChild>
-                      <Link to={`/area-autor/posts/${post.id}/editar`}>
-                        Editar
-                      </Link>
-                    </Button>
-                    {isOwner(post) ? (
+                    {canEdit(post) && (
+                      <Button variant="outline" size="sm" asChild>
+                        <Link to={`/area-autor/posts/${post.id}/editar`}>
+                          Editar
+                        </Link>
+                      </Button>
+                    )}
+                    {(isOwner(post) || isAdmin) ? (
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button variant="destructive" size="sm">
@@ -169,12 +181,13 @@ export default function AreaAutor() {
             </ul>
           ) : (
             <p className="text-muted-foreground">
-              Você ainda não tem posts. Crie um novo para começar.
+              Nenhum post no blog.
             </p>
           )}
 
           <div className="mt-12 pt-8 border-t">
             <h2 className="font-serif text-xl font-semibold text-foreground mb-4">Alterar minha senha</h2>
+            <p className="text-sm text-muted-foreground mb-4">{PASSWORD_CRITERIA_HELP}</p>
             <form onSubmit={handleChangePassword} className="flex flex-wrap items-end gap-4 max-w-md">
               <div className="space-y-2 flex-1 min-w-[180px]">
                 <Label htmlFor="new-password-area">Nova senha</Label>
@@ -198,7 +211,16 @@ export default function AreaAutor() {
                   disabled={changePasswordMutation.isPending}
                 />
               </div>
-              <Button type="submit" disabled={!userId || !newPassword.trim() || newPassword !== confirmPassword || changePasswordMutation.isPending}>
+              <Button
+                type="submit"
+                disabled={
+                  !userId ||
+                  !newPassword.trim() ||
+                  newPassword !== confirmPassword ||
+                  !isValidPassword(newPassword) ||
+                  changePasswordMutation.isPending
+                }
+              >
                 {changePasswordMutation.isPending ? 'Salvando…' : 'Alterar senha'}
               </Button>
             </form>

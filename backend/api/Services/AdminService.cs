@@ -11,7 +11,8 @@ public class AdminService : IAdminService
     public AdminService(BlogDbContext db, IConfiguration configuration)
     {
         _db = db;
-        _adminEmail = configuration["Admin:Email"]?.Trim();
+        var configured = configuration["Admin:Email"]?.Trim();
+        _adminEmail = string.IsNullOrEmpty(configured) ? BlogApi.Data.SeedData.DefaultAdminEmail : configured;
     }
 
     public async Task<bool> IsAdminAsync(Guid authorId, CancellationToken cancellationToken = default)

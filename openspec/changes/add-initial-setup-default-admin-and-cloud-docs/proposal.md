@@ -1,0 +1,19 @@
+# Change: Configuração inicial com admin padrão e documentação para nuvem (Linux)
+
+## Why
+
+A aplicação está no GitHub e será clonada por pessoas que vão configurá-la pela primeira vez noutro servidor. É necessário **(1)** uma **configuração inicial** em que o banco parte "zerado" (sem dados de demonstração) e existe um utilizador admin padrão (**admin@admin.com** com senha padrão), com troca obrigatória de senha no primeiro acesso; **(2)** instruções no **README** para instalar e executar a aplicação em **ambientes de nuvem (Linux)**.
+
+Atualmente o Admin depende de `Admin:Email` configurado (ex.: em appsettings); quem clona o repositório tem de alterar a configuração para ter um admin. Além disso, o seed cria autores e posts de exemplo, pelo que o banco não fica "zerado". Para um deploy inicial típico, o operador deve poder arrancar sem configurar nada e obter um admin conhecido (admin@admin.com) e um banco sem conteúdo de demonstração.
+
+## What Changes
+
+- **API – Admin por defeito**: Quando `Admin:Email` (ou `Admin__Email`) **não** estiver configurado, o sistema **deve** usar **admin@admin.com** como e-mail do admin. Assim, na primeira execução (com ou sem configuração), o sistema garante que existe um utilizador admin: se estiver configurado, usa esse e-mail; caso contrário, usa admin@admin.com. O `AdminService` (IsAdminAsync) deve considerar esse mesmo valor (configurado ou admin@admin.com). O utilizador é criado com senha padrão (ex.: `senha123`) e `MustChangePassword = true`, e o fluxo de troca obrigatória no primeiro acesso mantém-se.
+- **API – Banco zerado por defeito**: O seed que cria autores e posts de demonstração (Ana Silva, posts de exemplo) **deve** ser **opcional**. Introduzir uma configuração (ex.: `Seed:EnableDemoData` em appsettings) que, quando **false** ou ausente (valor por defeito), faz com que **não** se criem autores nem posts de demonstração; apenas o utilizador admin inicial (admin@admin.com ou o de Admin:Email) é criado. Quando `Seed:EnableDemoData` for **true** (ex.: em desenvolvimento), o comportamento atual de seed pode ser mantido. Assim, uma instalação nova num servidor fica com banco "zerado" (só o admin) por defeito.
+- **Documentação**: Atualizar **README.md** com uma secção **Instalação em ambientes de nuvem (Linux)** (ou equivalente), descrevendo passos típicos: instalar Node.js e .NET 9, clonar o repositório, build do frontend e do backend (API e BFF), configuração de variáveis (URLs, connection string, opcionalmente Admin__Email), execução da API e do BFF (ex.: com systemd ou em background), servir o frontend (ex.: nginx a apontar para o build estático ou hospedagem do `dist/`), e primeiro acesso com admin@admin.com (ou o e-mail configurado) e troca de senha. Atualizar **openspec/project.md** na secção relevante para referir que o admin por defeito é admin@admin.com quando não configurado e que o seed de demonstração é opcional.
+- **Spec**: **auth** — ADDED requirement: quando Admin:Email não está configurado, o sistema usa admin@admin.com como e-mail do admin (criação e IsAdmin); ADDED scenario para primeiro arranque sem configuração. **project-docs** — ADDED requirement: README inclui instruções de instalação em ambientes de nuvem (Linux), com pelo menos um cenário.
+
+## Impact
+
+- Affected specs: **auth** (ADDED requirement e scenario), **project-docs** (ADDED requirement e scenario).
+- Affected code: `backend/api/Data/SeedData.cs` (tornar o seed de autores/posts condicional a `Seed:EnableDemoData`; usar e-mail por defeito admin@admin.com em EnsureInitialAdminUserAsync quando Admin:Email vazio); `backend/api/Services/AdminService.cs` (usar admin@admin.com quando Admin:Email não configurado); `backend/api/Program.cs` (passar configuração ao seed para decidir se corre demo seed); `README.md` (nova secção cloud/Linux); `openspec/project.md` (frase sobre admin por defeito e seed opcional).

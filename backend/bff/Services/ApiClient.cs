@@ -50,9 +50,23 @@ public class ApiClient
         return await _http.SendAsync(req, cancellationToken);
     }
 
+    public async Task<HttpResponseMessage> GetAllPostsForAuthorAreaAsync(Guid authorId, CancellationToken cancellationToken = default)
+    {
+        var req = new HttpRequestMessage(HttpMethod.Get, "api/posts?forAuthorArea=true");
+        WithAuthorId(req, authorId);
+        return await _http.SendAsync(req, cancellationToken);
+    }
+
     public async Task<HttpResponseMessage> GetPostByIdForEditAsync(Guid postId, Guid authorId, CancellationToken cancellationToken = default)
     {
         var req = new HttpRequestMessage(HttpMethod.Get, $"api/posts/edit/{postId}");
+        WithAuthorId(req, authorId);
+        return await _http.SendAsync(req, cancellationToken);
+    }
+
+    public async Task<HttpResponseMessage> GetNextStoryOrderAsync(Guid authorId, CancellationToken cancellationToken = default)
+    {
+        var req = new HttpRequestMessage(HttpMethod.Get, "api/posts/next-story-order");
         WithAuthorId(req, authorId);
         return await _http.SendAsync(req, cancellationToken);
     }
@@ -67,6 +81,13 @@ public class ApiClient
     public async Task<HttpResponseMessage> UpdatePostAsync(Guid postId, object body, Guid authorId, CancellationToken cancellationToken = default)
     {
         var req = new HttpRequestMessage(HttpMethod.Put, $"api/posts/{postId}") { Content = JsonContent.Create(body) };
+        WithAuthorId(req, authorId);
+        return await _http.SendAsync(req, cancellationToken);
+    }
+
+    public async Task<HttpResponseMessage> UpdateStoryOrderAsync(object body, Guid authorId, CancellationToken cancellationToken = default)
+    {
+        var req = new HttpRequestMessage(HttpMethod.Put, "api/posts/story-order") { Content = JsonContent.Create(body) };
         WithAuthorId(req, authorId);
         return await _http.SendAsync(req, cancellationToken);
     }
@@ -106,6 +127,13 @@ public class ApiClient
         return await _http.SendAsync(req, cancellationToken);
     }
 
+    public async Task<HttpResponseMessage> GetCurrentUserAsync(Guid authorId, CancellationToken cancellationToken = default)
+    {
+        var req = new HttpRequestMessage(HttpMethod.Get, "api/users/me");
+        WithAuthorId(req, authorId);
+        return await _http.SendAsync(req, cancellationToken);
+    }
+
     public async Task<HttpResponseMessage> CreateUserAsync(object body, Guid authorId, CancellationToken cancellationToken = default)
     {
         var req = new HttpRequestMessage(HttpMethod.Post, "api/users") { Content = JsonContent.Create(body) };
@@ -123,6 +151,13 @@ public class ApiClient
     public async Task<HttpResponseMessage> DeleteUserAsync(Guid userId, Guid authorId, CancellationToken cancellationToken = default)
     {
         var req = new HttpRequestMessage(HttpMethod.Delete, $"api/users/{userId}");
+        WithAuthorId(req, authorId);
+        return await _http.SendAsync(req, cancellationToken);
+    }
+
+    public async Task<HttpResponseMessage> ResetUserPasswordAsync(Guid userId, Guid authorId, CancellationToken cancellationToken = default)
+    {
+        var req = new HttpRequestMessage(HttpMethod.Post, $"api/users/{userId}/reset-password");
         WithAuthorId(req, authorId);
         return await _http.SendAsync(req, cancellationToken);
     }

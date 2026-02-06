@@ -32,7 +32,8 @@ public class AuthController : ControllerBase
             token,
             user_id = loginResponse.UserId,
             author = new { id = loginResponse.AuthorId, name = loginResponse.Author.Name, avatar = loginResponse.Author.Avatar, bio = loginResponse.Author.Bio },
-            is_admin = loginResponse.IsAdmin
+            is_admin = loginResponse.IsAdmin,
+            must_change_password = loginResponse.MustChangePassword
         });
     }
 }

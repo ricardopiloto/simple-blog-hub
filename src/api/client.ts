@@ -1,5 +1,5 @@
 import { authStorage } from '@/auth/storage';
-import type { Post, OrderBy, CreateOrUpdatePostPayload, AuthorListItem, UserListItem, CreateUserPayload, UpdateUserPayload } from './types';
+import type { Post, OrderBy, CreateOrUpdatePostPayload, AuthorListItem, UserListItem, CreateUserPayload, UpdateUserPayload, NextStoryOrderResponse } from './types';
 
 const defaultBffUrl = 'http://localhost:5000';
 
@@ -61,12 +61,12 @@ export async function fetchPostBySlug(slug: string): Promise<Post | null> {
 }
 
 /**
- * Login; returns { token, user_id, author, is_admin } or null on failure.
+ * Login; returns { token, user_id, author, is_admin, must_change_password } or null on failure.
  */
 export async function login(
   email: string,
   password: string
-): Promise<{ token: string; user_id: string; author: { id: string; name: string; avatar: string | null; bio: string | null }; is_admin: boolean } | null> {
+): Promise<{ token: string; user_id: string; author: { id: string; name: string; avatar: string | null; bio: string | null }; is_admin: boolean; must_change_password: boolean } | null> {
   const base = getBffBaseUrl();
   const res = await fetch(`${base}/bff/auth/login`, {
     method: 'POST',
@@ -75,15 +75,22 @@ export async function login(
   });
   if (!res.ok) return null;
   const data = await res.json();
-  return { token: data.token, user_id: data.user_id ?? '', author: data.author, is_admin: Boolean(data.is_admin) };
+  return {
+    token: data.token,
+    user_id: data.user_id ?? '',
+    author: data.author,
+    is_admin: Boolean(data.is_admin),
+    must_change_password: Boolean(data.must_change_password),
+  };
 }
 
 /**
- * List posts the current author can edit (protected).
+ * List all posts for the author area (protected).
+ * Every author sees all posts; actions (edit/delete) are decided client-side.
  */
-export async function fetchEditablePosts(): Promise<Post[]> {
+export async function fetchAllPostsForAuthorArea(): Promise<Post[]> {
   const base = getBffBaseUrl();
-  return fetchWithAuth<Post[]>(`${base}/bff/posts/editable`);
+  return fetchWithAuth<Post[]>(`${base}/bff/posts/author-area`);
 }
 
 /**
@@ -92,6 +99,15 @@ export async function fetchEditablePosts(): Promise<Post[]> {
 export async function fetchPostByIdForEdit(id: string): Promise<Post> {
   const base = getBffBaseUrl();
   return fetchWithAuth<Post>(`${base}/bff/posts/edit/${encodeURIComponent(id)}`);
+}
+
+/**
+ * Get next suggested story_order for a new post (max among published + 1, or 1). Protected.
+ */
+export async function fetchNextStoryOrder(): Promise<number> {
+  const base = getBffBaseUrl();
+  const data = await fetchWithAuth<NextStoryOrderResponse>(`${base}/bff/posts/next-story-order`);
+  return data.next_story_order;
 }
 
 /**
@@ -115,6 +131,18 @@ export async function updatePost(id: string, payload: CreateOrUpdatePostPayload)
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
+  });
+}
+
+/**
+ * Update story order for multiple posts (protected).
+ */
+export async function updateStoryOrder(orders: { id: string; story_order: number }[]): Promise<void> {
+  const base = getBffBaseUrl();
+  await fetchWithAuth<void>(`${base}/bff/posts/story-order`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(orders),
   });
 }
 
@@ -197,6 +225,14 @@ export async function fetchUsers(): Promise<UserListItem[]> {
 }
 
 /**
+ * Get current user (protected; any authenticated user).
+ */
+export async function fetchCurrentUser(): Promise<UserListItem> {
+  const base = getBffBaseUrl();
+  return fetchWithAuth<UserListItem>(`${base}/bff/users/me`);
+}
+
+/**
  * Create user (protected; Admin only).
  */
 export async function createUser(payload: CreateUserPayload): Promise<UserListItem> {
@@ -220,9 +256,11 @@ export async function updateUser(userId: string, payload: UpdateUserPayload): Pr
   const base = getBffBaseUrl();
   const token = authStorage.getToken();
   if (!token) throw new Error('Unauthorized');
-  const body: Record<string, string> = {};
+  const body: Record<string, string | null> = {};
   if (payload.email !== undefined) body.email = payload.email;
   if (payload.password !== undefined) body.password = payload.password;
+  if (payload.author_name !== undefined) body.author_name = payload.author_name;
+  if (payload.author_bio !== undefined) body.author_bio = payload.author_bio ?? null;
   const res = await fetch(`${base}/bff/users/${encodeURIComponent(userId)}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -247,6 +285,26 @@ export async function deleteUser(userId: string): Promise<void> {
   if (!token) throw new Error('Unauthorized');
   const res = await fetch(`${base}/bff/users/${encodeURIComponent(userId)}`, {
     method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (res.status === 401) {
+    authStorage.clear();
+    throw new Error('Unauthorized');
+  }
+  if (res.status === 403) throw new Error('Forbidden');
+  if (res.status === 404) throw new Error('Not found');
+  if (!res.ok) throw new Error(`BFF error: ${res.status}`);
+}
+
+/**
+ * Reset user password to default (protected; Admin only). Target user must change password on next login.
+ */
+export async function resetUserPassword(userId: string): Promise<void> {
+  const base = getBffBaseUrl();
+  const token = authStorage.getToken();
+  if (!token) throw new Error('Unauthorized');
+  const res = await fetch(`${base}/bff/users/${encodeURIComponent(userId)}/reset-password`, {
+    method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
   });
   if (res.status === 401) {

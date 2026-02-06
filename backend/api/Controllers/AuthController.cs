@@ -43,6 +43,7 @@ public class AuthController : ControllerBase
             AuthorId = user.AuthorId.ToString(),
             Email = user.Email,
             IsAdmin = isAdmin,
+            MustChangePassword = user.MustChangePassword,
             Author = new AuthorDto
             {
                 Name = user.Author.Name,

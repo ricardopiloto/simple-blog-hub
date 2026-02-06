@@ -26,6 +26,7 @@ lerna-debug.log*
 *.suo
 *.ntvs*
 *.sw?
+.cursor/
 
 # Backend (.NET e SQLite)
 backend/**/bin/

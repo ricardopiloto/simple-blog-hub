@@ -12,10 +12,12 @@ public class PostsController : ControllerBase
 {
     private const string AuthorIdHeader = "X-Author-Id";
     private readonly BlogDbContext _db;
+    private readonly IAdminService _adminService;
 
-    public PostsController(BlogDbContext db)
+    public PostsController(BlogDbContext db, IAdminService adminService)
     {
         _db = db;
+        _adminService = adminService;
     }
 
     private Guid? GetAuthorIdFromHeader()
@@ -26,13 +28,14 @@ public class PostsController : ControllerBase
     }
 
     /// <summary>
-    /// GET /api/posts?published=true&amp;order=date|story or ?editable=true (requires X-Author-Id)
+    /// GET /api/posts?published=true&amp;order=date|story or ?editable=true (requires X-Author-Id) or ?forAuthorArea=true (requires X-Author-Id).
     /// </summary>
     [HttpGet]
     public async Task<ActionResult<IEnumerable<PostDto>>> GetPosts(
         [FromQuery] bool? published = true,
         [FromQuery] string order = "date",
         [FromQuery] bool editable = false,
+        [FromQuery] bool forAuthorArea = false,
         CancellationToken cancellationToken = default)
     {
         if (editable)
@@ -52,13 +55,32 @@ public class PostsController : ControllerBase
             return Ok(posts.Select(p => ToDto(p, contentAsHtml: false, includeAuthorId: true, includeCollaborators: true)));
         }
 
+        if (forAuthorArea)
+        {
+            var authorId = GetAuthorIdFromHeader();
+            if (authorId == null)
+                return Unauthorized();
+
+            var query = _db.Posts
+                .Include(p => p.Author)
+                .Include(p => p.Collaborators).ThenInclude(c => c.Author);
+
+            // Full catalog for author area: all posts (published or not), ordered by last update / creation.
+            var posts = await query
+                .OrderByDescending(p => p.UpdatedAt)
+                .ThenByDescending(p => p.PublishedAt ?? p.CreatedAt)
+                .ToListAsync(cancellationToken);
+
+            return Ok(posts.Select(p => ToDto(p, contentAsHtml: false, includeAuthorId: true, includeCollaborators: true)));
+        }
+
         var baseQuery = _db.Posts.Include(p => p.Author).AsQueryable();
         if (published.HasValue)
             baseQuery = baseQuery.Where(p => p.Published == published.Value);
         baseQuery = order.ToLowerInvariant() switch
         {
             "story" => baseQuery.OrderBy(p => p.StoryOrder),
-            _ => baseQuery.OrderByDescending(p => p.PublishedAt ?? p.CreatedAt)
+            _ => baseQuery.OrderByDescending(p => p.CreatedAt)
         };
         var list = await baseQuery.ToListAsync(cancellationToken);
         return Ok(list.Select(p => ToDto(p, contentAsHtml: true, includeAuthorId: false, includeCollaborators: false)));
@@ -82,6 +104,23 @@ public class PostsController : ControllerBase
         if (!await CanEditAsync(post.Id, authorId.Value, cancellationToken))
             return Forbid();
         return Ok(ToDto(post, contentAsHtml: false, includeAuthorId: true, includeCollaborators: true));
+    }
+
+    /// <summary>
+    /// GET /api/posts/next-story-order — next suggested story_order (max among published + 1, or 1). Requires X-Author-Id.
+    /// </summary>
+    [HttpGet("next-story-order")]
+    public async Task<ActionResult<NextStoryOrderResponse>> GetNextStoryOrder(CancellationToken cancellationToken = default)
+    {
+        var authorId = GetAuthorIdFromHeader();
+        if (authorId == null)
+            return Unauthorized();
+        var maxOrder = await _db.Posts
+            .Where(p => p.Published)
+            .Select(p => (int?)p.StoryOrder)
+            .MaxAsync(cancellationToken);
+        var next = (maxOrder ?? 0) + 1;
+        return Ok(new NextStoryOrderResponse { NextStoryOrder = next });
     }
 
     /// <summary>
@@ -174,15 +213,46 @@ public class PostsController : ControllerBase
         var post = await _db.Posts.FindAsync(new object[] { id }, cancellationToken);
         if (post == null)
             return NotFound();
-        if (post.AuthorId != authorId.Value)
+        var isAdmin = await _adminService.IsAdminAsync(authorId.Value, cancellationToken);
+        if (post.AuthorId != authorId.Value && !isAdmin)
             return Forbid();
         _db.Posts.Remove(post);
         await _db.SaveChangesAsync(cancellationToken);
         return NoContent();
     }
 
+    /// <summary>
+    /// PUT /api/posts/story-order — update story_order for multiple posts (authenticated).
+    /// Body: array of { id, story_order }.
+    /// </summary>
+    [HttpPut("story-order")]
+    public async Task<IActionResult> UpdateStoryOrder([FromBody] IEnumerable<StoryOrderItemRequest>? request, CancellationToken cancellationToken = default)
+    {
+        var authorId = GetAuthorIdFromHeader();
+        if (authorId == null)
+            return Unauthorized();
+        if (request == null)
+            return BadRequest();
+        var items = request.ToList();
+        foreach (var item in items)
+        {
+            if (string.IsNullOrWhiteSpace(item.Id) || !Guid.TryParse(item.Id.Trim(), out var id))
+                continue;
+            var post = await _db.Posts.FindAsync(new object[] { id }, cancellationToken);
+            if (post != null)
+            {
+                post.StoryOrder = item.StoryOrder;
+                post.UpdatedAt = DateTime.UtcNow;
+            }
+        }
+        await _db.SaveChangesAsync(cancellationToken);
+        return NoContent();
+    }
+
     private async Task<bool> CanEditAsync(Guid postId, Guid authorId, CancellationToken cancellationToken)
     {
+        if (await _adminService.IsAdminAsync(authorId, cancellationToken))
+            return true;
         var post = await _db.Posts.AsNoTracking().FirstOrDefaultAsync(p => p.Id == postId, cancellationToken);
         if (post == null) return false;
         if (post.AuthorId == authorId) return true;

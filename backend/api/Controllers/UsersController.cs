@@ -45,10 +45,34 @@ public class UsersController : ControllerBase
                 Id = u.Id.ToString(),
                 Email = u.Email,
                 AuthorId = u.AuthorId.ToString(),
-                AuthorName = u.Author.Name
+                AuthorName = u.Author.Name,
+                AuthorBio = u.Author.Bio
             })
             .ToListAsync(cancellationToken);
         return Ok(users);
+    }
+
+    /// <summary>GET /api/users/me — current user (any authenticated user).</summary>
+    [HttpGet("me")]
+    public async Task<ActionResult<UserListDto>> GetCurrentUser(CancellationToken cancellationToken = default)
+    {
+        if (!TryGetAuthorId(out var authorId))
+            return Unauthorized();
+
+        var user = await _db.Users
+            .Include(u => u.Author)
+            .FirstOrDefaultAsync(u => u.AuthorId == authorId, cancellationToken);
+        if (user == null)
+            return Unauthorized();
+
+        return Ok(new UserListDto
+        {
+            Id = user.Id.ToString(),
+            Email = user.Email,
+            AuthorId = user.AuthorId.ToString(),
+            AuthorName = user.Author.Name,
+            AuthorBio = user.Author.Bio
+        });
     }
 
     /// <summary>POST /api/users — create user (Admin only).</summary>
@@ -62,7 +86,10 @@ public class UsersController : ControllerBase
 
         var email = request.Email?.Trim() ?? string.Empty;
         var authorName = request.AuthorName?.Trim() ?? string.Empty;
+        var passwordProvided = request.Password != null && request.Password.Trim().Length > 0;
         var password = string.IsNullOrWhiteSpace(request.Password) ? SeedData.InitialAdminDefaultPassword : request.Password!.Trim();
+        if (passwordProvided && !PasswordValidation.IsValid(password))
+            return BadRequest(PasswordValidation.ErrorMessage);
         if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(authorName))
             return BadRequest();
 
@@ -87,7 +114,8 @@ public class UsersController : ControllerBase
             Email = email,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
             AuthorId = newAuthorId,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            MustChangePassword = true
         };
         _db.Users.Add(user);
         await _db.SaveChangesAsync(cancellationToken);
@@ -126,7 +154,12 @@ public class UsersController : ControllerBase
         {
             var pwd = request.Password.Trim();
             if (pwd.Length > 0)
+            {
+                if (!PasswordValidation.IsValid(pwd))
+                    return BadRequest(PasswordValidation.ErrorMessage);
                 user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(pwd);
+                user.MustChangePassword = false;
+            }
         }
 
         if (request.Email != null && isAdmin)
@@ -139,6 +172,38 @@ public class UsersController : ControllerBase
             user.Email = email;
         }
 
+        if (request.AuthorName != null && (isAdmin || isSelf))
+        {
+            var name = request.AuthorName.Trim();
+            if (name.Length > 0 && user.Author != null)
+                user.Author.Name = name;
+        }
+
+        if (request.Bio != null && (isAdmin || isSelf))
+        {
+            if (user.Author != null)
+                user.Author.Bio = string.IsNullOrWhiteSpace(request.Bio) ? null : request.Bio.Trim();
+        }
+
+        await _db.SaveChangesAsync(cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>POST /api/users/{id}/reset-password — Admin only; set target user password to default and require change on next login.</summary>
+    [HttpPost("{id}/reset-password")]
+    public async Task<IActionResult> ResetPassword(Guid id, CancellationToken cancellationToken = default)
+    {
+        if (!TryGetAuthorId(out var authorId))
+            return Unauthorized();
+        if (!await _adminService.IsAdminAsync(authorId, cancellationToken))
+            return Forbid();
+
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+        if (user == null)
+            return NotFound();
+
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(SeedData.InitialAdminDefaultPassword);
+        user.MustChangePassword = true;
         await _db.SaveChangesAsync(cancellationToken);
         return NoContent();
     }

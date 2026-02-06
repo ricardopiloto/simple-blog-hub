@@ -15,16 +15,18 @@ builder.Services.AddScoped<IAdminService, AdminService>();
 
 var app = builder.Build();
 
-app.UseHttpsRedirection();
-app.MapControllers();
-
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<BlogDbContext>();
     var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
     await db.Database.MigrateAsync();
-    await SeedData.EnsureSeedAsync(db);
+    await SeedData.EnsureSeedAsync(db, config);
     await SeedData.EnsureInitialAdminUserAsync(db, config);
+    await SeedData.TryResetAdminPasswordByTriggerFileAsync(db, config, logger);
 }
+
+app.UseHttpsRedirection();
+app.MapControllers();
 
 app.Run();

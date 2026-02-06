@@ -1,6 +1,6 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Menu, X, Sun, Moon, BookOpen, LogIn, User } from 'lucide-react';
+import { Menu, X, Sun, Moon, BookOpen, LogIn, LogOut, User } from 'lucide-react';
 import { useState } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,8 +9,15 @@ import { DiceIcon } from '@/components/layout/DiceIcon';
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
-  const { isAuthenticated, isAdmin } = useAuth();
+  const { isAuthenticated, isAdmin, logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    setIsMenuOpen(false);
+    navigate('/');
+  };
 
   return (
     <motion.header
@@ -51,13 +58,23 @@ export function Header() {
               Índice da História
             </Link>
             {isAuthenticated ? (
-              <Link
-                to="/area-autor"
-                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
-              >
-                <User className="h-4 w-4" />
-                Área do autor
-              </Link>
+              <>
+                <Link
+                  to="/area-autor"
+                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                >
+                  <User className="h-4 w-4" />
+                  Área do autor
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Sair
+                </button>
+              </>
             ) : (
               <Link
                 to="/login"
@@ -154,15 +171,21 @@ export function Header() {
                     <User className="h-4 w-4" />
                     Área do autor
                   </Link>
-                  {isAdmin && (
-                    <Link
-                      to="/area-autor/contas"
-                      onClick={() => setIsMenuOpen(false)}
-                      className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      Contas
-                    </Link>
-                  )}
+                  <Link
+                    to="/area-autor/contas"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Contas
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 text-left"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Sair
+                  </button>
                 </>
               ) : (
                 <Link

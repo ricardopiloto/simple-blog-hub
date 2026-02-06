@@ -26,6 +26,9 @@ public class LoginResponse
     [JsonPropertyName("is_admin")]
     public bool IsAdmin { get; set; }
 
+    [JsonPropertyName("must_change_password")]
+    public bool MustChangePassword { get; set; }
+
     [JsonPropertyName("author")]
     public AuthorDto Author { get; set; } = null!;
 }

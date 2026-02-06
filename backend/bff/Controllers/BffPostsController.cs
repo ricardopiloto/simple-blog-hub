@@ -54,6 +54,40 @@ public class PostsController : ControllerBase
     }
 
     /// <summary>
+    /// GET /bff/posts/author-area — protegido; lista todos os posts para a Área do Autor (com autor e colaboradores).
+    /// </summary>
+    [HttpGet("author-area")]
+    [Authorize]
+    public async Task<IActionResult> GetForAuthorArea(CancellationToken cancellationToken = default)
+    {
+        var authorId = GetAuthorId(User);
+        if (authorId == null)
+            return Unauthorized();
+        var response = await _api.GetAllPostsForAuthorAreaAsync(authorId.Value, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+            return StatusCode((int)response.StatusCode);
+        var content = await response.Content.ReadAsStringAsync(cancellationToken);
+        return Content(content, "application/json");
+    }
+
+    /// <summary>
+    /// GET /bff/posts/next-story-order — protegido; próxima ordem narrativa sugerida para novo post.
+    /// </summary>
+    [HttpGet("next-story-order")]
+    [Authorize]
+    public async Task<IActionResult> GetNextStoryOrder(CancellationToken cancellationToken = default)
+    {
+        var authorId = GetAuthorId(User);
+        if (authorId == null)
+            return Unauthorized();
+        var response = await _api.GetNextStoryOrderAsync(authorId.Value, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+            return StatusCode((int)response.StatusCode);
+        var content = await response.Content.ReadAsStringAsync(cancellationToken);
+        return Content(content, "application/json");
+    }
+
+    /// <summary>
     /// GET /bff/posts/edit/{id} — protegido; post para edição (conteúdo em Markdown).
     /// </summary>
     [HttpGet("edit/{id:guid}")]
@@ -114,6 +148,20 @@ public class PostsController : ControllerBase
             return StatusCode((int)response.StatusCode);
         var content = await response.Content.ReadAsStringAsync(cancellationToken);
         return Content(content, "application/json");
+    }
+
+    /// <summary>
+    /// PUT /bff/posts/story-order — protegido; atualizar ordem narrativa de vários posts.
+    /// </summary>
+    [HttpPut("story-order")]
+    [Authorize]
+    public async Task<IActionResult> UpdateStoryOrder([FromBody] object body, CancellationToken cancellationToken = default)
+    {
+        var authorId = GetAuthorId(User);
+        if (authorId == null)
+            return Unauthorized();
+        var response = await _api.UpdateStoryOrderAsync(body, authorId.Value, cancellationToken);
+        return response.IsSuccessStatusCode ? NoContent() : StatusCode((int)response.StatusCode);
     }
 
     /// <summary>

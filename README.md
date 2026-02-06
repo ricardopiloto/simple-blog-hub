@@ -33,6 +33,45 @@ Fluxo: **Frontend (React)** → **BFF** (único ponto de entrada público) → *
 - **Backend API** (`backend/api/`): `Controllers/` (Auth, Authors, Posts, Users), `Data/` (DbContext, SeedData), `Models/`, `Services/` (Admin, Markdown, PasswordValidation), `Migrations/`. Ficheiro de dados SQLite: `blog.db` (gerado ao rodar).
 - **Backend BFF** (`backend/bff/`): `Controllers/` (Auth, Authors, BffPosts, Users), `Services/` (ApiClient, JwtService), `Models/`.
 
+**Estrutura de arquivos do projeto:**
+
+```
+simple-blog-hub/
+├── src/                          # Frontend React (Vite + TypeScript)
+│   ├── api/                      # Cliente BFF (client.ts, types.ts)
+│   ├── auth/                     # Armazenamento de sessão (storage.ts)
+│   ├── components/               # Componentes: layout/, blog/, ui/ (shadcn), rotas, modais
+│   ├── contexts/                 # AuthContext, ThemeContext
+│   ├── hooks/                    # usePosts, use-toast, use-mobile
+│   ├── lib/                      # Utilitários e constantes
+│   ├── pages/                    # Index, Login, Posts, PostPage, PostEdit, AreaAutor, AreaContas, StoryIndex
+│   ├── test/                     # Testes Vitest (setup, example)
+│   ├── App.tsx, main.tsx, index.css
+│   └── vite-env.d.ts
+├── backend/
+│   ├── api/                      # API .NET 9 (SQLite)
+│   │   ├── Controllers/          # Auth, Authors, Posts, Users
+│   │   ├── Data/                 # BlogDbContext, SeedData
+│   │   ├── Migrations/           # EF Core migrations
+│   │   ├── Models/               # Author, Post, User, DTOs
+│   │   ├── Services/             # Admin, Markdown, PasswordValidation
+│   │   ├── Program.cs
+│   │   └── appsettings.json
+│   └── bff/                      # BFF .NET 9
+│       ├── Controllers/          # Auth, Authors, BffPosts, Users
+│       ├── Models/               # AuthModels
+│       ├── Services/             # ApiClient, JwtService
+│       ├── Program.cs
+│       └── appsettings.json
+├── public/                       # Assets estáticos (dice-icon.svg, placeholder.svg, robots.txt)
+├── openspec/                     # Especificações e changes (OpenSpec)
+│   ├── project.md
+│   ├── specs/
+│   └── changes/
+├── index.html, package.json, vite.config.ts, tailwind.config.ts, tsconfig.*.json
+└── README.md
+```
+
 ## Stack de desenvolvimento
 
 - **Frontend**: Node.js, npm, **Vite 5**, **React 18**, **TypeScript**, React Router DOM, Tailwind CSS, shadcn/ui (Radix UI), Framer Motion, TanStack React Query. Cliente BFF em `src/api/client.ts`; tipos em `src/api/types.ts`; hooks em `src/hooks/usePosts.ts`.

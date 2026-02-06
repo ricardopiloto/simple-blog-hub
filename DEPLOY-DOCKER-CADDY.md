@@ -151,6 +151,57 @@ Validar a configuração (opcional): `sudo caddy validate --config /etc/caddy/Ca
 
 ---
 
+## 8.1. API a reiniciar sem ficar em pé
+
+Se o contentor da API reinicia constantemente, ver o erro real:
+
+```bash
+# Últimas linhas do log (exceção .NET costuma aparecer aqui)
+docker compose logs --tail=100 api
+```
+
+Causas comuns:
+
+1. **Ficheiro `api.env` em falta ou com erro**  
+   O ficheiro tem de estar na **raiz do repo** (junto ao `docker-compose.yml`). Conteúdo mínimo:
+   ```bash
+   ConnectionStrings__DefaultConnection=Data Source=/data/blog.db
+   API__InternalKey=uma-chave-secreta-forte
+   Admin__Email=admin@exemplo.com
+   ```
+   Se `api.env` não existir, criar e voltar a subir: `docker compose up -d api`.
+
+2. **Permissões no volume**  
+   Se o log indicar "Permission denied" em `/data`, o contentor pode não conseguir criar `blog.db`. Nesse caso, forçar permissões no volume (uma vez):
+   ```bash
+   docker compose run --rm --entrypoint "" api chown -R 1000:1000 /data
+   docker compose up -d api
+   ```
+   (Se o processo não correr como UID 1000, ajustar conforme o log.)
+
+3. **Correr a API uma vez sem restart**  
+   Para ver a mensagem de erro no terminal:
+   ```bash
+   docker compose run --rm --no-deps api
+   ```
+   A aplicação vai sair ao falhar; a exceção aparece no stdout/stderr.
+
+4. **"table Users has no column named MustChangePassword"**  
+   A base foi criada com uma **imagem antiga** que não inclui a migração mais recente. É obrigatório **reconstruir a imagem** e usar um volume novo:
+   ```bash
+   docker compose down -v
+   docker compose build --no-cache api
+   docker compose up -d
+   ```
+   O `-v` em `down -v` remove os volumes. O `build --no-cache` garante que a imagem inclui todas as migrações (incl. `AddMustChangePasswordToUser`). Se ainda falhar, no servidor confirma que tens o código atualizado (`git pull`) antes de fazer o build.
+   - **Se quiseres manter dados** em vez de apagar o volume: adicionar a coluna manualmente (nome do volume = nome do projeto + `_blog_api_data`, ex.: `repo_blog_api_data`):
+   ```bash
+   docker run --rm -v repo_blog_api_data:/data alpine sh -c "apk add --no-cache sqlite && sqlite3 /data/blog.db 'ALTER TABLE Users ADD COLUMN MustChangePassword INTEGER NOT NULL DEFAULT 0;'"
+   docker compose up -d api
+   ```
+
+---
+
 ## 9. Persistência e recuperar senha do Admin
 
 - **Base de dados**: o ficheiro SQLite da API está no volume Docker `blog_api_data`, montado em `/data` dentro do contentor. Os dados persistem entre `docker compose down` e `docker compose up -d`.

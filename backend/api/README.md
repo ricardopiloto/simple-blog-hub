@@ -41,9 +41,9 @@ Respostas em JSON com formato compatível ao frontend (snake_case: `cover_image`
 
 **Se o build falhar:**
 
-1. Verifique a versão do SDK: `dotnet --version` deve ser **9.x** (ex.: 9.0.113). O projeto usa o `global.json` em `backend/` para exigir .NET 9.
+1. Verifique a versão do SDK: `dotnet --version` deve ser **8.x** (ex.: 8.0.401). O projeto usa o `global.json` em `backend/` para exigir .NET 8.
 2. Execute um restore limpo: `dotnet clean` e em seguida `dotnet restore` dentro de `backend/api`, depois `dotnet build` novamente.
-3. Se não tiver .NET 9 instalado, baixe em [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0).
+3. Se não tiver .NET 8 instalado, baixe em [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0).
 
 **Se `dotnet run` falhar com "Address already in use":** a porta 5001 está ocupada (outra instância da API, do BFF ou outro processo). Opções:
 

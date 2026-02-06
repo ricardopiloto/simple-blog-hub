@@ -37,10 +37,28 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 builder.Services.AddAuthorization();
 
+var corsAllowedOrigins = builder.Configuration["Cors:AllowedOrigins"]?.Trim();
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        if (!string.IsNullOrEmpty(corsAllowedOrigins))
+        {
+            var origins = corsAllowedOrigins.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            if (origins.Length > 0)
+                policy.WithOrigins(origins).AllowAnyMethod().AllowAnyHeader();
+            else
+                policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+        }
+        else
+            policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+    });
+});
+
 var app = builder.Build();
 
 app.UseHttpsRedirection();
-app.UseCors(policy => policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

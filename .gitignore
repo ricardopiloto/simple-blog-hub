@@ -1,7 +1,7 @@
-# Dependências
+# Dependências (frontend: frontend/node_modules)
 node_modules
 
-# Build
+# Build (frontend: frontend/dist)
 dist
 dist-ssr
 
@@ -34,3 +34,6 @@ backend/**/obj/
 backend/**/.vs/
 backend/api/*.db
 backend/api/*.db-*
+
+# Deploy (documento específico do servidor/domínio)
+DEPLOY-UBUNTU-CADDY.md

@@ -1,10 +1,10 @@
 # Blog BFF (Backend-for-Frontend)
 
-BFF .NET 9 que expõe endpoints públicos para o frontend e repassa as requisições para a API interna. **É o único ponto de entrada público**; a API não deve ser exposta à internet.
+BFF .NET 8 que expõe endpoints públicos para o frontend e repassa as requisições para a API interna. **É o único ponto de entrada público**; a API não deve ser exposta à internet.
 
 ## Requisitos
 
-- [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
+- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
 - A **API** (`backend/api`) deve estar rodando (ex.: `http://localhost:5001`).
 
 ## Configuração

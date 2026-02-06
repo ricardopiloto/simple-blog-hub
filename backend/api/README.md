@@ -1,10 +1,10 @@
 # Blog API (Backend interno)
 
-API interna .NET 9 + Entity Framework Core + SQLite. Expõe endpoints de leitura de posts. **Não deve ser exposta à internet**; apenas o BFF consome esta API.
+API interna .NET 8 + Entity Framework Core + SQLite. Expõe endpoints de leitura de posts. **Não deve ser exposta à internet**; apenas o BFF consome esta API.
 
 ## Requisitos
 
-- [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
+- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
 
 ## Build
 

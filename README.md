@@ -24,12 +24,12 @@ Blog de leitura para **contos e aventuras** de RPG. Interface em português. Os 
 Fluxo: **Frontend (React)** → **BFF** (único ponto de entrada público) → **API** (interna) → **SQLite**.
 
 - **Frontend** chama apenas o BFF (`VITE_BFF_URL`, ex.: `http://localhost:5000`). Não acessa a API diretamente.
-- **BFF** (.NET 9) repassa requisições para a API interna e emite JWT no login.
-- **API** (.NET 9) acessa **SQLite** via Entity Framework Core; não é exposta à internet.
+- **BFF** (.NET 8) repassa requisições para a API interna e emite JWT no login.
+- **API** (.NET 8) acessa **SQLite** via Entity Framework Core; não é exposta à internet.
 
 **Estrutura de pastas:**
 
-- **Raiz**: frontend em `src/` (páginas, componentes, hooks, `src/api/` cliente BFF, `src/auth/`, `src/contexts/`).
+- **Frontend** (`frontend/`): código React em `frontend/src/` (páginas, componentes, hooks, `frontend/src/api/` cliente BFF, `frontend/src/auth/`, `frontend/src/contexts/`). Comandos npm executam-se a partir de `frontend/`.
 - **Backend API** (`backend/api/`): `Controllers/` (Auth, Authors, Posts, Users), `Data/` (DbContext, SeedData), `Models/`, `Services/` (Admin, Markdown, PasswordValidation), `Migrations/`. Ficheiro de dados SQLite: `blog.db` (gerado ao rodar).
 - **Backend BFF** (`backend/bff/`): `Controllers/` (Auth, Authors, BffPosts, Users), `Services/` (ApiClient, JwtService), `Models/`.
 
@@ -37,19 +37,23 @@ Fluxo: **Frontend (React)** → **BFF** (único ponto de entrada público) → *
 
 ```
 simple-blog-hub/
-├── src/                          # Frontend React (Vite + TypeScript)
-│   ├── api/                      # Cliente BFF (client.ts, types.ts)
-│   ├── auth/                     # Armazenamento de sessão (storage.ts)
-│   ├── components/               # Componentes: layout/, blog/, ui/ (shadcn), rotas, modais
-│   ├── contexts/                 # AuthContext, ThemeContext
-│   ├── hooks/                    # usePosts, use-toast, use-mobile
-│   ├── lib/                      # Utilitários e constantes
-│   ├── pages/                    # Index, Login, Posts, PostPage, PostEdit, AreaAutor, AreaContas, StoryIndex
-│   ├── test/                     # Testes Vitest (setup, example)
-│   ├── App.tsx, main.tsx, index.css
-│   └── vite-env.d.ts
+├── frontend/                     # Frontend React (Vite + TypeScript)
+│   ├── src/                      # Código fonte
+│   │   ├── api/                  # Cliente BFF (client.ts, types.ts)
+│   │   ├── auth/                 # Armazenamento de sessão (storage.ts)
+│   │   ├── components/           # layout/, blog/, ui/ (shadcn), rotas, modais
+│   │   ├── contexts/             # AuthContext, ThemeContext
+│   │   ├── hooks/                # usePosts, use-toast, use-mobile
+│   │   ├── lib/                  # Utilitários e constantes
+│   │   ├── pages/                # Index, Login, Posts, PostPage, PostEdit, AreaAutor, AreaContas, StoryIndex
+│   │   ├── test/                 # Testes Vitest (setup, example)
+│   │   ├── App.tsx, main.tsx, index.css
+│   │   └── vite-env.d.ts
+│   ├── public/                   # Assets estáticos (dice-icon.svg, placeholder.svg, robots.txt)
+│   ├── index.html, package.json, vite.config.ts, tailwind.config.ts, tsconfig.*.json
+│   └── ...
 ├── backend/
-│   ├── api/                      # API .NET 9 (SQLite)
+│   ├── api/                      # API .NET 8 (SQLite)
 │   │   ├── Controllers/          # Auth, Authors, Posts, Users
 │   │   ├── Data/                 # BlogDbContext, SeedData
 │   │   ├── Migrations/           # EF Core migrations
@@ -57,47 +61,45 @@ simple-blog-hub/
 │   │   ├── Services/             # Admin, Markdown, PasswordValidation
 │   │   ├── Program.cs
 │   │   └── appsettings.json
-│   └── bff/                      # BFF .NET 9
+│   └── bff/                      # BFF .NET 8
 │       ├── Controllers/          # Auth, Authors, BffPosts, Users
 │       ├── Models/               # AuthModels
 │       ├── Services/             # ApiClient, JwtService
 │       ├── Program.cs
 │       └── appsettings.json
-├── public/                       # Assets estáticos (dice-icon.svg, placeholder.svg, robots.txt)
 ├── openspec/                     # Especificações e changes (OpenSpec)
 │   ├── project.md
 │   ├── specs/
 │   └── changes/
-├── index.html, package.json, vite.config.ts, tailwind.config.ts, tsconfig.*.json
 └── README.md
 ```
 
 ## Stack de desenvolvimento
 
-- **Frontend**: Node.js, npm, **Vite 5**, **React 18**, **TypeScript**, React Router DOM, Tailwind CSS, shadcn/ui (Radix UI), Framer Motion, TanStack React Query. Cliente BFF em `src/api/client.ts`; tipos em `src/api/types.ts`; hooks em `src/hooks/usePosts.ts`.
-- **Backend**: **.NET 9 SDK**. API: Entity Framework Core, SQLite, BCrypt (senhas), Markdig (Markdown→HTML). BFF: JWT para autenticação, HttpClient para a API.
-- **Testes**: Vitest, Testing Library, jsdom (`npm run test`, `npm run test:watch`).
-- **Lint**: ESLint 9 (`npm run lint`).
+- **Frontend**: Node.js, npm, **Vite 5**, **React 18**, **TypeScript**, React Router DOM, Tailwind CSS, shadcn/ui (Radix UI), Framer Motion, TanStack React Query. Cliente BFF em `frontend/src/api/client.ts`; tipos em `frontend/src/api/types.ts`; hooks em `frontend/src/hooks/usePosts.ts`. Comandos npm executam-se a partir de **`frontend/`**.
+- **Backend**: **.NET 8 SDK**. API: Entity Framework Core, SQLite, BCrypt (senhas), Markdig (Markdown→HTML). BFF: JWT para autenticação, HttpClient para a API.
+- **Testes**: Vitest, Testing Library, jsdom (`npm run test`, `npm run test:watch` a partir de `frontend/`).
+- **Lint**: ESLint 9 (`npm run lint` a partir de `frontend/`).
 
 **Comandos de build:**
 
-- Frontend: `npm run build` (produz `dist/`).
+- Frontend: em `frontend/`, `npm run build` (produz `frontend/dist/`).
 - API: `dotnet build` em `backend/api`.
 - BFF: `dotnet build` em `backend/bff`.
 
-**Scripts principais (raiz):** `npm run dev` (frontend em desenvolvimento), `npm run build`, `npm run test`, `npm run lint`, `npm run preview` (servir o build).
+**Scripts principais (em `frontend/`):** `npm run dev` (frontend em desenvolvimento), `npm run build`, `npm run test`, `npm run lint`, `npm run preview` (servir o build).
 
 ## Requisitos
 
 - **Node.js** e **npm** (frontend) — [instalar com nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
-- **.NET 9 SDK** (backend) — [download](https://dotnet.microsoft.com/download/dotnet/9.0).
+- **.NET 8 SDK** (backend) — [download](https://dotnet.microsoft.com/download/dotnet/8.0).
 
 ## Configuração passo a passo
 
 Seguir esta ordem para pôr o projeto a funcionar do zero até ao primeiro acesso (e opcionalmente ao reset de senha do Admin).
 
 1. **Clonar e instalar dependências do frontend**  
-   Na raiz do repositório: `npm install`.
+   Entrar na pasta do frontend e instalar: `cd frontend && npm install`.
 
 2. **Build e execução do backend**  
    - Build: `dotnet build` em `backend/api` e em `backend/bff`.  
@@ -105,7 +107,7 @@ Seguir esta ordem para pôr o projeto a funcionar do zero até ao primeiro acess
    - Noutro terminal, executar o **BFF** (porta 5000): `cd backend/bff && dotnet run`.
 
 3. **Executar o frontend**  
-   Na raiz: `npm run dev`. Abrir no navegador o endereço indicado (em geral `http://localhost:5173`). O frontend usa por padrão `http://localhost:5000` como BFF.
+   Em `frontend/`: `cd frontend && npm run dev`. Abrir no navegador o endereço indicado (em geral `http://localhost:5173` ou a porta configurada no Vite). O frontend usa por padrão `http://localhost:5000` como BFF.
 
 4. **Configurar o Admin (opcional)**  
    Sem configuração, a API usa por defeito o admin **admin@admin.com** (criado na primeira execução com senha `senha123`). Para usar outro e-mail, definir `Admin:Email` em `backend/api/appsettings.json` ou a variável `Admin__Email`; reiniciar a API para criar essa conta.
@@ -128,21 +130,24 @@ Seguir esta ordem para pôr o projeto a funcionar do zero até ao primeiro acess
 | `Admin__Email`  | API    | E-mail da conta Admin. Se não definido, usa **admin@admin.com**. Na primeira execução cria a conta com senha `senha123`. |
 | `Seed:EnableDemoData` | API | Se `true`, cria autores e posts de exemplo. Por defeito `false` (banco "zerado", só o admin). |
 | `Admin__PasswordResetTriggerPath` | API | (Opcional) Caminho do ficheiro de trigger para recuperar a senha do Admin. Por defeito: `admin-password-reset.trigger` no diretório de execução da API. |
+| `Cors__AllowedOrigins` | BFF | (Opcional) Lista de origens permitidas para CORS, separadas por `;`. Se definida, só essas origens podem chamar o BFF a partir do browser; definir **apenas no servidor** (não commitar domínios no repositório). Se não definida, qualquer origem é permitida (útil em desenvolvimento e quando o frontend e o BFF estão no mesmo domínio). |
 
-O projeto **roda sem `.env`**: o frontend usa padrão em código para o BFF; a API e o BFF usam `appsettings.json` e variáveis de ambiente do processo. O **`.env` na raiz é opcional** e é lido apenas pelo Vite para `VITE_*`; a única usada é `VITE_BFF_URL`. O backend não lê o `.env` da raiz.
+**CORS:** Com **deploy same-origin** (frontend e BFF no mesmo domínio, ex.: Caddy a servir a SPA e a fazer proxy de `/bff` para o BFF), **não é necessária configuração de domínio no CORS** para a aplicação funcionar; o browser trata os pedidos como same-origin. Em desenvolvimento local (frontend e BFF em portas diferentes), CORS aplica-se e a política atual do BFF permite esses pedidos.
+
+O projeto **roda sem `.env`**: o frontend usa padrão em código para o BFF; a API e o BFF usam `appsettings.json` e variáveis de ambiente do processo. O **`.env` em `frontend/` é opcional** e é lido apenas pelo Vite para `VITE_*`; a única usada é `VITE_BFF_URL`. O backend não lê o `.env` do frontend.
 
 ## Instalação em ambientes de nuvem (Linux)
 
 Para instalar e executar a aplicação num servidor Linux (ou VM em cloud):
 
 1. **Instalar dependências no servidor**  
-   Node.js e npm (ex.: [nvm](https://github.com/nvm-sh/nvm) ou pacote do distro) e [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0).
+   Node.js e npm (ex.: [nvm](https://github.com/nvm-sh/nvm) ou pacote do distro) e [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0).
 
 2. **Clonar o repositório**  
    `git clone <url-do-repo>` e entrar na pasta do projeto.
 
 3. **Build**  
-   Na raiz: `npm install` e `npm run build` (produz `dist/`).  
+   Em `frontend/`: `cd frontend && npm install` e `npm run build` (produz `frontend/dist/`).  
    Em `backend/api`: `dotnet build`.  
    Em `backend/bff`: `dotnet build`.
 
@@ -156,7 +161,7 @@ Para instalar e executar a aplicação num servidor Linux (ou VM em cloud):
    Em `backend/bff`: `dotnet run` (ou publicar e executar). O BFF escuta na porta 5000 e deve conseguir alcançar a API (API__BaseUrl).
 
 7. **Servir o frontend**  
-   Copiar o conteúdo da pasta `dist/` para um servidor web (ex.: nginx) configurado como raiz do site, ou usar um reverse proxy que sirva os estáticos e faça proxy de `/bff` para o BFF. Configurar no frontend a URL do BFF (variável de ambiente `VITE_BFF_URL` no build, ou valor em código).
+   Copiar o conteúdo da pasta `frontend/dist/` para um servidor web (ex.: nginx) configurado como raiz do site, ou usar um reverse proxy que sirva os estáticos e faça proxy de `/bff` para o BFF. Configurar no frontend a URL do BFF (variável de ambiente `VITE_BFF_URL` no build em `frontend/`, ou valor em código).
 
 8. **Primeiro acesso**  
    Abrir no browser a URL do frontend. Em Login, usar **admin@admin.com** e senha **senha123** (ou o e-mail configurado em `Admin__Email`). Concluir a **troca obrigatória de senha** no modal. A partir daí o admin pode usar a Área do autor e Contas.
@@ -173,13 +178,27 @@ Se o Admin esquecer a senha:
 
 ## Outros comandos
 
+Todos os comandos npm abaixo executam-se a partir da pasta **`frontend/`** (ex.: `cd frontend && npm run build`).
+
 | Comando            | Descrição                    |
 |--------------------|------------------------------|
-| `npm run build`    | Build de produção do frontend (`dist/`) |
+| `npm run build`    | Build de produção do frontend (`frontend/dist/`) |
 | `npm run preview`  | Servir o build localmente    |
 | `npm run test`     | Rodar testes do frontend (Vitest) |
 | `npm run test:watch` | Testes em modo watch      |
 | `npm run lint`     | Verificar código com ESLint  |
+
+## Verificar que a aplicação funciona
+
+Após clonar o repositório ou após alterações de estrutura ou dependências, use estes passos para confirmar que não há regressões:
+
+1. **Build do frontend** — Na pasta do frontend: `cd frontend && npm install && npm run build`. Deve produzir `frontend/dist/` sem erros.
+2. **Testes do frontend** — `cd frontend && npm run test`. Todos os testes devem passar.
+3. **Build do backend** — Em `backend/api`: `dotnet build`. Em `backend/bff`: `dotnet build`. Ambos devem concluir com sucesso (requer .NET 8 SDK).
+4. **Executar a aplicação** — Num terminal: `cd backend/api && dotnet run`. Noutro: `cd backend/bff && dotnet run`. Noutro: `cd frontend && npm run dev`. Abrir no browser o URL do frontend (ex.: `http://localhost:5173`).
+5. **Smoke check no browser** — Carregar a página inicial, ir a Login, entrar com o e-mail do Admin (ex.: **admin@admin.com**) e senha **senha123** (ou a configurada). Confirmar que a Área do autor ou outra chamada ao BFF funciona (ex.: listar posts). Concluir a troca de senha no modal se for o primeiro acesso.
+
+Se todos os passos forem bem-sucedidos, a aplicação está a funcionar corretamente após a estrutura de pastas (`frontend/`, `backend/`).
 
 ---
 

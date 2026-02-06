@@ -83,6 +83,7 @@ Seguir esta ordem para pôr o projeto a funcionar do zero até ao primeiro acess
 |-----------------|--------|-----------|
 | `VITE_BFF_URL`  | Frontend | URL do BFF (padrão: `http://localhost:5000`) |
 | `API__BaseUrl`  | BFF    | URL da API interna (padrão em appsettings: `http://localhost:5001`) |
+| `API__InternalKey` | API e BFF | **Chave partilhada BFF–API**: o BFF envia este valor no header `X-Api-Key`; a API só aceita pedidos com o mesmo valor. Definir o **mesmo** valor em ambos (appsettings ou variável). Em produção usar um valor forte e único. **Não é exposta ao frontend.** Se não configurada, a API aceita todos os pedidos (útil em desenvolvimento). |
 | `Jwt:Secret`    | BFF    | Chave para assinar o JWT (alterar em produção) |
 | Connection string | API  | SQLite (padrão: `Data Source=blog.db`) |
 | `Admin__Email`  | API    | E-mail da conta Admin. Se não definido, usa **admin@admin.com**. Na primeira execução cria a conta com senha `senha123`. |
@@ -107,7 +108,7 @@ Para instalar e executar a aplicação num servidor Linux (ou VM em cloud):
    Em `backend/bff`: `dotnet build`.
 
 4. **Configuração**  
-   Definir variáveis de ambiente ou editar `appsettings.json` na API e no BFF: connection string da API (SQLite, ex.: `Data Source=blog.db`), no BFF `API__BaseUrl` com o URL da API (ex.: `http://localhost:5001`). Para produção, definir `Jwt:Secret` no BFF. Opcionalmente `Admin__Email` na API para usar um e-mail de admin diferente de **admin@admin.com**. Por defeito o banco inicia sem dados de demonstração; para carregar exemplos, definir `Seed:EnableDemoData: true` na API.
+   Definir variáveis de ambiente ou editar `appsettings.json` na API e no BFF: connection string da API (SQLite, ex.: `Data Source=blog.db`), no BFF `API__BaseUrl` com o URL da API (ex.: `http://localhost:5001`). Para produção, definir `Jwt:Secret` no BFF e a **chave partilhada BFF–API** (`API__InternalKey`) com o **mesmo** valor na API e no BFF (valor forte e único; não é exposta ao frontend). Opcionalmente `Admin__Email` na API. Por defeito o banco inicia sem dados de demonstração; para carregar exemplos, definir `Seed:EnableDemoData: true` na API.
 
 5. **Executar a API**  
    Em `backend/api`: `dotnet run` (ou publicar com `dotnet publish` e executar o binário). A API escuta na porta 5001 (ou a configurada). Garantir que o ficheiro SQLite (ex.: `blog.db`) tem permissões de escrita.

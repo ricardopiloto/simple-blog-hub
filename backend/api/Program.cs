@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
 using BlogApi.Data;
 using BlogApi.Services;
@@ -27,6 +28,30 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseHttpsRedirection();
+
+// Optional shared key between BFF and API: when API:InternalKey is set, require X-Api-Key header (constant-time comparison).
+var internalKey = app.Configuration["API:InternalKey"]?.Trim();
+if (!string.IsNullOrEmpty(internalKey))
+{
+    var expectedHash = SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(internalKey));
+    app.Use(async (context, next) =>
+    {
+        var provided = context.Request.Headers["X-Api-Key"].FirstOrDefault();
+        if (string.IsNullOrEmpty(provided))
+        {
+            context.Response.StatusCode = 401;
+            return;
+        }
+        var providedHash = SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(provided));
+        if (!CryptographicOperations.FixedTimeEquals(expectedHash, providedHash))
+        {
+            context.Response.StatusCode = 401;
+            return;
+        }
+        await next(context);
+    });
+}
+
 app.MapControllers();
 
 app.Run();

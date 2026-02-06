@@ -10,10 +10,13 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSingleton<JwtService>();
 
 var apiBaseUrl = builder.Configuration["API:BaseUrl"] ?? "http://localhost:5001";
+var apiInternalKey = builder.Configuration["API:InternalKey"]?.Trim();
 builder.Services.AddHttpClient<ApiClient>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl.TrimEnd('/') + "/");
     client.DefaultRequestHeaders.Add("Accept", "application/json");
+    if (!string.IsNullOrEmpty(apiInternalKey))
+        client.DefaultRequestHeaders.Add("X-Api-Key", apiInternalKey);
 });
 
 var jwtSecret = builder.Configuration["Jwt:Secret"] ?? "dev-secret-change-in-production-min-32-chars";

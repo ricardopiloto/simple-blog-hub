@@ -35,6 +35,9 @@ async function fetchWithAuth<T>(url: string, options: RequestInit = {}): Promise
     const text = await res.text();
     throw new Error(res.status === 404 ? 'Not found' : `BFF error: ${res.status} ${text || res.statusText}`);
   }
+  if (res.status === 204 || res.headers.get('content-length') === '0') {
+    return undefined as T;
+  }
   return res.json() as Promise<T>;
 }
 

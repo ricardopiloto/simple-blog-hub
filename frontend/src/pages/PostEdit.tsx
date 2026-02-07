@@ -243,6 +243,7 @@ export default function PostEdit() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="post-cover">URL da imagem de capa</Label>
+              <p className="text-xs text-muted-foreground">Proporção recomendada 16:9 (ex.: 1200×675 px) para não cortar a imagem na visualização.</p>
               <Input
                 id="post-cover"
                 value={coverImage}

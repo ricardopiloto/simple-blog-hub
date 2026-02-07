@@ -143,11 +143,13 @@ export default function PostPage() {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="mb-12"
           >
-            <img
-              src={post.cover_image || DEFAULT_POST_COVER_IMAGE}
-              alt={post.title}
-              className="w-full aspect-[16/9] object-cover rounded-xl"
-            />
+            <div className="w-full aspect-[16/9] rounded-xl overflow-hidden bg-muted">
+              <img
+                src={post.cover_image || DEFAULT_POST_COVER_IMAGE}
+                alt={post.title}
+                className="w-full h-full object-contain object-center rounded-xl"
+              />
+            </div>
           </motion.div>
 
           {/* Content */}

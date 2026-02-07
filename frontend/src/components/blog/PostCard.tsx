@@ -27,7 +27,7 @@ export function PostCard({ post, index = 0 }: PostCardProps) {
           <img
             src={post.cover_image || DEFAULT_POST_COVER_IMAGE}
             alt={post.title}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
           />
         </div>
         <div className="space-y-3">

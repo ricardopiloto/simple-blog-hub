@@ -40,3 +40,47 @@ The system SHALL allow the author to set the post **cover image** in two ways: (
 - **THEN** the post uses that URL as cover_image and no upload is required
 - **AND** the existing default-cover behaviour when cover_image is null or empty continues to apply
 
+### Requirement: Cover image displayed with fixed aspect ratio and centered framing
+
+When the frontend displays a post **cover image** (with a valid cover_image URL or path), it SHALL use a **fixed aspect ratio** of **16:9** in the following contexts: single post page (article header), post list cards, and story index cards. The image SHALL be rendered with **object-fit: cover** and **object-position: center** (or equivalent) so that the image fills the display area and is centered when cropped, ensuring consistent and predictable framing within the visible bounds. Other contexts (e.g. homepage featured block) MAY use a different aspect ratio (e.g. 4:3) but SHALL still use object-fit cover and object-position center for consistency. Authors who provide images in 16:9 proportion will see the full image without cropping in the main display contexts.
+
+#### Scenario: Cover on single post page uses 16:9 and centered framing
+
+- **GIVEN** a post has a valid cover_image and is displayed on the post detail page
+- **WHEN** the user views the cover area
+- **THEN** the cover is displayed in a container with aspect ratio 16:9
+- **AND** the image uses object-fit cover and object-position center so that it is correctly framed within the container
+
+#### Scenario: Cover in list and story index cards uses 16:9 and centered framing
+
+- **GIVEN** a post with a valid cover_image is shown in a card (post list or story index)
+- **WHEN** the user views the card
+- **THEN** the cover image is displayed in a 16:9 aspect container with object-fit cover and object-position center
+- **AND** the framing is consistent with the single post page so that the same image does not appear arbitrarily cropped in different places
+
+#### Scenario: Image in 16:9 proportion is not cropped in main contexts
+
+- **GIVEN** the post cover image has proportion 16:9 (e.g. 1200×675 px)
+- **WHEN** the cover is displayed on the post page, in the list, or in the story index
+- **THEN** the full image is visible (no cropping) because the display aspect matches the image aspect
+- **AND** object-position center has no visible effect when the image exactly fills the container
+
+### Requirement: Na página do artigo a capa é exibida com object-contain para caber sem cortar
+
+Na **página do artigo** (single post page, vista de leitura), a imagem de capa **deve** (SHALL) ser exibida com **object-fit: contain** (ou classe equivalente, ex.: `object-contain`) dentro de um contentor com aspect ratio 16:9, de forma que imagens **fora do padrão 16:9** sejam **redimensionadas** (escala) para **caber inteiramente** no contentor, **sem cortar** partes da imagem. O contentor **deve** ter um **fundo neutro** (ex.: `bg-muted`) nas faixas (letterboxing ou pillarboxing) quando a imagem não preenche todo o 16:9. Com isso, a capa "encaixa melhor" na página mesmo quando a proporção da imagem não é 16:9. Em listas, cards e índice da história mantém-se object-cover para consistência visual dos blocos.
+
+#### Scenario: Imagem não 16:9 na página do artigo aparece inteira
+
+- **Dado** que um post tem uma imagem de capa com proporção diferente de 16:9 (ex.: 4:3 ou 1:1)
+- **Quando** o utilizador abre a página do artigo (post detail)
+- **Então** a capa é exibida com object-contain dentro do contentor 16:9
+- **E** a imagem completa é visível (redimensionada para caber, sem corte)
+- **E** qualquer espaço vazio (faixas) tem fundo neutro (ex.: cor muted)
+
+#### Scenario: Imagem 16:9 na página do artigo preenche o contentor
+
+- **Dado** que um post tem uma imagem de capa em proporção 16:9
+- **Quando** o utilizador abre a página do artigo
+- **Então** a capa preenche o contentor 16:9 (object-contain com imagem 16:9 não gera faixas visíveis)
+- **E** o aspecto é o de uma capa preenchida, sem faixas
+

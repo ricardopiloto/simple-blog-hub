@@ -93,7 +93,7 @@ function SortableCard({ post, displayOrder, workingListLength, isAuthenticated, 
               <img
                 src={post.cover_image || DEFAULT_POST_COVER_IMAGE}
                 alt=""
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover object-center"
               />
             </div>
           </Link>
@@ -310,7 +310,7 @@ export default function StoryIndex() {
                         <img
                           src={post.cover_image || DEFAULT_POST_COVER_IMAGE}
                           alt=""
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover object-center"
                         />
                       </div>
                     </Link>

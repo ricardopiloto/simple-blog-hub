@@ -367,3 +367,31 @@ The deploy and update documentation (e.g. **DEPLOY-DOCKER-CADDY.md**, **ATUALIZA
 - **THEN** the existing (old) API image runs, which does not contain the new migration code
 - **AND** the database schema will **not** be updated automatically; the operator would need to apply the change manually (e.g. SQL script) or rebuild and restart
 
+### Requirement: Base de dados no servidor exposta ao Docker via volume (bind mount)
+
+A documentação do projeto **deve** (SHALL) indicar que, em deploy com Docker, a **base de dados SQLite** pode ficar **no servidor** (host), numa pasta exposta ao contentor da API via **bind mount** (volume), de modo a facilitar a execução de **scripts manuais** (ex.: migrações SQL) no host com `sqlite3` sem precisar de contentores temporários. O repositório **deve** incluir um documento genérico (ex.: **EXPOR-DB-NO-HOST.md**) com passo a passo para usar essa configuração (bind mount, migração de dados desde volume nomeado se aplicável, execução de scripts no host). A documentação **pode** referir que o operador pode manter um guia **local** (ex.: em `docs/local/`) com os seus caminhos e passos específicos do servidor; esse ficheiro **não** é commitado (a pasta `docs/local/` e o padrão `*-local.md` estão no `.gitignore`).
+
+#### Scenario: Operador executa script manual no host quando a base está em pasta exposta
+
+- **Dado** que o deploy Docker usa bind mount (ex.: pasta `data/` no host montada em `/data` no contentor da API)
+- **Quando** o operador precisa de aplicar um script SQL manual (ex.: coluna em falta)
+- **Então** a documentação indica que pode executar no host, a partir da raiz do repositório (ou da pasta onde está o `blog.db`): `sqlite3 data/blog.db < backend/api/Migrations/Scripts/nome.sql`
+- **E** o documento EXPOR-DB-NO-HOST.md (ou equivalente) descreve o passo a passo genérico e, se aplicável, a migração desde um volume nomeado
+
+#### Scenario: Documentação local não é commitada
+
+- **Quando** o operador cria ou edita um guia em `docs/local/` (ex.: `expor-db-servidor.md`) com os seus caminhos específicos do servidor
+- **Então** esse ficheiro está coberto pelo `.gitignore` (pasta `docs/local/` ou padrão `*-local.md`)
+- **E** não é incluído em commits nem publicado no GitHub
+
+### Requirement: CHANGELOG descreve alterações de cada release versionada
+
+Para cada **release versionada** do projeto (tag de versão, ex.: v1.3, v1.4), o ficheiro **CHANGELOG.md** na raiz **deve** (SHALL) conter uma secção correspondente (ex.: `## [1.4]`) que descreva as **alterações** dessa versão: (a) lista das changes OpenSpec incluídas na release, com descrição breve de cada uma; (b) quando aplicável, menção à atualização da documentação do projeto e dos procedimentos de atualização/instalação. O objetivo é que qualquer leitor saiba o que foi alterado em cada versão sem depender apenas da mensagem do commit ou da tag.
+
+#### Scenario: Leitor consulta o CHANGELOG para a versão mais recente
+
+- **Quando** um utilizador abre o CHANGELOG.md (ex.: no repositório ou após clone)
+- **Então** encontra uma secção para a versão mais recente (ex.: `## [1.4]`)
+- **E** essa secção lista as alterações incluídas (changes aplicadas e, se for o caso, atualização da documentação e dos procedimentos)
+- **E** pode usar essa informação para saber o que mudou desde a versão anterior
+

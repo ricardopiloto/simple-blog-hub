@@ -1,6 +1,13 @@
 # Changelog
 
-Os releases são versionados por tag (ex.: `v1.3`, `v1.4`). O resumo detalhado das changes OpenSpec aplicadas pode ser usado na mensagem do commit de release e está também na proposta da respetiva versão em `openspec/changes/`.
+Os releases são versionados por tag (ex.: `v1.3`, `v1.4`, `v1.5`). O resumo detalhado das changes OpenSpec aplicadas pode ser usado na mensagem do commit de release e está também na proposta da respetiva versão em `openspec/changes/`.
+
+## [1.5]
+
+- persist-story-order-when-saving-index: Requisito explícito de que "Salvar ordem" no Índice da História atualiza a coluna StoryOrder no banco para refletir a ordem da tela.
+- fix-story-order-save-204-no-content: Correção do erro "Unexpected end of JSON input" ao salvar ordem no Índice; o cliente trata respostas 204 No Content sem parsear JSON.
+- add-cover-size-guidance-and-framing: Texto de ajuda no formulário de post com proporção recomendada 16:9 (ex.: 1200×675 px) para não cortar a capa; object-center nas imagens de capa (página do post, cards, índice).
+- post-page-cover-contain-for-non-16-9: Na página do artigo, capa exibida com object-contain e fundo neutro (bg-muted) para imagens fora de 16:9, mostrando a imagem inteira sem corte.
 
 ## [1.4]
 

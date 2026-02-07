@@ -58,7 +58,7 @@ docker compose build --no-cache
 docker compose up -d
 ```
 
-Isto atualiza o código, reconstrói as imagens e sobe os contentores. Os dados (SQLite) permanecem no volume; as migrações EF Core são aplicadas ao arranque da API. O passo de **reconstrução** (`docker compose build --no-cache`) é **essencial** quando há novas migrações: a nova imagem contém o código das migrações e, ao arrancar, a API aplica-as; se não reconstruir, o esquema não será atualizado.
+Isto atualiza o código, reconstrói as imagens e sobe os contentores. Os dados (SQLite) permanecem na pasta `data/` no host (bind mount); as migrações EF Core são aplicadas ao arranque da API. O passo de **reconstrução** (`docker compose build --no-cache`) é **essencial** quando há novas migrações: a nova imagem contém o código das migrações e, ao arrancar, a API aplica-as; se não reconstruir, o esquema não será atualizado.
 
 ### 2. Frontend
 
@@ -75,6 +75,8 @@ Substitui `seu-dominio.com` pelo teu domínio público e `DOCUMENT_ROOT` pela pa
 
 ### 3. Caddy (opcional)
 
+Se adicionaste ou alteraste regras no Caddyfile (ex.: para servir `/sitemap.xml` e `/robots.txt` pelo BFF), ver a secção do Caddyfile em **[DEPLOY-DOCKER-CADDY.md](DEPLOY-DOCKER-CADDY.md)** e recarregar:
+
 ```bash
 sudo systemctl reload caddy
 ```
@@ -85,7 +87,7 @@ Se precisares de aplicar scripts de banco manualmente em Docker (ex.: coluna em 
 
 ## Scripts de banco de dados (aplicação manual)
 
-Quando a API falha com "no such column" (ex.: ViewCount, IncludeInStoryOrder), podes aplicar o esquema manualmente com os scripts em `backend/api/Migrations/Scripts/`. Detalhes completos (incl. opções Docker com volume) estão no **README da API** (`backend/api/README.md`, secções "Migrações manuais" e "Troubleshooting").
+Quando a API falha com "no such column" (ex.: ViewCount, IncludeInStoryOrder), podes aplicar o esquema manualmente com os scripts em `backend/api/Migrations/Scripts/`. Com a pasta de dados no host (bind mount `data/`, predefinido), podes executar os scripts **no host** a partir de REPO_DIR — ver **[EXPOR-DB-NO-HOST.md](EXPOR-DB-NO-HOST.md)**. Detalhes completos (incl. Docker com volume nomeado) estão no **README da API** (`backend/api/README.md`, Troubleshooting).
 
 | Script | Coluna | Quando usar |
 |--------|--------|-------------|
@@ -106,6 +108,10 @@ sqlite3 blog.db < Migrations/Scripts/add_include_in_story_order_to_posts.sql
 Substitui `blog.db` pelo caminho do teu ficheiro SQLite se for outro. Executa **uma vez** por script; se a coluna já existir, o SQLite pode devolver erro (pode ignorar). Depois reinicia a API.
 
 ### Docker
+
+**Se usas a pasta `data/` no host (bind mount, predefinido):** a partir de REPO_DIR, executa no host: `sqlite3 data/blog.db < backend/api/Migrations/Scripts/add_view_count_to_posts.sql` (ou o script adequado). Depois: `docker compose restart api`. Ver **[EXPOR-DB-NO-HOST.md](EXPOR-DB-NO-HOST.md)**.
+
+**Se ainda usas volume nomeado** (configuração antiga):
 
 1. Obter o nome do volume da API: `docker volume ls | grep blog_api_data`.
 2. **Opção A** — Executar o script dentro de um contentor temporário com sqlite3 (substituir `NOME_DO_VOLUME`):

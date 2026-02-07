@@ -1,3 +1,5 @@
+# Fallback when /robots.txt is not proxied to BFF (e.g. local dev). In production, Caddy forwards /robots.txt to the BFF for dynamic content and Sitemap URL.
+
 User-agent: Googlebot
 Allow: /
 

@@ -1,6 +1,12 @@
 # Changelog
 
-Os releases são versionados por tag (ex.: `v1.3`). O resumo detalhado das changes OpenSpec aplicadas pode ser usado na mensagem do commit de release e está também na proposta da respetiva versão em `openspec/changes/`.
+Os releases são versionados por tag (ex.: `v1.3`, `v1.4`). O resumo detalhado das changes OpenSpec aplicadas pode ser usado na mensagem do commit de release e está também na proposta da respetiva versão em `openspec/changes/`.
+
+## [1.4]
+
+- add-dynamic-sitemap-and-robots: Sitemap dinâmico (GET /sitemap.xml) e robots.txt (GET /robots.txt) servidos pelo BFF; Caddy encaminha /sitemap.xml e /robots.txt para o BFF (documentado em DEPLOY-DOCKER-CADDY).
+- expose-db-on-host-for-docker: Base de dados no host via bind mount (pasta data/); documento EXPOR-DB-NO-HOST.md; documentação local em docs/local/ não commitada.
+- add-version-1-4-and-update-docs: Documentação do projeto e procedimentos de atualização/instalação revisados e alinhados para v1.4.
 
 ## [1.3]
 

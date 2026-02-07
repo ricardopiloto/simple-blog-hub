@@ -112,6 +112,12 @@ O Caddy já está no host. Configurar o **teu domínio** no Caddyfile (ex.: `/et
 
 ```caddyfile
 seu-dominio.com {
+    handle /sitemap.xml {
+        reverse_proxy 127.0.0.1:5000
+    }
+    handle /robots.txt {
+        reverse_proxy 127.0.0.1:5000
+    }
     handle /bff/* {
         reverse_proxy 127.0.0.1:5000
     }
@@ -123,8 +129,7 @@ seu-dominio.com {
 }
 ```
 
-- **Ordem importante**: o `handle /bff/*` tem de vir **antes** do `handle` dos estáticos. Caso contrário, pedidos POST para `/bff/auth/login` podem ser tratados pelo `file_server` e devolver **405 Method Not Allowed**.
-- **handle /bff/***: pedidos a `/bff/*` (incl. POST de login) são reencaminhados para o BFF em `127.0.0.1:5000` (contentor mapeado para essa porta).
+- **Ordem importante**: os `handle` de `/sitemap.xml`, `/robots.txt` e `/bff/*` têm de vir **antes** do `handle` dos estáticos. Assim, `/sitemap.xml` e `/robots.txt` são servidos pelo BFF na raiz do domínio (sitemap dinâmico e robots.txt com a linha Sitemap); pedidos a `/bff/*` (incl. POST de login) são reencaminhados para o BFF em `127.0.0.1:5000`. Caso contrário, pedidos POST para `/bff/auth/login` podem ser tratados pelo `file_server` e devolver **405 Method Not Allowed**.
 - **handle** (resto): estáticos e fallback do SPA.
 
 **Imagens de capa (upload local):** Se os autores usarem o upload de imagem de capa no formulário de post, os ficheiros são guardados num diretório configurável no BFF (`Uploads:ImagesPath`). É necessário (1) definir esse caminho em produção (ex.: volume ou pasta no host, como uma pasta irmã de DOCUMENT_ROOT, ex.: `/caminho/para/images/posts`) para que os uploads persistam entre deploys; (2) servir esse diretório em `/images/posts/` no Caddy. Exemplo no Caddyfile, **antes** do `handle` dos estáticos: `handle /images/* { root * /caminho/para/images ; file_server }`. Garantir que o BFF tem permissão de escrita nessa pasta (em Docker, montar um volume no contentor do BFF para o mesmo caminho e configurar `Uploads__ImagesPath` nesse caminho, e no host o Caddy serve a mesma pasta).
@@ -211,16 +216,16 @@ Causas comuns:
 
 ## 9. Persistência e recuperar senha do Admin
 
-- **Base de dados**: o ficheiro SQLite da API está no volume Docker `blog_api_data`, montado em `/data` dentro do contentor. Os dados persistem entre `docker compose down` e `docker compose up -d`.
+- **Base de dados**: o ficheiro SQLite da API fica **no servidor**, na pasta `data/` na raiz do repositório (bind mount para `/data` no contentor). O `blog.db` está em `REPO_DIR/data/blog.db`; podes executar scripts manuais no host com `sqlite3 data/blog.db < backend/api/Migrations/Scripts/nome.sql` (a partir de REPO_DIR). Ver **[EXPOR-DB-NO-HOST.md](EXPOR-DB-NO-HOST.md)** para detalhes e para migrar desde o volume nomeado antigo.
 
-- **Recuperar senha do Admin**: criar o ficheiro de trigger no volume e reiniciar a API:
+- **Recuperar senha do Admin**: criar o ficheiro de trigger na pasta de dados e reiniciar a API:
 
 ```bash
-docker compose exec api touch /data/admin-password-reset.trigger
+touch data/admin-password-reset.trigger
 docker compose restart api
 ```
 
-Depois fazer login com a senha **senha123** e alterar no modal. A API remove o ficheiro após o reset.
+(Em alternativa: `docker compose exec api touch /data/admin-password-reset.trigger`.) Depois fazer login com a senha **senha123** e alterar no modal. A API remove o ficheiro após o reset.
 
 ---
 
@@ -261,7 +266,7 @@ Não é necessário reiniciar o Caddy para alterações só nos estáticos; para
 | API | Só na rede Docker (`http://api:5001`), não exposta no host |
 | BFF | Exposto no host em 127.0.0.1:5000 (proxy Caddy em /bff) |
 | Env | api.env e bff.env na raiz do repo (não commitar) |
-| Volume | blog_api_data → /data no contentor da API (blog.db e trigger) |
+| Dados API | Pasta `data/` no host (bind mount → /data no contentor; blog.db e trigger) — ver EXPOR-DB-NO-HOST.md |
 
 ---
 

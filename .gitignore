@@ -37,7 +37,12 @@ backend/**/.vs/
 backend/api/*.db
 backend/api/*.db-*
 
+# Dados da API em Docker (bind mount data/)
+data/*.db
+data/*.db-*
+data/*.trigger
+
 # Deploy (documento específico do servidor/domínio)
 DEPLOY-UBUNTU-CADDY.md
 *-local.md
-docs/local/
+docs/local/*

@@ -1,0 +1,2 @@
+# Pasta para o SQLite (blog.db) e trigger do Admin quando se usa Docker com bind mount.
+# O .gitignore exclui data/*.db, data/*.db-* e data/*.trigger para não versionar dados sensíveis.

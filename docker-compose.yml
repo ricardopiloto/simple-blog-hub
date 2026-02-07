@@ -16,7 +16,7 @@ services:
     env_file:
       - api.env
     volumes:
-      - blog_api_data:/data
+      - ./data:/data
     networks:
       - blog
 
@@ -37,9 +37,6 @@ services:
       - "127.0.0.1:5000:5000"
     networks:
       - blog
-
-volumes:
-  blog_api_data:
 
 networks:
   blog:

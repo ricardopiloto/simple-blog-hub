@@ -5,11 +5,19 @@ TBD - created by archiving change add-index-pagination-filter-reorder. Update Pu
 ## Requirements
 ### Requirement: Índice da História paginado e filtrável
 
-O sistema **deve** (SHALL) exibir na página **Índice da História** (`/indice`) a lista de posts ordenados por ordem narrativa (`story_order`), com **paginação** de 6 itens por página e **filtro em tempo real** por número da ordem ou título. Os cards **devem** ser compactos, exibindo apenas **título** e **imagem** (capa), sem resumo (excerpt).
+O sistema **deve** (SHALL) exibir na página **Índice da História** (`/indice`) a lista de posts **que fazem parte da ordem da história** (campo `include_in_story_order` verdadeiro), publicados, ordenados por ordem narrativa (`story_order`), com **paginação** de 6 itens por página e **filtro em tempo real** por número da ordem ou título. Posts publicados que **não** fazem parte da ordem da história (ex.: extras, one-shots) **não** devem aparecer nesta lista, embora continuem visíveis na página inicial e na lista de artigos. Os cards **devem** ser compactos, exibindo apenas **título** e **imagem** (capa), sem resumo (excerpt).
+
+#### Scenario: Apenas posts "na história" aparecem no Índice
+
+- **Dado** que existem posts publicados, sendo alguns com "faz parte da ordem da história" ativo (ex.: posts 1, 2, 3 e 5) e pelo menos um com "faz parte da ordem da história" desativado (ex.: post 4)
+- **Quando** o utilizador acessa a página do Índice da História
+- **Então** o sistema exibe apenas os posts marcados como parte da ordem (ex.: 1, 2, 3 e 5, na ordem narrativa)
+- **E** o post 4 (não parte da história) **não** aparece na lista do Índice
+- **E** a paginação e o filtro aplicam-se apenas a essa lista filtrada
 
 #### Scenario: Lista paginada com 6 itens por página
 
-- **Dado** que existem posts publicados ordenados por `story_order`
+- **Dado** que existem posts publicados ordenados por `story_order` e marcados como parte da ordem da história
 - **Quando** o usuário acessa a página do Índice
 - **Então** o sistema deve exibir no máximo **6 itens por página**, respeitando a ordem narrativa
 - **E** deve haver controles de navegação entre páginas (ex.: anterior, próxima, ou números de página)

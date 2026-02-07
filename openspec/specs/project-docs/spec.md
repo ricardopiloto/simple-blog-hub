@@ -263,3 +263,107 @@ The README (or openspec/project.md) SHALL include a **verification** section tha
 - **THEN** all commands and paths use the **`frontend/`** directory (e.g. `cd frontend && npm run build`, copy from `frontend/dist`)
 - **AND** the "update application" or redeploy section is consistent with the same layout
 
+### Requirement: Documentação referencia o repositório do projeto (URL canónico)
+
+A documentação do projeto **deve** (SHALL) referenciar de forma explícita o **repositório do projeto no GitHub** com o URL canónico (https://github.com/ricardopiloto/simple-blog-hub). O **README.md** **deve** incluir esse URL (ex.: no início, numa secção "Repositório" ou equivalente) para que quem clona ou consulta a documentação saiba onde encontrar o código. O **openspec/project.md** **deve** mencionar o repositório onde fizer sentido (ex.: contexto do projeto ou convenções de Git). Nos guias de deploy (**DEPLOY-DOCKER-CADDY.md**, **ATUALIZAR-SERVIDOR-DOCKER-CADDY.md**), onde se instrui a clonar ou a atualizar o código (ex.: `git clone`, `git pull`), **deve** ser indicado o URL canónico como exemplo (ex.: "Ex.: https://github.com/ricardopiloto/simple-blog-hub") para facilitar a configuração em novos ambientes.
+
+#### Scenario: Leitor do README encontra o link do repositório
+
+- **Quando** um desenvolvedor ou operador abre o README.md do projeto
+- **Então** encontra uma referência clara ao repositório GitHub (URL ou secção "Repositório" com o link)
+- **E** pode usar esse URL para clonar ou partilhar o projeto
+
+#### Scenario: Guias de deploy incluem exemplo de URL para clone/atualização
+
+- **Quando** um operador segue DEPLOY-DOCKER-CADDY.md ou ATUALIZAR-SERVIDOR-DOCKER-CADDY.md e precisa de clonar ou atualizar o repositório
+- **Então** as instruções incluem o URL canónico como exemplo (ex.: `git clone https://github.com/ricardopiloto/simple-blog-hub repo`)
+- **E** não é necessário procurar o URL noutro sítio
+
+### Requirement: Deploy documentation describes upload directory for cover images
+
+When the application supports **local upload of post cover images** (stored under `images/posts` and served at `/images/posts/`), the deploy and update documentation (e.g. DEPLOY-DOCKER-CADDY.md, ATUALIZAR-SERVIDOR-DOCKER-CADDY.md) SHALL describe how to configure the upload path (e.g. `Uploads:ImagesPath` in the BFF) and how the web server must serve that directory at `/images/posts` so that uploaded covers are accessible. The documentation SHALL note that the upload directory should be persistent across deploys (e.g. not inside the frontend build output).
+
+#### Scenario: Operator configures production for cover uploads
+
+- **GIVEN** the operator is deploying with Docker and Caddy
+- **WHEN** they consult the deploy documentation for cover image uploads
+- **THEN** they find instructions to (1) set the BFF upload path (e.g. volume or host path) and (2) add a Caddyfile rule to serve that path at `/images/posts/`
+- **AND** uploaded cover images persist across redeploys and are served correctly
+
+### Requirement: Guia de atualização com secções local e Docker e lista de scripts de banco
+
+A documentação do projeto SHALL incluir um **guia de atualização** (como atualizar o código e os serviços após um `git pull`) com **secções claras** que separem:
+
+- **Atualização local (desenvolvimento)**: passos para atualizar e executar a API, o BFF e o frontend em ambiente de desenvolvimento (ex.: `dotnet run` a partir de `backend/api` e `backend/bff`, SQLite em `blog.db`), incluindo quando e como aplicar migrações ou scripts manuais se a base estiver desatualizada.
+- **Atualização Docker (produção)**: passos para atualizar no servidor com Docker (pull, rebuild das imagens, `docker compose up -d`, build do frontend e cópia para o document root), com ênfase na reconstrução da imagem da API quando há novas migrações.
+
+O guia SHALL listar os **scripts de banco de dados** que podem ser aplicados manualmente (ex.: `add_view_count_to_posts.sql`, `add_include_in_story_order_to_posts.sql`), com instruções ou referências explícitas para **cada ambiente** (local: comando `sqlite3` a partir da pasta da API; Docker: uso do volume ou cópia da base para o host, execução do script, e quando aplicável devolução ao volume). A referência ao README da API (Troubleshooting e migrações manuais) é aceitável para o detalhe completo dos comandos Docker.
+
+#### Scenario: Operador atualiza em Docker e consulta scripts de banco
+
+- **GIVEN** o operador está a atualizar o servidor com Docker (após `git pull`)
+- **WHEN** precisa de aplicar um script de banco manualmente (ex.: coluna IncludeInStoryOrder em falta)
+- **THEN** o guia de atualização contém a secção "Atualização Docker" e uma subsecção ou lista de "Scripts de banco de dados"
+- **AND** o operador encontra o script relevante (ex.: `add_include_in_story_order_to_posts.sql`) com indicação de como executar em ambiente Docker (ou referência ao README da API para os comandos completos)
+
+#### Scenario: Desenvolvedor atualiza localmente
+
+- **GIVEN** o desenvolvedor faz pull e corre a API localmente (`cd backend/api && dotnet run`)
+- **WHEN** consulta como atualizar em desenvolvimento
+- **THEN** o guia contém a secção "Atualização local (desenvolvimento)" com passos de build e execução
+- **AND** se precisar de scripts manuais, encontra a lista de scripts e o comando para ambiente local (ex.: `sqlite3 blog.db < Migrations/Scripts/...` a partir de `backend/api`)
+
+### Requirement: README da API documenta resolução para "no such column" (colunas de migrações)
+
+O **README** da API (`backend/api/README.md`) **deve** (SHALL) incluir na secção **Troubleshooting** a descrição de como resolver erros do tipo **"no such column: p.<NomeColuna>"** quando a coluna foi introduzida por uma migração EF Core mas ainda não existe na base de dados (ex.: API não foi reconstruída/reiniciada após atualização do código). Para cada coluna que tenha um script SQL manual de migração (ex.: ViewCount, IncludeInStoryOrder), o README **deve** indicar: (1) recomendar reconstruir e reiniciar a API para que `MigrateAsync()` aplique as migrações ao arranque; (2) alternativa: executar o script SQL correspondente contra o ficheiro da base de dados e reiniciar a API. O objetivo é que um operador que encontre o erro saiba como corrigi-lo sem alterar código.
+
+#### Scenario: Operador vê "no such column: p.IncludeInStoryOrder"
+
+- **Dado** que a API lança SQLite Error "no such column: p.IncludeInStoryOrder"
+- **Quando** o operador abre o README da API na secção Troubleshooting
+- **Então** encontra instruções para este erro (reconstruir e reiniciar a API, ou executar o script `add_include_in_story_order_to_posts.sql`)
+- **E** após aplicar uma das opções e reiniciar a API, o erro deixa de ocorrer
+
+### Requirement: Frontend build free of nullish-coalescing syntax errors
+
+The frontend codebase SHALL use the nullish coalescing operator (`??`) and logical OR (`||`) in the same expression only when the intended precedence is made explicit with parentheses, so that the build (Vite/react-swc) does not fail with "Nullish coalescing operator(??) requires parens when mixing with logical operators". This applies in particular to error-message handling in API client code (e.g. `uploadCoverImage`) where a fallback chain (e.g. `j.error ?? (text || res.statusText)`) is used.
+
+#### Scenario: Frontend builds after fix
+
+- **GIVEN** the upload cover error handling in `client.ts` uses `j.error ?? (text || res.statusText)`
+- **WHEN** the developer runs `npm run build` or `npm run dev` in the frontend
+- **THEN** the build completes without syntax errors related to `??` and `||`
+- **AND** the error message shown on upload failure still prefers the JSON `error` field when present
+
+### Requirement: API usa path determinístico para a base SQLite (Content Root)
+
+A API **deve** (SHALL) resolver paths relativos na connection string SQLite ("Data Source") **relativamente ao Content Root** da aplicação (e não ao diretório de trabalho do processo), de modo que `MigrateAsync()` e todo o runtime usem **o mesmo ficheiro** de base de dados. Isto evita que, consoante o sítio de onde se invoca `dotnet run`, um ficheiro `blog.db` diferente seja usado e que as migrações pareçam "não estar a ser aplicadas" (por aplicarem-se a outro ficheiro). A documentação da API (README) **deve** indicar que o cenário recomendado para desenvolvimento local é executar a API a partir de `backend/api` (`cd backend/api && dotnet run`), para que o `blog.db` fique nessa pasta e as migrações ao arranque se apliquem a esse ficheiro sem necessidade de scripts manuais.
+
+#### Scenario: Operador corre build e run a partir de backend/api e migrações aplicam-se
+
+- **Dado** que existem migrações EF Core pendentes (ex.: coluna IncludeInStoryOrder)
+- **Quando** o operador executa `cd backend/api && dotnet build && dotnet run`
+- **Então** a API usa o ficheiro `blog.db` em `backend/api` (path resolvido pelo Content Root)
+- **E** `MigrateAsync()` aplica as migrações pendentes a esse ficheiro ao arranque
+- **E** não é necessário executar scripts SQL manuais para colunas introduzidas por essas migrações
+
+### Requirement: API applies migrations at startup; deploy docs state rebuild required for schema updates
+
+The API SHALL apply EF Core migrations **automatically at startup**: `MigrateAsync()` (or equivalent) SHALL be run before any seed or startup logic that writes to the database, so that the schema is up to date before seed or admin user creation. This is the **primary** way the database schema is updated when a new version of the API is deployed.
+
+The deploy and update documentation (e.g. **DEPLOY-DOCKER-CADDY.md**, **ATUALIZAR-SERVIDOR-DOCKER-CADDY.md**) SHALL state **clearly** that when a new version includes **database schema changes** (new EF Core migrations), the operator **must rebuild** the API image (e.g. `docker compose build api` or `docker compose build --no-cache`) before starting the containers (`docker compose up -d`). The reason is that the new migration code is compiled into the API image; if the operator only runs `up -d` without rebuilding, the **old image** (without the new migrations) runs, and the schema will **not** be updated automatically. After rebuilding, when the new container starts, `MigrateAsync()` runs and applies any pending migrations. The API README (e.g. backend/api/README.md) SHALL also mention that when deploying with Docker, rebuilding the API image is required for schema updates so that migrations run automatically on startup.
+
+#### Scenario: Deploy with new migration — rebuild and migrations run automatically
+
+- **GIVEN** a new version of the code includes a new EF Core migration (e.g. a new column or table)
+- **WHEN** the operator deploys by running `git pull`, then `docker compose build --no-cache api` (or `docker compose build api`), then `docker compose up -d`
+- **THEN** the new API image contains the new migration assembly
+- **AND** when the API container starts, `MigrateAsync()` runs and applies the pending migration(s)
+- **AND** the database schema is updated **without** the operator having to run manual SQL or a separate migration command
+
+#### Scenario: Skipping rebuild prevents schema update
+
+- **GIVEN** a new version includes a new migration but the operator runs only `docker compose up -d` (without rebuilding the API image)
+- **THEN** the existing (old) API image runs, which does not contain the new migration code
+- **AND** the database schema will **not** be updated automatically; the operator would need to apply the change manually (e.g. SQL script) or rebuild and restart
+

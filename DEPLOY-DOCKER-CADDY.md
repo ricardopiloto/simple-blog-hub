@@ -108,25 +108,26 @@ O Caddy já está no host. Configurar o domínio **blog.1nodado.com.br** (ou o t
 
 ```caddyfile
 blog.1nodado.com.br {
-    root * /var/www/blog/dist
-    file_server
-    try_files {path} /index.html
     handle /bff/* {
         reverse_proxy 127.0.0.1:5000
+    }
+    handle {
+        root * /var/www/blog/dist
+        file_server
+        try_files {path} /index.html
     }
 }
 ```
 
-- **root** e **file_server**: servem os estáticos do frontend.
-- **try_files {path} /index.html**: fallback para o SPA (React Router).
-- **handle /bff/***: pedidos a `/bff/*` são reencaminhados para o BFF em `127.0.0.1:5000` (contentor mapeado para essa porta).
+- **Ordem importante**: o `handle /bff/*` tem de vir **antes** do `handle` dos estáticos. Caso contrário, pedidos POST para `/bff/auth/login` podem ser tratados pelo `file_server` e devolver **405 Method Not Allowed**.
+- **handle /bff/***: pedidos a `/bff/*` (incl. POST de login) são reencaminhados para o BFF em `127.0.0.1:5000` (contentor mapeado para essa porta).
+- **handle** (resto): estáticos e fallback do SPA.
 
 Recarregar o Caddy:
 
 ```bash
 sudo systemctl reload caddy
 ```
-
 Validar a configuração (opcional): `sudo caddy validate --config /etc/caddy/Caddyfile`.
 
 ---
@@ -218,6 +219,8 @@ Depois fazer login com a senha **senha123** e alterar no modal. A API remove o f
 ---
 
 ## 10. Atualizar a aplicação (deploy posterior)
+
+Para um guia dedicado apenas à atualização, ver **[ATUALIZAR-SERVIDOR-DOCKER-CADDY.md](ATUALIZAR-SERVIDOR-DOCKER-CADDY.md)**.
 
 **Backend (API e BFF):**
 

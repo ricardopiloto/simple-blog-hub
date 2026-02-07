@@ -48,12 +48,22 @@ export async function fetchPosts(order: OrderBy = 'date'): Promise<Post[]> {
 }
 
 /**
- * Get a single post by slug from BFF (public).
+ * Get a single post by slug from BFF. When the user is logged in, the request includes the token so the BFF returns view_count.
  */
 export async function fetchPostBySlug(slug: string): Promise<Post | null> {
   const base = getBffBaseUrl();
+  const url = `${base}/bff/posts/${encodeURIComponent(slug)}`;
+  const token = authStorage.getToken();
+  const headers: HeadersInit = { Accept: 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
   try {
-    return await fetchJson<Post>(`${base}/bff/posts/${encodeURIComponent(slug)}`);
+    const res = await fetch(url, { headers });
+    if (res.status === 404) return null;
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`BFF error: ${res.status} ${text || res.statusText}`);
+    }
+    return (await res.json()) as Post;
   } catch (e) {
     if (e instanceof Error && e.message === 'Not found') return null;
     throw e;

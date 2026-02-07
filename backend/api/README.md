@@ -37,7 +37,26 @@ A primeira execução aplica as migrations e insere o seed (1 autor, 5 posts). O
 
 Respostas em JSON com formato compatível ao frontend (snake_case: `cover_image`, `published_at`, `story_order`, `author` aninhado).
 
+## Migrações manuais (upgrade)
+
+Se estiver a atualizar de uma versão **anterior** que não tinha a coluna **ViewCount** (contagem de visualizações por post) e preferir aplicar o schema manualmente em vez de depender do `MigrateAsync()` na arrancada da API, pode executar o script SQL em `Migrations/Scripts/add_view_count_to_posts.sql`:
+
+```bash
+sqlite3 blog.db < Migrations/Scripts/add_view_count_to_posts.sql
+```
+
+(Substitua `blog.db` pelo caminho do seu ficheiro SQLite.) Execute **uma vez**. Se a coluna já existir (por exemplo, a migração EF já foi aplicada), o SQLite devolverá erro; pode ignorar e não voltar a executar.
+
 ## Troubleshooting
+
+**Se aparecer "no such column: p.ViewCount" (ou "no such column: ViewCount"):** a base de dados foi criada antes da migração que adiciona a coluna ViewCount. Aplique a migração manualmente (a partir da pasta `backend/api`, onde está o `blog.db`):
+
+```bash
+cd backend/api
+sqlite3 blog.db < Migrations/Scripts/add_view_count_to_posts.sql
+```
+
+Se o `blog.db` estiver noutro caminho (ex.: definido em `ConnectionStrings:DefaultConnection`), use esse caminho em vez de `blog.db`. Depois reinicie a API.
 
 **Se o build falhar:**
 

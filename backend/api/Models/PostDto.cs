@@ -43,6 +43,9 @@ public class PostDto
     [JsonPropertyName("author_id")]
     public string? AuthorId { get; set; }
 
+    [JsonPropertyName("view_count")]
+    public int ViewCount { get; set; }
+
     [JsonPropertyName("author")]
     public AuthorDto Author { get; set; } = null!;
 

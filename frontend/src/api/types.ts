@@ -12,6 +12,8 @@ export interface Post {
   updated_at: string;
   story_order: number;
   author_id?: string;
+  /** Present only when the user is logged in (BFF includes it for authenticated requests). */
+  view_count?: number;
   author: {
     name: string;
     avatar: string | null;

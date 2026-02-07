@@ -136,6 +136,8 @@ public class PostsController : ControllerBase
             .FirstOrDefaultAsync(p => p.Slug == slug, cancellationToken);
         if (post == null)
             return NotFound();
+        post.ViewCount++;
+        await _db.SaveChangesAsync(cancellationToken);
         return Ok(ToDto(post, contentAsHtml: true, includeAuthorId: false, includeCollaborators: false));
     }
 
@@ -166,7 +168,8 @@ public class PostsController : ControllerBase
             CreatedAt = now,
             UpdatedAt = now,
             StoryOrder = request.StoryOrder,
-            AuthorId = authorId.Value
+            AuthorId = authorId.Value,
+            ViewCount = 0
         };
         _db.Posts.Add(post);
         await _db.SaveChangesAsync(cancellationToken);
@@ -319,6 +322,7 @@ public class PostsController : ControllerBase
             CreatedAt = p.CreatedAt.ToString("O"),
             UpdatedAt = p.UpdatedAt.ToString("O"),
             StoryOrder = p.StoryOrder,
+            ViewCount = p.ViewCount,
             Author = new AuthorDto { Name = p.Author.Name, Avatar = p.Author.AvatarUrl, Bio = p.Author.Bio }
         };
         if (includeAuthorId)

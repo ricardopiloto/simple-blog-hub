@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using BlogBff.Models;
@@ -225,7 +226,7 @@ public class PostsController : ControllerBase
     }
 
     /// <summary>
-    /// GET /bff/posts/{slug} — post por slug (público; conteúdo em HTML).
+    /// GET /bff/posts/{slug} — post por slug (público; conteúdo em HTML). view_count only when authenticated.
     /// </summary>
     [HttpGet("{slug}")]
     public async Task<IActionResult> GetBySlug(string slug, CancellationToken cancellationToken = default)
@@ -238,6 +239,31 @@ public class PostsController : ControllerBase
         if (!response.IsSuccessStatusCode)
             return StatusCode((int)response.StatusCode);
         var content = await response.Content.ReadAsStringAsync(cancellationToken);
+        if (!(User.Identity?.IsAuthenticated == true))
+        {
+            try
+            {
+                using var doc = JsonDocument.Parse(content);
+                var root = doc.RootElement;
+                var writer = new System.IO.MemoryStream();
+                using (var jsonWriter = new Utf8JsonWriter(writer, new JsonWriterOptions { Indented = false }))
+                {
+                    jsonWriter.WriteStartObject();
+                    foreach (var prop in root.EnumerateObject())
+                    {
+                        if (prop.Name.Equals("view_count", StringComparison.OrdinalIgnoreCase))
+                            continue;
+                        prop.WriteTo(jsonWriter);
+                    }
+                    jsonWriter.WriteEndObject();
+                }
+                content = System.Text.Encoding.UTF8.GetString(writer.ToArray());
+            }
+            catch
+            {
+                // If parse fails, return original content (view_count may still be present)
+            }
+        }
         return Content(content, "application/json");
     }
 }

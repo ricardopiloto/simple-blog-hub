@@ -66,6 +66,12 @@ export function Header() {
                   <User className="h-4 w-4" />
                   Área do autor
                 </Link>
+                <Link
+                  to="/area-autor/contas"
+                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Contas
+                </Link>
                 <button
                   type="button"
                   onClick={handleLogout}

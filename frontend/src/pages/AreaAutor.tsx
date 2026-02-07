@@ -1,13 +1,12 @@
-import { useEffect, useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useMemo, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
-import { fetchAllPostsForAuthorArea, deletePost, updateUser } from '@/api/client';
-import { PASSWORD_CRITERIA_HELP, isValidPassword } from '@/lib/constants';
+import { fetchAllPostsForAuthorArea, deletePost } from '@/api/client';
+import type { Post } from '@/api/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   AlertDialog,
@@ -24,9 +23,7 @@ import {
 export default function AreaAutor() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { author, logout, userId, isAdmin, setMustChangePassword } = useAuth();
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const { author, logout, isAdmin } = useAuth();
   const { data: posts, isLoading, error } = useQuery({
     queryKey: ['posts', 'author-area'],
     queryFn: () => fetchAllPostsForAuthorArea(),
@@ -62,21 +59,25 @@ export default function AreaAutor() {
     return false;
   };
 
-  const changePasswordMutation = useMutation({
-    mutationFn: (password: string) => updateUser(userId ?? '', { password }),
-    onSuccess: () => {
-      setNewPassword('');
-      setConfirmPassword('');
-      setMustChangePassword(false);
-    },
-  });
+  const [filterQuery, setFilterQuery] = useState('');
 
-  function handleChangePassword(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    if (newPassword.trim() && newPassword === confirmPassword && userId) {
-      changePasswordMutation.mutate(newPassword.trim());
-    }
-  }
+  const filteredPosts = useMemo(() => {
+    if (!posts) return [];
+    const q = filterQuery.trim().toLowerCase();
+    if (!q) return posts;
+    return posts.filter((post: Post) => {
+      const titleMatch = post.title.toLowerCase().includes(q);
+      const authorMatch = post.author?.name?.toLowerCase().includes(q);
+      const dateStr = post.published_at
+        ? new Date(post.published_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+        : '';
+      const isoDate = post.published_at ? new Date(post.published_at).toISOString().slice(0, 10) : '';
+      const dateMatch = dateStr.includes(q) || isoDate.includes(q);
+      return titleMatch || authorMatch || dateMatch;
+    });
+  }, [posts, filterQuery]);
+
+  const showScroll = filteredPosts.length > 10;
 
   return (
     <Layout>
@@ -92,11 +93,6 @@ export default function AreaAutor() {
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              {isAdmin && (
-                <Button variant="outline" asChild>
-                  <Link to="/area-autor/contas">Contas</Link>
-                </Button>
-              )}
               <Button asChild>
                 <Link to="/area-autor/posts/novo">Novo post</Link>
               </Button>
@@ -116,8 +112,22 @@ export default function AreaAutor() {
               ))}
             </div>
           ) : posts && posts.length > 0 ? (
-            <ul className="space-y-3">
-              {posts.map((post) => (
+            <>
+              <div className="mb-4">
+                <Input
+                  type="search"
+                  placeholder="Pesquisar por autor, título ou data"
+                  value={filterQuery}
+                  onChange={(e) => setFilterQuery(e.target.value)}
+                  className="max-w-md"
+                  aria-label="Pesquisar por autor, título ou data"
+                />
+              </div>
+              <div
+                className={showScroll ? 'overflow-y-auto max-h-[32rem] rounded-lg border bg-muted/30' : ''}
+              >
+                <ul className="space-y-3 p-1">
+                  {filteredPosts.map((post) => (
                 <li
                   key={post.id}
                   className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-card p-4"
@@ -139,6 +149,7 @@ export default function AreaAutor() {
                       {(post.author?.name || (post.collaborators && post.collaborators.length > 0)) && (post.slug || post.published) && ' · '}
                       {post.slug}
                       {post.published ? ' · Publicado' : ' · Rascunho'}
+                      {typeof post.view_count === 'number' && ` · ${post.view_count} visualizações`}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
@@ -177,56 +188,19 @@ export default function AreaAutor() {
                     ) : null}
                   </div>
                 </li>
-              ))}
-            </ul>
+                  ))}
+                </ul>
+              </div>
+              {filterQuery.trim() && filteredPosts.length === 0 && (
+                <p className="text-muted-foreground mt-2">Nenhum post corresponde à pesquisa.</p>
+              )}
+            </>
           ) : (
             <p className="text-muted-foreground">
               Nenhum post no blog.
             </p>
           )}
 
-          <div className="mt-12 pt-8 border-t">
-            <h2 className="font-serif text-xl font-semibold text-foreground mb-4">Alterar minha senha</h2>
-            <p className="text-sm text-muted-foreground mb-4">{PASSWORD_CRITERIA_HELP}</p>
-            <form onSubmit={handleChangePassword} className="flex flex-wrap items-end gap-4 max-w-md">
-              <div className="space-y-2 flex-1 min-w-[180px]">
-                <Label htmlFor="new-password-area">Nova senha</Label>
-                <Input
-                  id="new-password-area"
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="••••••••"
-                  disabled={changePasswordMutation.isPending}
-                />
-              </div>
-              <div className="space-y-2 flex-1 min-w-[180px]">
-                <Label htmlFor="confirm-password-area">Confirmar senha</Label>
-                <Input
-                  id="confirm-password-area"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="••••••••"
-                  disabled={changePasswordMutation.isPending}
-                />
-              </div>
-              <Button
-                type="submit"
-                disabled={
-                  !userId ||
-                  !newPassword.trim() ||
-                  newPassword !== confirmPassword ||
-                  !isValidPassword(newPassword) ||
-                  changePasswordMutation.isPending
-                }
-              >
-                {changePasswordMutation.isPending ? 'Salvando…' : 'Alterar senha'}
-              </Button>
-            </form>
-            {changePasswordMutation.isSuccess && <p className="text-sm text-green-600 dark:text-green-400 mt-2">Senha alterada com sucesso.</p>}
-            {changePasswordMutation.error && <p className="text-sm text-destructive mt-2">{changePasswordMutation.error instanceof Error ? changePasswordMutation.error.message : 'Erro ao alterar senha.'}</p>}
-          </div>
         </div>
       </section>
     </Layout>

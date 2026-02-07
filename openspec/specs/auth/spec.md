@@ -177,3 +177,95 @@ When the API starts, the system SHALL ensure that a user account exists for the 
 - **THEN** the system does not create a duplicate user
 - **AND** the existing account and password remain unchanged
 
+### Requirement: Default admin email when not configured
+
+When **Admin:Email** (appsettings or environment `Admin__Email`) is **not** set or is empty, the system **SHALL** use the default email **admin@admin.com** for the initial admin account. The API **SHALL** create the initial admin user with this email (and default password, e.g. `senha123`) on first run when no user with that email exists; the user **SHALL** have `MustChangePassword = true` so that the operator must change the password on first login. The service that determines whether a user is the Admin (e.g. IsAdminAsync) **SHALL** use this same default email when Admin:Email is not configured, so that the account created at first run is recognised as Admin without any configuration.
+
+#### Scenario: First run without Admin:Email configured creates admin@admin.com
+
+- **Given** the API is started for the first time (empty database or no user with the default admin email) and **Admin:Email** is not set in configuration
+- **When** the application runs the initial admin creation logic
+- **Then** the system creates an Author and a User with email **admin@admin.com** and the default password (e.g. `senha123`), with MustChangePassword = true
+- **And** the operator can log in with admin@admin.com and the default password and is required to change the password in the modal on first access
+- **And** that user is recognised as Admin (e.g. IsAdminAsync returns true for that author)
+
+#### Scenario: Admin password reset trigger works with default admin email
+
+- **Given** Admin:Email is not configured (so the admin email is admin@admin.com)
+- **When** the operator creates the admin password reset trigger file and restarts the API
+- **Then** the API resets the password of the user with email **admin@admin.com** to the default and sets MustChangePassword = true
+- **And** the trigger file is removed after processing
+
+### Requirement: Non-admin users see only own profile in Contas and can edit own bio
+
+Any **authenticated author** (Admin or not) SHALL be able to access the **Contas** screen (e.g. `/area-autor/contas`). **Non-admin** users SHALL see **only their own user** (a single profile) on that screen, not the list of all accounts. The API SHALL provide a "current user" endpoint (e.g. GET /api/users/me or equivalent via BFF) that returns the authenticated user's profile (id, email, author name, author bio) so the frontend can display a single-profile view for non-admin. On the Contas screen, non-admin users SHALL be able to **edit their own author name**, **author bio** (descrição do autor, breve frase exibida na página do artigo), and **password**. The API SHALL allow PUT (or equivalent) on the user resource for the **own** user id (when the authenticated author's user id matches the target id) to update author name, author bio, and password; only the Admin SHALL be allowed to update other users or to update email. The Admin SHALL continue to see the list of all users and to create, edit, reset-password, and delete other accounts.
+
+#### Scenario: Non-admin opens Contas and sees only own profile
+
+- **GIVEN** the user is logged in and is **not** the Admin (their email does not match the configured Admin email)
+- **WHEN** they navigate to the Contas screen (e.g. `/area-autor/contas`)
+- **THEN** the screen SHALL display only **one** profile (their own: their email, author name, author bio if set)
+- **AND** the screen SHALL NOT display the list of other users or the "Nova conta" (create user) action
+- **AND** they SHALL see an "Editar" (or equivalent) action to edit that single profile
+
+#### Scenario: Non-admin edits own author bio and change persists
+
+- **GIVEN** the user is logged in as a non-admin author
+- **WHEN** they open Contas, click Editar on their profile, change the **author bio** (descrição do autor) field, and save
+- **THEN** the API SHALL accept the update (PUT or equivalent for their own user id with the bio field)
+- **AND** the new bio SHALL be persisted and SHALL appear in the author's profile and in the post page (author description) when that author has published posts
+- **AND** the user SHALL be able to edit their own author name and password in the same way (own profile only)
+
+#### Scenario: Admin sees list of all users in Contas
+
+- **GIVEN** the user is logged in as the Admin (email matches configured Admin email)
+- **WHEN** they navigate to the Contas screen
+- **THEN** the screen SHALL display the **list of all users** (all accounts)
+- **AND** the Admin SHALL see actions to create new users, edit any user (including email, author name, author bio, password), reset password, and delete users (subject to existing policy, e.g. not delete self if applicable)
+
+### Requirement: Área do Autor dashboard does not duplicate Contas or password change
+
+The **Área do Autor** (author dashboard) page SHALL NOT display a **"Contas"** button; access to the Contas screen SHALL be only via the **main navigation** (header), for all authenticated authors. The Área do Autor SHALL NOT display an **"Alterar minha senha"** section; changing the user's password SHALL be done in the **Contas** screen (edit user form). The dashboard SHALL remain focused on listing and managing posts (Novo post, Editar, Excluir), while profile and password are managed in Contas.
+
+#### Scenario: Author uses header for Contas; dashboard shows only posts
+
+- **GIVEN** the user is logged in as an author (Admin or non-admin)
+- **WHEN** they open the Área do Autor page
+- **THEN** they see only the list of posts and the "Novo post" action (and per-post Editar/Excluir as applicable)
+- **AND** they do NOT see a "Contas" button or an "Alterar minha senha" section on that page
+- **AND** they can open Contas via the header (menu superior) to edit their profile (author name, author bio) or change their password
+
+### Requirement: Contas menu visible to all authenticated authors
+
+The frontend SHALL display the **"Contas"** menu entry (link or button) to **all authenticated authors** (Admin and non-admin), not only to the Admin. The entry SHALL appear in (1) the **main navigation** (header), in both desktop and mobile layouts, and (2) the **Área do autor** dashboard page, so that any logged-in author can discover and open the Contas screen. On the Contas screen, non-admin users see only their own profile and can edit their author name, author bio, and password; Admin see the list of all accounts. Hiding the Contas entry from non-admin is not permitted, so that the behavior matches the auth requirement that any authenticated author SHALL be able to access the Contas screen.
+
+#### Scenario: Non-admin author sees Contas in header and dashboard
+
+- **GIVEN** the user is logged in as a non-admin author (their email does not match the configured Admin email)
+- **WHEN** they view the site header (desktop or mobile) or the Área do autor dashboard page
+- **THEN** they SHALL see a "Contas" link or button
+- **AND** when they click it, they SHALL navigate to the Contas screen (e.g. `/area-autor/contas`) and see only their own profile (single-user view, "Meu perfil")
+- **AND** they SHALL be able to edit their author name, author bio, and password from that screen
+
+### Requirement: First-time SQLite setup creates admin user from API configuration
+
+During **first-time SQLite setup** (first installation, when the database is created and seed runs), the API SHALL create the **initial admin user** with **full admin permissions** and with the **email** taken from the API configuration. The configuration SHALL be read from the process environment (e.g. when running under systemd or Docker, from `api.env` via `Admin__Email`) or from appsettings (`Admin:Email`). When `Admin:Email` / `Admin__Email` is **not** set or is empty, the system SHALL use the default email **admin@admin.com**. The created user SHALL be the Admin (recognised by the service that determines admin identity, e.g. `IsAdminAsync`, so that the operator can manage accounts, reset passwords, and perform all admin-only operations after first login).
+
+#### Scenario: First install with Admin__Email in api.env creates admin with that email
+
+- **GIVEN** a fresh SQLite database (first installation)
+- **AND** the API is configured with an admin email (e.g. in `api.env`: `Admin__Email=admin@example.com`)
+- **WHEN** the API starts and runs migrations then seed (e.g. `EnsureInitialAdminUserAsync`)
+- **THEN** the system SHALL create exactly one user with email **admin@example.com** (the configured value)
+- **AND** that user SHALL have full admin permissions (e.g. `IsAdminAsync` returns true for that user's email)
+- **AND** the operator SHALL be able to log in with that email and the default password and then use admin-only features (e.g. Contas, reset passwords, create authors)
+
+#### Scenario: First install without Admin__Email creates default admin@admin.com
+
+- **GIVEN** a fresh SQLite database (first installation)
+- **AND** the API has no admin email configured (no `Admin__Email` in api.env and no `Admin:Email` in appsettings, or both empty)
+- **WHEN** the API starts and runs migrations then seed
+- **THEN** the system SHALL create exactly one user with email **admin@admin.com** (the default)
+- **AND** that user SHALL have full admin permissions
+- **AND** the operator SHALL be able to log in with admin@admin.com and the default password and use admin-only features
+

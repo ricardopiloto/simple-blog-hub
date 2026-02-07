@@ -14,6 +14,8 @@ public class Post
     public DateTime UpdatedAt { get; set; }
     public int StoryOrder { get; set; }
     public Guid AuthorId { get; set; }
+    /// <summary>Number of times the post has been viewed (public GET by slug). Only exposed to authenticated users via BFF.</summary>
+    public int ViewCount { get; set; }
 
     public Author Author { get; set; } = null!;
     public ICollection<PostCollaborator> Collaborators { get; set; } = new List<PostCollaborator>();

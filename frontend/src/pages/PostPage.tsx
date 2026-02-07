@@ -2,7 +2,7 @@ import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Eye } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { DEFAULT_POST_COVER_IMAGE } from '@/lib/constants';
 import { usePost, usePostsByStoryOrder } from '@/hooks/usePosts';
@@ -122,6 +122,15 @@ export default function PostPage() {
                 <>
                   <span>•</span>
                   <span>{formattedDate}</span>
+                </>
+              )}
+              {typeof post.view_count === 'number' && (
+                <>
+                  <span>•</span>
+                  <span className="flex items-center gap-1.5" title="visualizações">
+                    <Eye className="h-4 w-4" />
+                    <span>{post.view_count}</span>
+                  </span>
                 </>
               )}
             </div>

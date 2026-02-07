@@ -1,5 +1,5 @@
 import { authStorage } from '@/auth/storage';
-import type { Post, OrderBy, CreateOrUpdatePostPayload, AuthorListItem, UserListItem, CreateUserPayload, UpdateUserPayload, NextStoryOrderResponse } from './types';
+import type { Post, OrderBy, CreateOrUpdatePostPayload, AuthorListItem, UserListItem, CreateUserPayload, UpdateUserPayload, NextStoryOrderResponse, PagedPostsResponse } from './types';
 
 const defaultBffUrl = 'http://localhost:5000';
 
@@ -45,6 +45,17 @@ async function fetchWithAuth<T>(url: string, options: RequestInit = {}): Promise
 export async function fetchPosts(order: OrderBy = 'date'): Promise<Post[]> {
   const base = getBffBaseUrl();
   return fetchJson<Post[]>(`${base}/bff/posts?order=${encodeURIComponent(order)}`);
+}
+
+/**
+ * Fetch a page of published posts with optional search (title, author, date).
+ * Returns { items, total } for pagination.
+ */
+export async function fetchPostsPage(page: number, pageSize: number, search?: string): Promise<PagedPostsResponse> {
+  const base = getBffBaseUrl();
+  const params = new URLSearchParams({ order: 'date', page: String(page), pageSize: String(pageSize) });
+  if (search?.trim()) params.set('search', search.trim());
+  return fetchJson<PagedPostsResponse>(`${base}/bff/posts?${params.toString()}`);
 }
 
 /**
@@ -154,6 +165,38 @@ export async function updateStoryOrder(orders: { id: string; story_order: number
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(orders),
   });
+}
+
+/**
+ * Upload cover image (protected). Returns the public URL path for the saved image (e.g. /images/posts/xxx.jpg).
+ */
+export async function uploadCoverImage(file: File): Promise<{ url: string }> {
+  const base = getBffBaseUrl();
+  const token = authStorage.getToken();
+  if (!token) throw new Error('Unauthorized');
+  const formData = new FormData();
+  formData.append('file', file);
+  const res = await fetch(`${base}/bff/uploads/cover`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  });
+  if (res.status === 401) {
+    authStorage.clear();
+    throw new Error('Unauthorized');
+  }
+  if (!res.ok) {
+    const text = await res.text();
+    let err: string;
+    try {
+      const j = JSON.parse(text) as { error?: string };
+      err = j.error ?? (text || res.statusText);
+    } catch {
+      err = text || res.statusText;
+    }
+    throw new Error(`BFF error: ${res.status} ${err}`);
+  }
+  return res.json() as Promise<{ url: string }>;
 }
 
 /**

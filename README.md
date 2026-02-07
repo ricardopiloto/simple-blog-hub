@@ -2,6 +2,10 @@
 
 Blog de leitura para **contos e aventuras** de RPG. Interface em português. Os dados vêm do **BFF** (Backend-for-Frontend), que consome uma API interna .NET com persistência em **SQLite**.
 
+**Repositório:** [https://github.com/ricardopiloto/simple-blog-hub](https://github.com/ricardopiloto/simple-blog-hub)
+
+**Documentação:** Para **atualizar** o projeto após um pull (desenvolvimento local ou produção Docker), ver **[ATUALIZAR-SERVIDOR-DOCKER-CADDY.md](ATUALIZAR-SERVIDOR-DOCKER-CADDY.md)**. Para **instalação inicial** em servidor com Docker e Caddy, ver **[DEPLOY-DOCKER-CADDY.md](DEPLOY-DOCKER-CADDY.md)**. Os releases são versionados por tag (ex.: `v1.3`); o changelog das changes OpenSpec aplicadas está em **[CHANGELOG.md](CHANGELOG.md)** e pode ser usado na mensagem do commit de release. A documentação no repositório é **genérica** (sem domínios nem caminhos específicos); podes manter uma cópia local dos guias de deploy/atualização com os teus dados (domínio, caminhos) em ficheiros `*-local.md`, que não são commitados.
+
 ## Funcionalidades
 
 - **Página inicial**: ordenada por **data de criação** — Destaque = último post criado (entre publicados), grid de artigos recentes na mesma ordem. Apenas posts **publicados** aparecem aqui e no Índice; rascunhos só na Área do autor.
@@ -175,6 +179,8 @@ Se o Admin esquecer a senha:
 1. No servidor onde a API corre, crie o ficheiro **`admin-password-reset.trigger`** no **diretório de execução da API** (ex.: `backend/api` quando corre `dotnet run` a partir daí). Pode usar outro caminho com `Admin:PasswordResetTriggerPath` ou `Admin__PasswordResetTriggerPath`.
 2. Reinicie a API. Na inicialização, a API localiza o utilizador com e-mail `Admin:Email`, repõe a senha para `senha123`, define troca obrigatória no próximo login e **apaga o ficheiro** de trigger.
 3. O Admin faz login com `senha123`; o modal de troca de senha é exibido e deve alterar a senha.
+
+**Se a API falhar com "no such column: p.IncludeInStoryOrder" (ou similar):** a base de dados em uso não tem colunas adicionadas por migrações recentes. Ver secção **Troubleshooting** em [backend/api/README.md](backend/api/README.md) para aplicar a migração (reconstruir e reiniciar a API, ou executar o script SQL indicado).
 
 ## Outros comandos
 

@@ -193,7 +193,7 @@ The repository SHALL provide an **optional manual SQL migration script** that ad
 
 ### Requirement: Documentation for updating the application on the server (Docker/Caddy)
 
-The repository SHALL provide a **document** that describes how to **update the application code on the server** when the deployment was performed according to **DEPLOY-DOCKER-CADDY.md** (Docker for API and BFF, Caddy on the host serving the frontend and proxying `/bff`). The document SHALL be aimed at operators who have already completed the initial deployment and only need to apply a new version of the code. It SHALL include: (1) pulling the latest code from the repository (e.g. `git pull` in the repo directory); (2) rebuilding and restarting the backend containers (API and BFF), e.g. `docker compose build --no-cache` and `docker compose up -d`; (3) rebuilding the frontend (e.g. `npm install` and `npm run build` with the appropriate `VITE_BFF_URL`) and copying the built assets to the Caddy document root (e.g. `/var/www/blog/`); (4) optionally reloading Caddy when needed. The document MAY reference DEPLOY-DOCKER-CADDY.md for prerequisites and initial setup, and MAY mention when manual database migrations (e.g. SQL scripts for schema upgrades) are required when upgrading from an older version.
+The repository SHALL provide a **document** that describes how to **update the application code on the server** when the deployment was performed according to **DEPLOY-DOCKER-CADDY.md** (Docker for API and BFF, Caddy on the host serving the frontend and proxying `/bff`). The document SHALL be aimed at operators who have already completed the initial deployment and only need to apply a new version of the code. It SHALL include: (1) pulling the latest code from the repository (e.g. `git pull` in the repo directory); (2) rebuilding and restarting the backend containers (API and BFF), e.g. `docker compose build --no-cache` and `docker compose up -d`; (3) rebuilding the frontend (e.g. `npm install` and `npm run build` with the appropriate `VITE_BFF_URL`) and copying the built assets to the Caddy document root (e.g. DOCUMENT_ROOT); (4) optionally reloading Caddy when needed. The document MAY reference DEPLOY-DOCKER-CADDY.md for prerequisites and initial setup, and MAY mention when manual database migrations (e.g. SQL scripts for schema upgrades) are required when upgrading from an older version.
 
 #### Scenario: Operator updates code on server using the update document
 
@@ -205,7 +205,7 @@ The repository SHALL provide a **document** that describes how to **update the a
 
 ### Requirement: CORS validation and optional config documented; no domain in git
 
-The documentation (README and/or openspec/project.md) SHALL state that **with same-origin deployment** (frontend and BFF served under the same domain, e.g. reverse proxy serving the SPA and proxying `/bff` to the BFF), **no CORS domain configuration is required** for the application to work; the browser treats requests to the same origin as same-origin. The documentation MAY describe an optional BFF configuration (e.g. `Cors__AllowedOrigins`) to restrict CORS to specific origins; when described, it SHALL state that the **domain or origin value is set only on the server** (environment or appsettings not committed to the repository) and **must not be committed to git**. No deployment-specific domain (e.g. blog.1nodado.com.br) SHALL be hardcoded in repository code or in committed configuration files.
+The documentation (README and/or openspec/project.md) SHALL state that **with same-origin deployment** (frontend and BFF served under the same domain, e.g. reverse proxy serving the SPA and proxying `/bff` to the BFF), **no CORS domain configuration is required** for the application to work; the browser treats requests to the same origin as same-origin. The documentation MAY describe an optional BFF configuration (e.g. `Cors__AllowedOrigins`) to restrict CORS to specific origins; when described, it SHALL state that the **domain or origin value is set only on the server** (environment or appsettings not committed to the repository) and **must not be committed to git**. No deployment-specific domain (e.g. a real production domain) SHALL be hardcoded in repository code or in committed configuration files; use placeholders (e.g. seu-dominio.com) in documentation.
 
 #### Scenario: Reader learns that same-origin deploy needs no CORS config
 
@@ -217,17 +217,35 @@ The documentation (README and/or openspec/project.md) SHALL state that **with sa
 
 - **WHEN** the documentation describes optional CORS allowed origins configuration (e.g. `Cors__AllowedOrigins`)
 - **THEN** it states that the value (e.g. the public URL of the site) is set only on the server (environment variable or non-versioned appsettings)
-- **AND** no example or default in the committed repository contains a real deployment domain (e.g. blog.1nodado.com.br); placeholders like "URL do seu domínio" or "https://seu-dominio.com" may be used
+- **AND** no example or default in the committed repository contains a real deployment domain; placeholders like "URL do seu domínio" or "https://seu-dominio.com" may be used
 
 ### Requirement: Deploy doc clarifies adding Caddy block when file has other sites
 
-When the deploy documentation (e.g. DEPLOY-UBUNTU-CADDY.md) describes how to configure Caddy for the blog (e.g. a server block for blog.1nodado.com.br with static files and `/bff` reverse proxy), it SHALL state clearly that **if the Caddyfile already contains other server blocks** (for other domains or services), the deployer SHALL **add** the blog block to the existing file rather than replacing the entire Caddyfile. This prevents accidental removal of existing site configuration.
+When the deploy documentation (e.g. DEPLOY-DOCKER-CADDY.md) describes how to configure Caddy for the blog (e.g. a server block for the deployer's domain with static files and `/bff` reverse proxy), it SHALL state clearly that **if the Caddyfile already contains other server blocks** (for other domains or services), the deployer SHALL **add** the blog block to the existing file rather than replacing the entire Caddyfile. This prevents accidental removal of existing site configuration.
 
 #### Scenario: Deployer with existing Caddyfile
 
 - **WHEN** a deployer follows the deploy doc and their server already has a Caddyfile with other server blocks (e.g. for a main site or other subdomains)
 - **THEN** the doc explicitly tells them to add the blog block to the existing file, not to replace the whole Caddyfile
-- **AND** they can add the snippet without losing their current 1nodado.com.br, foundry.1nodado.com.br, or other blocks
+- **AND** they can add the snippet without losing their current server blocks (other domains or services)
+
+### Requirement: Documentação commitada genérica (open-source)
+
+The documentation **committed to the repository** SHALL NOT contain **real deployment domains** (e.g. a specific production URL) nor **server-specific absolute paths** (e.g. a maintainer's server path). It SHALL use **generic placeholders** instead: for domain, e.g. seu-dominio.com or https://seu-dominio.com; for paths, e.g. REPO_DIR (repository directory on the server) and DOCUMENT_ROOT (where the web server serves static files). The repository MAY document that the operator can keep a **local copy** of deploy/update guides (e.g. files named `*-local.md`) with their own domain and paths; such files SHALL be listed in `.gitignore` and not committed.
+
+#### Scenario: Reader does not see real domain in repo
+
+- **GIVEN** a user clones the repository or reads the documentation on GitHub
+- **WHEN** they read README, DEPLOY-DOCKER-CADDY.md, ATUALIZAR-SERVIDOR-DOCKER-CADDY.md or other versioned guides
+- **THEN** they do not find real deployment domains nor the maintainer's server-specific paths
+- **AND** they find placeholders (e.g. seu-dominio.com, REPO_DIR, DOCUMENT_ROOT) that they can replace with their own values
+
+#### Scenario: Operator keeps local documentation with specific data
+
+- **GIVEN** the operator follows the generic repo documentation for deploy
+- **WHEN** they want to keep a guide with their own domain and paths filled in (for local use on the server)
+- **THEN** the README (or equivalent doc) states that they can create a copy in a file with suffix `-local` (e.g. DEPLOY-DOCKER-CADDY.local.md) and fill in their data
+- **AND** those files are listed in `.gitignore` and are not committed
 
 ### Requirement: Documented verification after structural changes
 

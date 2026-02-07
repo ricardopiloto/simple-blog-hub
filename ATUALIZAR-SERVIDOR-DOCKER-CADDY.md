@@ -1,67 +1,134 @@
-# Atualizar o código no servidor (deploy Docker/Caddy)
+# Atualizar o código (local e Docker)
 
-Este guia é para quem **já instalou** o blog no servidor seguindo **[DEPLOY-DOCKER-CADDY.md](DEPLOY-DOCKER-CADDY.md)** (Docker para API e BFF, Caddy no host a servir o frontend e o proxy `/bff`). Aqui descreve-se apenas como **atualizar** o código após um `git pull` — não cobre a instalação inicial.
+Este guia descreve como **atualizar** o projeto após um `git pull`. Há duas secções: **Atualização local** (desenvolvimento) e **Atualização Docker** (produção). Para instalação inicial em servidor com Docker e Caddy, ver **[DEPLOY-DOCKER-CADDY.md](DEPLOY-DOCKER-CADDY.md)**.
 
----
+**Repositório:** [https://github.com/ricardopiloto/simple-blog-hub](https://github.com/ricardopiloto/simple-blog-hub)
 
-## Pré-requisitos
-
-- O servidor está configurado como em DEPLOY-DOCKER-CADDY.md: diretório do projeto (ex.: `/var/www/blog/repo`), ficheiros `api.env` e `bff.env` na raiz do repositório, Caddy a servir estáticos em `/var/www/blog/dist` e a fazer proxy de `/bff` para o BFF.
-- Tens acesso SSH (ou equivalente) ao servidor e permissão para executar `docker compose`, `npm`, e (opcionalmente) `sudo systemctl reload caddy`.
+Na secção **Atualização Docker**, usa **REPO_DIR** para o diretório do repositório no servidor (ex.: onde fizeste `git clone`) e **DOCUMENT_ROOT** para a pasta onde o Caddy serve os estáticos (para onde copias o `dist` do frontend).
 
 ---
 
-## Passos para atualizar
+## Atualização local (desenvolvimento)
+
+Para desenvolver em máquina local com API e BFF a correr por `dotnet run` e frontend por Vite:
+
+1. **Pull** do código:
+   ```bash
+   git pull
+   ```
+
+2. **API**: A partir de `backend/api` para que o `blog.db` e as migrações usem o mesmo diretório:
+   ```bash
+   cd backend/api
+   dotnet build
+   dotnet run
+   ```
+   A API executa `MigrateAsync()` ao arranque; as migrações pendentes são aplicadas ao `blog.db` nesta pasta. Se aparecer erro "no such column" (ex.: ViewCount, IncludeInStoryOrder), ver a subsecção **Scripts de banco de dados (aplicação manual)** abaixo ou o **Troubleshooting** em `backend/api/README.md`.
+
+3. **BFF**: Noutro terminal, a partir da raiz do repo:
+   ```bash
+   cd backend/bff
+   dotnet build
+   dotnet run
+   ```
+
+4. **Frontend**: Noutro terminal:
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
+
+Se a base de dados estiver desatualizada e preferires aplicar scripts SQL manualmente em vez de depender do `MigrateAsync()`, usa os comandos da secção **Scripts de banco de dados (aplicação manual)** (ambiente **Local**).
+
+---
+
+## Atualização Docker (produção)
+
+Para quem **já instalou** o blog no servidor com Docker (API e BFF em contentores, Caddy no host). Pré-requisitos: diretório do repositório no servidor (ex.: REPO_DIR), `api.env` e `bff.env` na raiz do repositório, Caddy a servir estáticos e proxy `/bff`.
 
 ### 1. Backend (API e BFF)
 
-Na raiz do repositório no servidor:
+Na raiz do repositório no servidor (REPO_DIR):
 
 ```bash
-cd /var/www/blog/repo
+cd REPO_DIR
 git pull
 docker compose build --no-cache
 docker compose up -d
 ```
 
-Isto atualiza o código, reconstrói as imagens Docker da API e do BFF e sobe os contentores. Os dados (SQLite) permanecem no volume Docker; as migrações EF Core são aplicadas ao arranque da API quando necessário.
+Isto atualiza o código, reconstrói as imagens e sobe os contentores. Os dados (SQLite) permanecem no volume; as migrações EF Core são aplicadas ao arranque da API. O passo de **reconstrução** (`docker compose build --no-cache`) é **essencial** quando há novas migrações: a nova imagem contém o código das migrações e, ao arrancar, a API aplica-as; se não reconstruir, o esquema não será atualizado.
 
 ### 2. Frontend
 
-O frontend é construído no host e servido pelo Caddy. Ajusta o domínio em `VITE_BFF_URL` se for diferente no teu caso:
+O frontend é construído no host e servido pelo Caddy:
 
 ```bash
-cd /var/www/blog/repo/frontend
+cd REPO_DIR/frontend
 npm install
-VITE_BFF_URL=https://blog.1nodado.com.br npm run build
-cp -r dist /var/www/blog/
+VITE_BFF_URL=https://seu-dominio.com npm run build
+cp -r dist DOCUMENT_ROOT
 ```
 
-Isto instala dependências, faz o build do frontend e copia os estáticos para o document root do Caddy (`/var/www/blog/dist`).
+Substitui `seu-dominio.com` pelo teu domínio público e `DOCUMENT_ROOT` pela pasta onde o Caddy serve os estáticos (ex.: onde copias o `dist`).
 
 ### 3. Caddy (opcional)
-
-Para alterações só nos estáticos, normalmente não é necessário reiniciar o Caddy. Se quiseres garantir que o Caddy recarrega a configuração:
 
 ```bash
 sudo systemctl reload caddy
 ```
 
+Se precisares de aplicar scripts de banco manualmente em Docker (ex.: coluna em falta), ver a secção **Scripts de banco de dados (aplicação manual)** (ambiente **Docker**) ou o **README da API** (`backend/api/README.md`, Troubleshooting).
+
 ---
 
-## Atualizar a partir de uma versão antiga
+## Scripts de banco de dados (aplicação manual)
 
-Se estiveres a atualizar a partir de uma versão que **não** tinha determinadas colunas ou tabelas (por exemplo, a coluna `ViewCount` nos posts), a API aplica as migrações EF Core ao arranque. Se usares um script de migração manual em vez das migrações automáticas, consulta o **README da API** (`backend/api/README.md`) ou a documentação do script (ex.: secção de migrações ou upgrade no DEPLOY-DOCKER-CADDY.md) para saber quando e como executá-lo.
+Quando a API falha com "no such column" (ex.: ViewCount, IncludeInStoryOrder), podes aplicar o esquema manualmente com os scripts em `backend/api/Migrations/Scripts/`. Detalhes completos (incl. opções Docker com volume) estão no **README da API** (`backend/api/README.md`, secções "Migrações manuais" e "Troubleshooting").
+
+| Script | Coluna | Quando usar |
+|--------|--------|-------------|
+| `add_view_count_to_posts.sql` | ViewCount (contagem de visualizações) | Erro "no such column: p.ViewCount" |
+| `add_include_in_story_order_to_posts.sql` | IncludeInStoryOrder ("faz parte da ordem da história") | Erro "no such column: p.IncludeInStoryOrder" |
+
+### Local
+
+A partir da pasta onde está o `blog.db` (ex.: `backend/api`):
+
+```bash
+cd backend/api
+sqlite3 blog.db < Migrations/Scripts/add_view_count_to_posts.sql
+# ou, para IncludeInStoryOrder:
+sqlite3 blog.db < Migrations/Scripts/add_include_in_story_order_to_posts.sql
+```
+
+Substitui `blog.db` pelo caminho do teu ficheiro SQLite se for outro. Executa **uma vez** por script; se a coluna já existir, o SQLite pode devolver erro (pode ignorar). Depois reinicia a API.
+
+### Docker
+
+1. Obter o nome do volume da API: `docker volume ls | grep blog_api_data`.
+2. **Opção A** — Executar o script dentro de um contentor temporário com sqlite3 (substituir `NOME_DO_VOLUME`):
+   ```bash
+   docker run --rm -v NOME_DO_VOLUME:/data -v $(pwd)/backend/api/Migrations/Scripts:/scripts ubuntu:22.04 sh -c "apt-get update -qq && apt-get install -y -qq sqlite3 && sqlite3 /data/blog.db < /scripts/add_view_count_to_posts.sql"
+   ```
+   Para IncludeInStoryOrder, usar `/scripts/add_include_in_story_order_to_posts.sql`.
+3. **Opção B** — Copiar a base para o host, executar o script no host e devolver ao volume (ver `backend/api/README.md`, Troubleshooting, para os comandos completos).
+
+Depois: `docker compose up -d api`.
 
 ---
 
 ## Resumo
 
-| Etapa      | Comando (resumido) |
-|-----------|---------------------|
-| Código    | `cd /var/www/blog/repo && git pull` |
-| Backend   | `docker compose build --no-cache && docker compose up -d` |
-| Frontend  | `cd frontend && npm install && VITE_BFF_URL=... npm run build && cp -r dist /var/www/blog/` |
-| Caddy     | (opcional) `sudo systemctl reload caddy` |
+| Ambiente | Etapa | Comando (resumido) |
+|----------|--------|---------------------|
+| **Local** | Código | `git pull` |
+| **Local** | API | `cd backend/api && dotnet build && dotnet run` |
+| **Local** | BFF | `cd backend/bff && dotnet run` |
+| **Local** | Frontend | `cd frontend && npm install && npm run dev` |
+| **Docker** | Código | `cd REPO_DIR && git pull` |
+| **Docker** | Backend | `docker compose build --no-cache && docker compose up -d` |
+| **Docker** | Frontend | `cd frontend && npm install && VITE_BFF_URL=https://seu-dominio.com npm run build && cp -r dist DOCUMENT_ROOT` |
 
-Para instalação inicial, problemas de arranque da API ou recuperação de senha do Admin, ver **[DEPLOY-DOCKER-CADDY.md](DEPLOY-DOCKER-CADDY.md)**.
+Para instalação inicial em servidor, recuperação de senha do Admin ou problemas de arranque, ver **[DEPLOY-DOCKER-CADDY.md](DEPLOY-DOCKER-CADDY.md)**.

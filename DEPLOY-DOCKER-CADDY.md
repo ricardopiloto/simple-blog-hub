@@ -2,7 +2,7 @@
 
 Instruções para publicar o **1noDado RPG** usando **Docker** para a API e o BFF, num servidor **Ubuntu 24.04** com **Caddy** já instalado no host. O Caddy continua a servir o frontend estático e a fazer reverse proxy para o BFF; a API corre apenas na rede interna do Docker.
 
-Fluxo: **Caddy (host)** → estáticos em `/var/www/blog/dist` e `/bff/*` → **BFF (contentor)** → **API (contentor)**.
+Fluxo: **Caddy (host)** → estáticos em DOCUMENT_ROOT (ex.: pasta onde copias o `dist`) e `/bff/*` → **BFF (contentor)** → **API (contentor)**. Usa **REPO_DIR** para o diretório do repositório no servidor e **DOCUMENT_ROOT** para a pasta onde o Caddy serve os estáticos.
 
 ---
 
@@ -28,15 +28,17 @@ Para build do frontend (no host): **Node.js** e **npm** (ex.: `sudo apt install 
 
 ## 2. Diretório e repositório
 
-Escolher um diretório para o projeto (ex.: `/var/www/blog`). Exemplo:
+Escolher um diretório para o projeto no servidor (ex.: `/opt/blog` ou `/var/www/blog`). Exemplo (substituir `/caminho/do/projeto` pelo teu caminho):
 
 ```bash
-sudo mkdir -p /var/www/blog
-sudo chown "$USER:$USER" /var/www/blog
-cd /var/www/blog
-git clone <url-do-repositório> repo
+sudo mkdir -p /caminho/do/projeto
+sudo chown "$USER:$USER" /caminho/do/projeto
+cd /caminho/do/projeto
+git clone https://github.com/ricardopiloto/simple-blog-hub repo
 cd repo
 ```
+
+Daqui em diante, **REPO_DIR** = diretório onde está o clone (ex.: `/caminho/do/projeto/repo`). **DOCUMENT_ROOT** = pasta onde o Caddy servirá os estáticos (ex.: `/caminho/do/projeto/dist`).
 
 Os ficheiros Docker estão no repositório: `backend/api/Dockerfile`, `backend/bff/Dockerfile`, `docker-compose.yml`.
 
@@ -82,6 +84,8 @@ docker compose ps
 
 O BFF fica exposto em **127.0.0.1:5000** no host (apenas localhost). A API não está exposta; só o BFF a contacta na rede interna (`http://api:5001`).
 
+**Migrações de base de dados:** Quando uma nova versão inclui **alterações na base de dados** (novas migrações EF Core), é necessário **reconstruir** a imagem da API (`docker compose build api` ou `docker compose build --no-cache`) antes de `docker compose up -d`, para que as migrações sejam aplicadas automaticamente ao arranque do contentor. Se não reconstruir, a imagem antiga não contém as novas migrações e o esquema não será atualizado.
+
 ---
 
 ## 5. Build do frontend (no host)
@@ -89,30 +93,30 @@ O BFF fica exposto em **127.0.0.1:5000** no host (apenas localhost). A API não 
 O frontend continua a ser construído no host e servido pelo Caddy (não corre em contentor).
 
 ```bash
-cd /var/www/blog/repo/frontend
+cd REPO_DIR/frontend
 npm install
-VITE_BFF_URL=https://blog.1nodado.com.br npm run build
+VITE_BFF_URL=https://seu-dominio.com npm run build
 ```
 
-Copiar os estáticos para o document root do Caddy:
+Substituir `seu-dominio.com` pelo teu domínio público. Copiar os estáticos para o document root do Caddy (DOCUMENT_ROOT):
 
 ```bash
-cp -r /var/www/blog/repo/frontend/dist /var/www/blog/
+cp -r REPO_DIR/frontend/dist DOCUMENT_ROOT
 ```
 
 ---
 
 ## 6. Caddy: site e reverse proxy
 
-O Caddy já está no host. Configurar o domínio **blog.1nodado.com.br** (ou o teu domínio) no Caddyfile (ex.: `/etc/caddy/Caddyfile`):
+O Caddy já está no host. Configurar o **teu domínio** no Caddyfile (ex.: `/etc/caddy/Caddyfile`). Substituir `seu-dominio.com` pelo teu domínio e `/caminho/para/estaticos` por DOCUMENT_ROOT (pasta onde copiaste o `dist`):
 
 ```caddyfile
-blog.1nodado.com.br {
+seu-dominio.com {
     handle /bff/* {
         reverse_proxy 127.0.0.1:5000
     }
     handle {
-        root * /var/www/blog/dist
+        root * /caminho/para/estaticos
         file_server
         try_files {path} /index.html
     }
@@ -122,6 +126,8 @@ blog.1nodado.com.br {
 - **Ordem importante**: o `handle /bff/*` tem de vir **antes** do `handle` dos estáticos. Caso contrário, pedidos POST para `/bff/auth/login` podem ser tratados pelo `file_server` e devolver **405 Method Not Allowed**.
 - **handle /bff/***: pedidos a `/bff/*` (incl. POST de login) são reencaminhados para o BFF em `127.0.0.1:5000` (contentor mapeado para essa porta).
 - **handle** (resto): estáticos e fallback do SPA.
+
+**Imagens de capa (upload local):** Se os autores usarem o upload de imagem de capa no formulário de post, os ficheiros são guardados num diretório configurável no BFF (`Uploads:ImagesPath`). É necessário (1) definir esse caminho em produção (ex.: volume ou pasta no host, como uma pasta irmã de DOCUMENT_ROOT, ex.: `/caminho/para/images/posts`) para que os uploads persistam entre deploys; (2) servir esse diretório em `/images/posts/` no Caddy. Exemplo no Caddyfile, **antes** do `handle` dos estáticos: `handle /images/* { root * /caminho/para/images ; file_server }`. Garantir que o BFF tem permissão de escrita nessa pasta (em Docker, montar um volume no contentor do BFF para o mesmo caminho e configurar `Uploads__ImagesPath` nesse caminho, e no host o Caddy serve a mesma pasta).
 
 Recarregar o Caddy:
 
@@ -134,7 +140,7 @@ Validar a configuração (opcional): `sudo caddy validate --config /etc/caddy/Ca
 
 ## 7. Primeiro acesso
 
-1. Abrir no browser: **https://blog.1nodado.com.br**
+1. Abrir no browser a URL do teu domínio (ex.: **https://seu-dominio.com**).
 2. Ir a **Login** e entrar com o e-mail do Admin (ex.: definido em `Admin__Email` ou **admin@admin.com**) e senha **senha123**.
 3. Concluir a **troca obrigatória de senha** no modal.
 
@@ -220,24 +226,26 @@ Depois fazer login com a senha **senha123** e alterar no modal. A API remove o f
 
 ## 10. Atualizar a aplicação (deploy posterior)
 
-Para um guia dedicado apenas à atualização, ver **[ATUALIZAR-SERVIDOR-DOCKER-CADDY.md](ATUALIZAR-SERVIDOR-DOCKER-CADDY.md)**.
+As atualizações subsequentes seguem o guia **[ATUALIZAR-SERVIDOR-DOCKER-CADDY.md](ATUALIZAR-SERVIDOR-DOCKER-CADDY.md)**. Esse documento descreve os passos de atualização **Docker** (e também **local**, para desenvolvimento) e lista os **scripts de banco de dados** que podem ser aplicados manualmente (ViewCount, IncludeInStoryOrder), com instruções para cada ambiente.
 
 **Backend (API e BFF):**
 
 ```bash
-cd /var/www/blog/repo
+cd REPO_DIR
 git pull
 docker compose build --no-cache
 docker compose up -d
 ```
 
+O passo `docker compose build --no-cache` é **necessário para atualizações do esquema**: quando há novas migrações EF Core, a reconstrução garante que a nova imagem da API as inclui, e as migrações são aplicadas automaticamente quando o contentor arranca. Se omitir o build, o esquema não será atualizado.
+
 **Frontend:**
 
 ```bash
-cd /var/www/blog/repo/frontend
+cd REPO_DIR/frontend
 npm install
-VITE_BFF_URL=https://blog.1nodado.com.br npm run build
-cp -r dist /var/www/blog/
+VITE_BFF_URL=https://seu-dominio.com npm run build
+cp -r dist DOCUMENT_ROOT
 ```
 
 Não é necessário reiniciar o Caddy para alterações só nos estáticos; para garantir: `sudo systemctl reload caddy`.
@@ -248,8 +256,8 @@ Não é necessário reiniciar o Caddy para alterações só nos estáticos; para
 
 | Item | Valor |
 |------|--------|
-| Domínio | blog.1nodado.com.br (ajustar no Caddyfile) |
-| Estáticos | /var/www/blog/dist (build no host a partir de `repo/frontend`) |
+| Domínio | Teu domínio (ex.: seu-dominio.com; configurar no Caddyfile) |
+| Estáticos | DOCUMENT_ROOT (build no host: `cd REPO_DIR/frontend && npm run build`, depois copiar `dist`) |
 | API | Só na rede Docker (`http://api:5001`), não exposta no host |
 | BFF | Exposto no host em 127.0.0.1:5000 (proxy Caddy em /bff) |
 | Env | api.env e bff.env na raiz do repo (não commitar) |

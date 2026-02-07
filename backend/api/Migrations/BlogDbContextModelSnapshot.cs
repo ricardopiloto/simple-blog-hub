@@ -66,6 +66,9 @@ namespace BlogApi.Migrations
                     b.Property<string>("Excerpt")
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("IncludeInStoryOrder")
+                        .HasColumnType("INTEGER");
+
                     b.Property<bool>("Published")
                         .HasColumnType("INTEGER");
 

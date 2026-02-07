@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Data.Sqlite;
 using BlogApi.Data;
 using BlogApi.Services;
 
@@ -10,8 +11,17 @@ builder.Services.AddEndpointsApiExplorer();
 
 var connectionString = builder.Configuration.GetValue<string>("ConnectionStrings:DefaultConnection")
     ?? "Data Source=blog.db";
+// Resolve relative Data Source path against Content Root so MigrateAsync() and runtime use the same file
+// regardless of process working directory (fixes "migrations not applying" when running from different cwd).
+var csb = new SqliteConnectionStringBuilder(connectionString);
+if (!string.IsNullOrEmpty(csb.DataSource) && !Path.IsPathRooted(csb.DataSource))
+{
+    csb.DataSource = Path.Combine(builder.Environment.ContentRootPath, csb.DataSource);
+    connectionString = csb.ToString();
+}
+var resolvedConnectionString = connectionString;
 builder.Services.AddDbContext<BlogDbContext>(options =>
-    options.UseSqlite(connectionString));
+    options.UseSqlite(resolvedConnectionString));
 builder.Services.AddScoped<IAdminService, AdminService>();
 
 var app = builder.Build();
@@ -22,6 +32,8 @@ using (var scope = app.Services.CreateScope())
     var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
     await db.Database.MigrateAsync();
+    var dbPath = new SqliteConnectionStringBuilder(resolvedConnectionString).DataSource;
+    logger.LogInformation("Database migrations applied. Database file: {DbPath}", dbPath);
     await SeedData.EnsureSeedAsync(db, config);
     await SeedData.EnsureInitialAdminUserAsync(db, config);
     await SeedData.TryResetAdminPasswordByTriggerFileAsync(db, config, logger);

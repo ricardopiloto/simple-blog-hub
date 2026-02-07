@@ -1,5 +1,8 @@
 import { Link } from 'react-router-dom';
+import { Github } from 'lucide-react';
 import { DiceIcon } from '@/components/layout/DiceIcon';
+
+const GITHUB_REPO_URL = 'https://github.com/ricardopiloto/simple-blog-hub';
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
@@ -82,6 +85,17 @@ export function Footer() {
               game-icons.net
             </a>
             , CC BY 3.0.
+          </p>
+          <p className="text-xs text-muted-foreground/80">
+            <a
+              href={GITHUB_REPO_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 underline hover:text-foreground transition-colors"
+            >
+              <Github className="h-4 w-4" aria-hidden />
+              Código no GitHub
+            </a>
           </p>
         </div>
       </div>

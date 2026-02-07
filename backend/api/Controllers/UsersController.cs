@@ -181,8 +181,11 @@ public class UsersController : ControllerBase
 
         if (request.Bio != null && (isAdmin || isSelf))
         {
+            var bioTrimmed = request.Bio.Trim();
+            if (bioTrimmed.Length > 70)
+                return BadRequest("Bio must be at most 70 characters.");
             if (user.Author != null)
-                user.Author.Bio = string.IsNullOrWhiteSpace(request.Bio) ? null : request.Bio.Trim();
+                user.Author.Bio = string.IsNullOrWhiteSpace(request.Bio) ? null : bioTrimmed;
         }
 
         await _db.SaveChangesAsync(cancellationToken);

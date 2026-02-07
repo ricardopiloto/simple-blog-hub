@@ -45,6 +45,7 @@
 
 ### Git Workflow
 
+- **Repositório:** https://github.com/ricardopiloto/simple-blog-hub
 - Repositório pode ser editado via GitHub (push) ou IDE local. Convenções de branch e commit não estão documentadas no repositório; usar fluxo padrão (ex.: `main` como tronco e branches por feature/fix) até definição explícita.
 
 ## Domain Context

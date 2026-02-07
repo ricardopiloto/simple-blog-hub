@@ -40,6 +40,9 @@ public class PostDto
     [JsonPropertyName("story_order")]
     public int StoryOrder { get; set; }
 
+    [JsonPropertyName("include_in_story_order")]
+    public bool IncludeInStoryOrder { get; set; }
+
     [JsonPropertyName("author_id")]
     public string? AuthorId { get; set; }
 
@@ -60,6 +63,18 @@ public class NextStoryOrderResponse
 {
     [JsonPropertyName("next_story_order")]
     public int NextStoryOrder { get; set; }
+}
+
+/// <summary>
+/// Paginated response when GET /api/posts is called with page and pageSize (snake_case in JSON).
+/// </summary>
+public class PagedPostsResponse
+{
+    [JsonPropertyName("items")]
+    public List<PostDto> Items { get; set; } = new();
+
+    [JsonPropertyName("total")]
+    public int Total { get; set; }
 }
 
 public class CollaboratorDto
@@ -108,6 +123,9 @@ public class CreateOrUpdatePostRequest
 
     [JsonPropertyName("story_order")]
     public int StoryOrder { get; set; }
+
+    [JsonPropertyName("include_in_story_order")]
+    public bool? IncludeInStoryOrder { get; set; }
 }
 
 public class AuthorDto

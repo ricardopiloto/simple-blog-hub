@@ -11,6 +11,8 @@ export interface Post {
   created_at: string;
   updated_at: string;
   story_order: number;
+  /** When false, post is excluded from Índice da História and prev/next sequence. Default true. */
+  include_in_story_order?: boolean;
   author_id?: string;
   /** Present only when the user is logged in (BFF includes it for authenticated requests). */
   view_count?: number;
@@ -36,6 +38,12 @@ export interface NextStoryOrderResponse {
   next_story_order: number;
 }
 
+/** Response from GET /bff/posts when using page and pageSize (paginated list). */
+export interface PagedPostsResponse {
+  items: Post[];
+  total: number;
+}
+
 export interface CreateOrUpdatePostPayload {
   title: string;
   slug: string;
@@ -44,6 +52,8 @@ export interface CreateOrUpdatePostPayload {
   cover_image?: string | null;
   published: boolean;
   story_order: number;
+  /** When false, post is excluded from Índice da História. Default true. */
+  include_in_story_order?: boolean;
 }
 
 export interface UserListItem {

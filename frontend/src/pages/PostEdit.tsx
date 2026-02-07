@@ -22,6 +22,7 @@ import {
   fetchAuthors,
   addCollaborator,
   removeCollaborator,
+  uploadCoverImage,
 } from '@/api/client';
 import type { CreateOrUpdatePostPayload } from '@/api/types';
 import { useAuth } from '@/contexts/AuthContext';
@@ -57,7 +58,9 @@ export default function PostEdit() {
   const [coverImage, setCoverImage] = useState('');
   const [published, setPublished] = useState(true);
   const [storyOrder, setStoryOrder] = useState(1);
+  const [includeInStoryOrder, setIncludeInStoryOrder] = useState(true);
   const [selectedAuthorId, setSelectedAuthorId] = useState('');
+  const [uploadingCover, setUploadingCover] = useState(false);
 
   const { data: post, isLoading: loadingPost } = useQuery({
     queryKey: ['post', 'edit', id],
@@ -76,7 +79,7 @@ export default function PostEdit() {
   const { data: nextStoryOrder } = useQuery({
     queryKey: ['posts', 'next-story-order'],
     queryFn: fetchNextStoryOrder,
-    enabled: isNew,
+    enabled: true,
   });
 
   const addCollabMutation = useMutation({
@@ -104,6 +107,7 @@ export default function PostEdit() {
       setCoverImage(post.cover_image ?? '');
       setPublished(post.published);
       setStoryOrder(post.story_order);
+      setIncludeInStoryOrder(post.include_in_story_order ?? true);
     }
   }, [post]);
 
@@ -137,6 +141,10 @@ export default function PostEdit() {
   }
 
   const EXCERPT_LENGTH = 32;
+  const STORY_ORDER_THRESHOLD = 5;
+  const suggestedNext = nextStoryOrder ?? null;
+  const showStoryOrderWarning =
+    suggestedNext != null && storyOrder > suggestedNext + STORY_ORDER_THRESHOLD;
 
   function handleContentChange(value: string) {
     setContent(value);
@@ -153,6 +161,7 @@ export default function PostEdit() {
       cover_image: coverImage.trim() || null,
       published,
       story_order: storyOrder,
+      include_in_story_order: includeInStoryOrder,
     };
     if (isNew) {
       createMutation.mutate(payload);
@@ -238,8 +247,30 @@ export default function PostEdit() {
                 id="post-cover"
                 value={coverImage}
                 onChange={(e) => setCoverImage(e.target.value)}
-                placeholder="https://..."
+                placeholder="https://... ou envie um ficheiro abaixo"
                 disabled={saving}
+              />
+              <p className="text-xs text-muted-foreground">Ou envie um ficheiro (JPEG, PNG ou WebP; máx. 5 MB):</p>
+              <Input
+                id="post-cover-upload"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                disabled={saving || uploadingCover}
+                onChange={async (e) => {
+                  const f = e.target.files?.[0];
+                  if (!f) return;
+                  setUploadingCover(true);
+                  try {
+                    const { url } = await uploadCoverImage(f);
+                    setCoverImage(url);
+                  } catch (err) {
+                    console.error(err);
+                    // Could add toast; for now leave field unchanged
+                  } finally {
+                    setUploadingCover(false);
+                    e.target.value = '';
+                  }
+                }}
               />
             </div>
             <div className="flex items-center gap-2">
@@ -261,7 +292,26 @@ export default function PostEdit() {
                 onChange={(e) => setStoryOrder(Number(e.target.value) || 0)}
                 disabled={saving}
               />
+              {showStoryOrderWarning && suggestedNext != null && (
+                <p className="text-sm text-amber-600 dark:text-amber-400">
+                  Esta ordem está muito à frente da sequência atual. A próxima sugerida é {suggestedNext}.
+                </p>
+              )}
             </div>
+            <div className="flex items-center gap-2 space-y-0">
+              <Switch
+                id="post-include-in-story-order"
+                checked={includeInStoryOrder}
+                onCheckedChange={setIncludeInStoryOrder}
+                disabled={saving}
+              />
+              <Label htmlFor="post-include-in-story-order" className="cursor-pointer">
+                Faz parte da ordem da história
+              </Label>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Se desmarcado, o post não aparece no Índice da História nem nos links anterior/próximo.
+            </p>
             {isOwner && post && (
               <div className="space-y-2">
                 <Label>Colaboradores</Label>

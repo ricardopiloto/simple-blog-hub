@@ -280,9 +280,10 @@ export default function AreaContas() {
                 value={editAuthorBio}
                 onChange={(e) => setEditAuthorBio(e.target.value)}
                 placeholder='Ex.: Sonhador e amante de contos e RPG'
+                maxLength={70}
               />
               <p className="text-xs text-muted-foreground">
-                Breve frase exibida no seu perfil (ex.: &quot;&lt;Nome&gt; Sonhador e amante de contos e RPG&quot;).
+                Breve frase exibida no seu perfil. Máx. 70 caracteres ({editAuthorBio.length}/70).
               </p>
             </div>
             {isAdmin && (

@@ -21,13 +21,19 @@ public class ApiClient
         return await response.Content.ReadFromJsonAsync<LoginResponse>(cancellationToken);
     }
 
-    public async Task<HttpResponseMessage> GetPostsAsync(bool? published = true, string order = "date", CancellationToken cancellationToken = default)
+    public async Task<HttpResponseMessage> GetPostsAsync(bool? published = true, string order = "date", int? page = null, int? pageSize = null, string? search = null, CancellationToken cancellationToken = default)
     {
         var query = new List<string>();
         if (published.HasValue)
             query.Add($"published={published.Value.ToString().ToLowerInvariant()}");
         if (!string.IsNullOrEmpty(order))
             query.Add($"order={Uri.EscapeDataString(order)}");
+        if (page.HasValue)
+            query.Add($"page={page.Value}");
+        if (pageSize.HasValue)
+            query.Add($"pageSize={pageSize.Value}");
+        if (!string.IsNullOrEmpty(search))
+            query.Add($"search={Uri.EscapeDataString(search)}");
         var qs = query.Count > 0 ? "?" + string.Join("&", query) : "";
         return await _http.GetAsync($"api/posts{qs}", cancellationToken);
     }

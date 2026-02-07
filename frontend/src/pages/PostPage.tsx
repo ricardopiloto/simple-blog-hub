@@ -203,12 +203,14 @@ export default function PostPage() {
               {prevPost ? (
                 <Link
                   to={`/post/${prevPost.slug}`}
-                  className="inline-flex flex-col gap-1 text-left max-w-[min(100%,16rem)] text-muted-foreground hover:text-foreground transition-colors"
+                  className="inline-flex flex-col gap-1 text-left max-w-[min(100%,16rem)] text-muted-foreground hover:text-foreground transition-colors min-w-0"
                 >
                   <span className="text-sm font-medium">Post anterior</span>
-                  <span className="inline-flex items-center gap-2 font-serif text-lg truncate">
+                  <span className="inline-flex items-center gap-2 font-serif text-lg min-w-0">
                     <ArrowLeft className="h-4 w-4 shrink-0" />
-                    {prevPost.title}
+                    <span className="truncate" title={prevPost.title}>
+                      {prevPost.title}
+                    </span>
                   </span>
                 </Link>
               ) : (
@@ -217,11 +219,13 @@ export default function PostPage() {
               {nextPost ? (
                 <Link
                   to={`/post/${nextPost.slug}`}
-                  className="inline-flex flex-col gap-1 text-right max-w-[min(100%,16rem)] ml-auto text-muted-foreground hover:text-foreground transition-colors"
+                  className="inline-flex flex-col gap-1 text-right max-w-[min(100%,16rem)] ml-auto text-muted-foreground hover:text-foreground transition-colors min-w-0"
                 >
                   <span className="text-sm font-medium">Próximo post</span>
-                  <span className="inline-flex items-center gap-2 font-serif text-lg truncate justify-end">
-                    {nextPost.title}
+                  <span className="inline-flex items-center gap-2 font-serif text-lg min-w-0 justify-end">
+                    <span className="truncate" title={nextPost.title}>
+                      {nextPost.title}
+                    </span>
                     <ArrowRight className="h-4 w-4 shrink-0" />
                   </span>
                 </Link>

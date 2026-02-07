@@ -28,12 +28,15 @@ public class PostsController : ControllerBase
     }
 
     /// <summary>
-    /// GET /api/posts?published=true&amp;order=date|story or ?editable=true (requires X-Author-Id) or ?forAuthorArea=true (requires X-Author-Id).
+    /// GET /api/posts?published=true&amp;order=date|story or ?page=1&amp;pageSize=6&amp;search= (paginated) or ?editable=true or ?forAuthorArea=true.
     /// </summary>
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<PostDto>>> GetPosts(
+    public async Task<ActionResult> GetPosts(
         [FromQuery] bool? published = true,
         [FromQuery] string order = "date",
+        [FromQuery] int? page = null,
+        [FromQuery] int? pageSize = null,
+        [FromQuery] string? search = null,
         [FromQuery] bool editable = false,
         [FromQuery] bool forAuthorArea = false,
         CancellationToken cancellationToken = default)
@@ -77,13 +80,40 @@ public class PostsController : ControllerBase
         var baseQuery = _db.Posts.Include(p => p.Author).AsQueryable();
         if (published.HasValue)
             baseQuery = baseQuery.Where(p => p.Published == published.Value);
+        if (order.Equals("story", StringComparison.OrdinalIgnoreCase))
+            baseQuery = baseQuery.Where(p => p.IncludeInStoryOrder);
         baseQuery = order.ToLowerInvariant() switch
         {
             "story" => baseQuery.OrderBy(p => p.StoryOrder),
             _ => baseQuery.OrderByDescending(p => p.CreatedAt)
         };
         var list = await baseQuery.ToListAsync(cancellationToken);
+
+        if (page.HasValue && pageSize.HasValue && page.Value >= 1 && pageSize.Value >= 1)
+        {
+            var searchTrim = search?.Trim();
+            if (!string.IsNullOrEmpty(searchTrim))
+            {
+                var q = searchTrim.ToLowerInvariant();
+                list = list.Where(p =>
+                    (p.Title != null && p.Title.Contains(q, StringComparison.OrdinalIgnoreCase)) ||
+                    (p.Author?.Name != null && p.Author.Name.Contains(q, StringComparison.OrdinalIgnoreCase)) ||
+                    FormatDateForSearch(p).Contains(q, StringComparison.OrdinalIgnoreCase)).ToList();
+            }
+            var total = list.Count;
+            var skip = (page.Value - 1) * pageSize.Value;
+            var pageList = list.Skip(skip).Take(pageSize.Value).ToList();
+            var items = pageList.Select(p => ToDto(p, contentAsHtml: true, includeAuthorId: false, includeCollaborators: false)).ToList();
+            return Ok(new PagedPostsResponse { Items = items, Total = total });
+        }
+
         return Ok(list.Select(p => ToDto(p, contentAsHtml: true, includeAuthorId: false, includeCollaborators: false)));
+    }
+
+    private static string FormatDateForSearch(Post p)
+    {
+        var d = p.PublishedAt ?? p.CreatedAt;
+        return d.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
     }
 
     /// <summary>
@@ -107,7 +137,7 @@ public class PostsController : ControllerBase
     }
 
     /// <summary>
-    /// GET /api/posts/next-story-order — next suggested story_order (max among published + 1, or 1). Requires X-Author-Id.
+    /// GET /api/posts/next-story-order — next suggested story_order (max over published posts + 1, or 1). Requires X-Author-Id.
     /// </summary>
     [HttpGet("next-story-order")]
     public async Task<ActionResult<NextStoryOrderResponse>> GetNextStoryOrder(CancellationToken cancellationToken = default)
@@ -168,6 +198,7 @@ public class PostsController : ControllerBase
             CreatedAt = now,
             UpdatedAt = now,
             StoryOrder = request.StoryOrder,
+            IncludeInStoryOrder = request.IncludeInStoryOrder ?? true,
             AuthorId = authorId.Value,
             ViewCount = 0
         };
@@ -201,6 +232,8 @@ public class PostsController : ControllerBase
         post.Published = request.Published;
         post.PublishedAt = request.Published ? (post.PublishedAt ?? DateTime.UtcNow) : null;
         post.StoryOrder = request.StoryOrder;
+        if (request.IncludeInStoryOrder.HasValue)
+            post.IncludeInStoryOrder = request.IncludeInStoryOrder.Value;
         post.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync(cancellationToken);
         await _db.Entry(post).Collection(p => p.Collaborators).Query().Include(c => c.Author).LoadAsync(cancellationToken);
@@ -322,6 +355,7 @@ public class PostsController : ControllerBase
             CreatedAt = p.CreatedAt.ToString("O"),
             UpdatedAt = p.UpdatedAt.ToString("O"),
             StoryOrder = p.StoryOrder,
+            IncludeInStoryOrder = p.IncludeInStoryOrder,
             ViewCount = p.ViewCount,
             Author = new AuthorDto { Name = p.Author.Name, Avatar = p.Author.AvatarUrl, Bio = p.Author.Bio }
         };

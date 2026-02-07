@@ -25,12 +25,12 @@ public class PostsController : ControllerBase
     }
 
     /// <summary>
-    /// GET /bff/posts?order=date|story — lista posts publicados (delega à API).
+    /// GET /bff/posts?order=date|story or ?page=1&amp;pageSize=6&amp;search= — lista posts publicados (delega à API).
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> GetPosts([FromQuery] string order = "date", CancellationToken cancellationToken = default)
+    public async Task<IActionResult> GetPosts([FromQuery] string order = "date", [FromQuery] int? page = null, [FromQuery] int? pageSize = null, [FromQuery] string? search = null, CancellationToken cancellationToken = default)
     {
-        var response = await _api.GetPostsAsync(published: true, order: order, cancellationToken);
+        var response = await _api.GetPostsAsync(published: true, order: order, page: page, pageSize: pageSize, search: search, cancellationToken);
         if (!response.IsSuccessStatusCode)
             return StatusCode((int)response.StatusCode);
         var content = await response.Content.ReadAsStringAsync(cancellationToken);

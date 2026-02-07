@@ -19,6 +19,8 @@ BFF .NET 8 que expõe endpoints públicos para o frontend e repassa as requisiç
 
 O frontend usa `VITE_BFF_URL` (ex.: `http://localhost:5000`) para chamar o BFF.
 
+Para atualizar o projeto (local ou Docker) após um pull, ver **[ATUALIZAR-SERVIDOR-DOCKER-CADDY.md](../../ATUALIZAR-SERVIDOR-DOCKER-CADDY.md)** na raiz do repositório.
+
 ## Endpoints
 
 - `GET /bff/posts?order=date|story` — lista posts publicados (delega à API; ordenação por data ou story_order).

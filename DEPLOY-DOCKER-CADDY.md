@@ -121,6 +121,10 @@ seu-dominio.com {
     handle /bff/* {
         reverse_proxy 127.0.0.1:5000
     }
+    handle /images/posts/* {
+        root * /caminho/para/repo/frontend/public/images
+        file_server
+    }
     handle {
         root * /caminho/para/estaticos
         file_server
@@ -129,10 +133,14 @@ seu-dominio.com {
 }
 ```
 
-- **Ordem importante**: os `handle` de `/sitemap.xml`, `/robots.txt` e `/bff/*` têm de vir **antes** do `handle` dos estáticos. Assim, `/sitemap.xml` e `/robots.txt` são servidos pelo BFF na raiz do domínio (sitemap dinâmico e robots.txt com a linha Sitemap); pedidos a `/bff/*` (incl. POST de login) são reencaminhados para o BFF em `127.0.0.1:5000`. Caso contrário, pedidos POST para `/bff/auth/login` podem ser tratados pelo `file_server` e devolver **405 Method Not Allowed**.
+Substituir `/caminho/para/repo` por REPO_DIR no servidor (ex.: `/var/www/blog/repo`), para que as imagens de capa enviadas pelos autores sejam servidas em `/images/posts/`.
+
+- **Ordem importante**: os `handle` de `/sitemap.xml`, `/robots.txt`, `/bff/*` e `/images/posts/*` têm de vir **antes** do `handle` dos estáticos. Assim, `/sitemap.xml` e `/robots.txt` são servidos pelo BFF na raiz do domínio (sitemap dinâmico e robots.txt com a linha Sitemap); pedidos a `/bff/*` (incl. POST de login e upload de capa) são reencaminhados para o BFF em `127.0.0.1:5000`; pedidos a `/images/posts/*` são servidos a partir da pasta de uploads no host. Caso contrário, pedidos POST para `/bff/auth/login` podem ser tratados pelo `file_server` e devolver **405 Method Not Allowed**.
 - **handle** (resto): estáticos e fallback do SPA.
 
-**Imagens de capa (upload local):** Se os autores usarem o upload de imagem de capa no formulário de post, os ficheiros são guardados num diretório configurável no BFF (`Uploads:ImagesPath`). É necessário (1) definir esse caminho em produção (ex.: volume ou pasta no host, como uma pasta irmã de DOCUMENT_ROOT, ex.: `/caminho/para/images/posts`) para que os uploads persistam entre deploys; (2) servir esse diretório em `/images/posts/` no Caddy. Exemplo no Caddyfile, **antes** do `handle` dos estáticos: `handle /images/* { root * /caminho/para/images ; file_server }`. Garantir que o BFF tem permissão de escrita nessa pasta (em Docker, montar um volume no contentor do BFF para o mesmo caminho e configurar `Uploads__ImagesPath` nesse caminho, e no host o Caddy serve a mesma pasta).
+**Imagens de capa (upload local):** O `docker-compose.yml` inclui o volume `./frontend/public/images/posts:/frontend/public/images/posts` no serviço BFF. Os ficheiros enviados pelos autores ficam em **REPO_DIR/frontend/public/images/posts** no servidor (ex.: `/var/www/blog/repo/frontend/public/images/posts`). Não é necessário definir `Uploads__ImagesPath` no bff.env. Para as imagens aparecerem no post, o Caddy deve servir esse diretório em `/images/posts/` (bloco `handle /images/posts/*` no exemplo acima).
+
+**Permissões:** A pasta `frontend/public/images/posts` já existe no repositório (com `.gitkeep`) após o clone. Se o BFF não conseguir gravar (erro de permissão), criar a pasta no host e ajustar permissões: `mkdir -p frontend/public/images/posts` (a partir de REPO_DIR) e, se necessário, `chown` para o UID com que o processo do BFF corre no contentor (ex.: `docker compose exec bff id` para ver o utilizador).
 
 Recarregar o Caddy:
 

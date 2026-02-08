@@ -75,6 +75,9 @@ namespace BlogApi.Migrations
                     b.Property<DateTime?>("PublishedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("ScheduledPublishAt")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Slug")
                         .IsRequired()
                         .HasColumnType("TEXT");

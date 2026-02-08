@@ -93,6 +93,7 @@ Quando a API falha com "no such column" (ex.: ViewCount, IncludeInStoryOrder), p
 |--------|--------|-------------|
 | `add_view_count_to_posts.sql` | ViewCount (contagem de visualizações) | Erro "no such column: p.ViewCount" |
 | `add_include_in_story_order_to_posts.sql` | IncludeInStoryOrder ("faz parte da ordem da história") | Erro "no such column: p.IncludeInStoryOrder" |
+| `add_scheduled_publish_at_to_posts.sql` | ScheduledPublishAt (agendamento de publicação) | Erro "no such column: p.ScheduledPublishAt" |
 
 ### Local
 
@@ -103,13 +104,15 @@ cd backend/api
 sqlite3 blog.db < Migrations/Scripts/add_view_count_to_posts.sql
 # ou, para IncludeInStoryOrder:
 sqlite3 blog.db < Migrations/Scripts/add_include_in_story_order_to_posts.sql
+# ou, para ScheduledPublishAt:
+sqlite3 blog.db < Migrations/Scripts/add_scheduled_publish_at_to_posts.sql
 ```
 
 Substitui `blog.db` pelo caminho do teu ficheiro SQLite se for outro. Executa **uma vez** por script; se a coluna já existir, o SQLite pode devolver erro (pode ignorar). Depois reinicia a API.
 
 ### Docker
 
-**Se usas a pasta `data/` no host (bind mount, predefinido):** a partir de REPO_DIR, executa no host: `sqlite3 data/blog.db < backend/api/Migrations/Scripts/add_view_count_to_posts.sql` (ou o script adequado). Depois: `docker compose restart api`. Ver **[EXPOR-DB-NO-HOST.md](EXPOR-DB-NO-HOST.md)**.
+**Se usas a pasta `data/` no host (bind mount, predefinido):** a partir de REPO_DIR, executa no host: `sqlite3 data/blog.db < backend/api/Migrations/Scripts/add_view_count_to_posts.sql` (ou o script adequado, ex.: `add_scheduled_publish_at_to_posts.sql`). Depois: `docker compose restart api`. Ver **[EXPOR-DB-NO-HOST.md](EXPOR-DB-NO-HOST.md)**.
 
 **Se ainda usas volume nomeado** (configuração antiga):
 
@@ -118,7 +121,7 @@ Substitui `blog.db` pelo caminho do teu ficheiro SQLite se for outro. Executa **
    ```bash
    docker run --rm -v NOME_DO_VOLUME:/data -v $(pwd)/backend/api/Migrations/Scripts:/scripts ubuntu:22.04 sh -c "apt-get update -qq && apt-get install -y -qq sqlite3 && sqlite3 /data/blog.db < /scripts/add_view_count_to_posts.sql"
    ```
-   Para IncludeInStoryOrder, usar `/scripts/add_include_in_story_order_to_posts.sql`.
+   Para IncludeInStoryOrder, usar `/scripts/add_include_in_story_order_to_posts.sql`. Para ScheduledPublishAt, usar `/scripts/add_scheduled_publish_at_to_posts.sql`.
 3. **Opção B** — Copiar a base para o host, executar o script no host e devolver ao volume (ver `backend/api/README.md`, Troubleshooting, para os comandos completos).
 
 Depois: `docker compose up -d api`.

@@ -98,3 +98,65 @@ No formulário de **novo post** e de **edição de post**, junto ao campo "URL d
 - **Então** o sistema aceita e guarda a imagem normalmente
 - **E** a orientação é apenas informativa, não validada
 
+### Requirement: UI indica que agendamento vazio significa publicação imediata
+
+No formulário de **novo post** e de **edição de post**, na secção **"Agendar publicação"** (calendário e campo de hora), o sistema **deve** (SHALL) exibir um **texto visível** que informe ao autor que **deixar a data e a hora de agendamento vazios** significa que o post será **publicado imediatamente** ao guardar (ao clicar em "Criar post" ou "Salvar"), de acordo com o estado do checkbox "Publicado". O texto **deve** estar junto aos controlos de data/hora (ex.: na descrição da secção ou logo abaixo do label "Agendar publicação"), para que o autor não fique em dúvida sobre o comportamento quando não preenche o agendamento. Exemplo de redação: "Deixe vazio para publicação imediata."
+
+#### Scenario: Autor vê indicação de publicação imediata ao abrir o formulário
+
+- **Dado** que o autor abre a página "Novo post" ou "Editar post"
+- **Quando** o formulário é exibido
+- **Então** na secção "Agendar publicação" (com calendário e campo de hora) o autor **vê** um texto que indica que deixar a data e a hora vazios resulta em publicação imediata ao guardar (ex.: "Deixe vazio para publicação imediata")
+- **E** esse texto está visível sem necessidade de interação adicional (ex.: não está apenas em tooltip oculto)
+
+### Requirement: Toggle "Agendar publicação" controla visibilidade do calendário; desligado = publicação imediata
+
+No formulário de **novo post** e de **edição de post**, o sistema **deve** (SHALL) incluir um **toggle** (ex.: Switch) com label "Agendar publicação". **Quando o toggle está desligado** (predefinido ao criar um novo post): o calendário e o campo de hora **não** são exibidos; ao guardar, o post é criado/atualizado **sem** agendamento (`scheduled_publish_at` null), ou seja, **publicação imediata** conforme o estado do checkbox "Publicado". **Quando o toggle está ligado**: o sistema exibe o calendário (seleção de data) e o campo de hora; o autor pode definir data/hora futura e, ao guardar, o post fica agendado (rascunho até à data). Ao **editar um post que já tem** `scheduled_publish_at`, o toggle **deve** vir **ligado** e a data/hora agendada **devem** estar preenchidos. Ao editar um post sem agendamento, o toggle vem **desligado**. Esta apresentação deixa claro que "sem agendar = publicação imediata" sem necessidade de texto adicional.
+
+#### Scenario: Novo post com toggle desligado — publicação imediata
+
+- **Dado** que o autor abre "Novo post" e preenche título e conteúdo
+- **Quando** o toggle "Agendar publicação" está **desligado** (estado inicial) e o autor marca "Publicado" e clica em "Criar post"
+- **Então** o calendário e o campo de hora **não** estão visíveis
+- **E** o post é criado com `scheduled_publish_at` null e `published` true (publicação imediata)
+
+#### Scenario: Autor liga o toggle e agenda
+
+- **Dado** que o autor está em "Novo post" ou "Editar post"
+- **Quando** o autor **liga** o toggle "Agendar publicação"
+- **Então** o calendário e o campo de hora são exibidos
+- **E** o autor pode selecionar uma data/hora futura e, ao guardar, o post fica agendado (rascunho com `scheduled_publish_at`)
+
+#### Scenario: Editar post agendado — toggle ligado e data preenchida
+
+- **Dado** que o autor abre "Editar post" para um post que tem `scheduled_publish_at` definido
+- **Quando** o formulário é carregado
+- **Então** o toggle "Agendar publicação" está **ligado**
+- **E** a data e a hora agendadas estão preenchidas nos controlos
+- **E** o autor pode alterar ou desligar o toggle para remover o agendamento
+
+### Requirement: Autor pode agendar a publicação para uma data e hora futuras
+
+No formulário de **novo post** e de **edição de post**, o sistema **deve** (SHALL) permitir ao autor **agendar** a publicação para uma **data e hora futuras**. O formulário **deve** incluir um controlo de **calendário** (seleção da data) e um controlo de **hora** (ex.: HH:mm), visíveis na página "Novo Post" e "Editar Post". Quando o autor preenche uma data/hora futura e guarda, o post **deve** ser persistido como **rascunho** (`Published = false`) com o campo `scheduled_publish_at` definido (em UTC). O post **não** aparece nas listas públicas até que a data/hora agendada seja atingida e o sistema o publique automaticamente. O autor pode optar por "Publicar agora" (comportamento atual, checkbox Publicado) ou "Agendar publicação" (calendário + hora); quando há agendamento preenchido, o post é guardado como rascunho com essa data/hora. Ao editar um post que já tem agendamento, o formulário **deve** exibir a data/hora agendada (convertida para o fuso do utilizador).
+
+#### Scenario: Autor agenda publicação no Novo Post
+
+- **Dado** que o autor está no formulário "Novo post" e preencheu título, conteúdo e demais campos
+- **Quando** o autor seleciona no calendário uma data futura (ex.: 10/Fevereiro) e uma hora (ex.: 09:00) e guarda
+- **Então** o post é criado com `Published = false` e `scheduled_publish_at` igual à data/hora escolhida (em UTC)
+- **E** o post **não** aparece na página inicial nem no Índice da História até à data/hora agendada
+- **E** o post aparece na Área do autor (lista de posts) como rascunho, com indicação de agendamento (se implementado)
+
+#### Scenario: Autor edita post e adiciona agendamento
+
+- **Dado** que o autor está a editar um post que está em rascunho
+- **Quando** o autor preenche no formulário a secção "Agendar publicação" com data/hora futura e guarda
+- **Então** o post é atualizado com `scheduled_publish_at` definido e permanece `Published = false`
+- **E** na data/hora agendada o sistema publicará o post automaticamente
+
+#### Scenario: Autor remove agendamento ou publica agora
+
+- **Dado** que o autor está a editar um post agendado ou a criar um novo
+- **Quando** o autor deixa a data/hora de agendamento vazia e marca "Publicado" (ou não preenche agendamento e marca Publicado)
+- **Então** ao guardar, o post é criado/atualizado com `Published = true` (ou mantido rascunho sem agendamento) e `scheduled_publish_at` é null
+

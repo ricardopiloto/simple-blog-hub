@@ -55,6 +55,8 @@ sqlite3 blog.db < Migrations/Scripts/add_view_count_to_posts.sql
 
 Para a coluna **IncludeInStoryOrder** (posts "faz parte da ordem da história"), use o script `Migrations/Scripts/add_include_in_story_order_to_posts.sql` da mesma forma (executar uma vez; se a coluna já existir, ignorar o erro).
 
+Para a coluna **ScheduledPublishAt** (agendamento de publicação de posts), use o script `Migrations/Scripts/add_scheduled_publish_at_to_posts.sql` da mesma forma (executar uma vez; se a coluna já existir, ignorar o erro).
+
 ## Troubleshooting
 
 **Se aparecer "no such column: p.ViewCount" (ou "no such column: ViewCount"):** a base de dados foi criada antes da migração que adiciona a coluna ViewCount. Duas formas de resolver:
@@ -106,6 +108,16 @@ Para a coluna **IncludeInStoryOrder** (posts "faz parte da ordem da história"),
    ```bash
    cd backend/api
    sqlite3 blog.db < Migrations/Scripts/add_include_in_story_order_to_posts.sql
+   ```
+   (Substitua `blog.db` pelo caminho do seu ficheiro SQLite.) Depois reinicie a API. Se a coluna já existir, o SQLite devolverá erro; pode ignorar.
+
+**Se aparecer "no such column: p.ScheduledPublishAt" (ou "no such column: ScheduledPublishAt"):** a base de dados ainda não tem a coluna da migração que adiciona o agendamento de publicação. Duas formas de resolver:
+
+1. **Recomendado:** Reconstruir e reiniciar a API para que `MigrateAsync()` aplique a migração ao arranque. Em desenvolvimento local: pare a API, faça `dotnet build` em `backend/api` e volte a executar `dotnet run`. Com Docker: `docker compose build --no-cache api` e `docker compose up -d api`.
+2. **Migração manual (local):** Execute o script SQL uma vez:
+   ```bash
+   cd backend/api
+   sqlite3 blog.db < Migrations/Scripts/add_scheduled_publish_at_to_posts.sql
    ```
    (Substitua `blog.db` pelo caminho do seu ficheiro SQLite.) Depois reinicie a API. Se a coluna já existir, o SQLite devolverá erro; pode ignorar.
 

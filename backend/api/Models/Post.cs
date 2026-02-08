@@ -10,6 +10,8 @@ public class Post
     public string? CoverImageUrl { get; set; }
     public bool Published { get; set; }
     public DateTime? PublishedAt { get; set; }
+    /// <summary>When set, post is scheduled to be published at this UTC time; remains draft until then.</summary>
+    public DateTime? ScheduledPublishAt { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     public int StoryOrder { get; set; }

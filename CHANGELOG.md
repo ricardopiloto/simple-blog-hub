@@ -1,6 +1,14 @@
 # Changelog
 
-Os releases são versionados por tag (ex.: `v1.3`, `v1.4`, `v1.5`). O resumo detalhado das changes OpenSpec aplicadas pode ser usado na mensagem do commit de release e está também na proposta da respetiva versão em `openspec/changes/`.
+Os releases são versionados por tag (ex.: `v1.3`, `v1.4`, `v1.5`, `v1.6`). O resumo detalhado das changes OpenSpec aplicadas pode ser usado na mensagem do commit de release e está também na proposta da respetiva versão em `openspec/changes/`.
+
+## [1.6]
+
+- add-scheduled-publish-post: Publicação agendada de posts (calendário e hora no formulário Novo/Editar Post; campo ScheduledPublishAt na API; background service publica automaticamente à data/hora agendada).
+- fix-scheduled-publish-at-missing-column: Script SQL manual add_scheduled_publish_at_to_posts.sql e documentação no README da API e em ATUALIZAR para o erro "no such column: p.ScheduledPublishAt".
+- schedule-publish-toggle-show-calendar-when-on: Toggle "Agendar publicação" no formulário de post; calendário e hora só visíveis quando o toggle está ligado; desligado = publicação imediata.
+- docker-bff-upload-volume-host-public-images: Volume no docker-compose (BFF) para ./frontend/public/images/posts no host; Caddy deve servir esse diretório em /images/posts/ (handle no Caddyfile) para as imagens de capa enviadas aparecerem no post.
+- hide-newsletter-section-until-implemented: Secção "Fique por dentro" na página inicial oculta até a funcionalidade de newsletter estar implementada.
 
 ## [1.5]
 

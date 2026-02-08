@@ -31,6 +31,9 @@ public class PostDto
     [JsonPropertyName("published_at")]
     public string? PublishedAt { get; set; }
 
+    [JsonPropertyName("scheduled_publish_at")]
+    public string? ScheduledPublishAt { get; set; }
+
     [JsonPropertyName("created_at")]
     public string CreatedAt { get; set; } = string.Empty;
 
@@ -126,6 +129,9 @@ public class CreateOrUpdatePostRequest
 
     [JsonPropertyName("include_in_story_order")]
     public bool? IncludeInStoryOrder { get; set; }
+
+    [JsonPropertyName("scheduled_publish_at")]
+    public string? ScheduledPublishAt { get; set; }
 }
 
 public class AuthorDto

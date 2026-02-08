@@ -395,3 +395,46 @@ Para cada **release versionada** do projeto (tag de versão, ex.: v1.3, v1.4), o
 - **E** essa secção lista as alterações incluídas (changes aplicadas e, se for o caso, atualização da documentação e dos procedimentos)
 - **E** pode usar essa informação para saber o que mudou desde a versão anterior
 
+### Requirement: Manual SQL migration script for ScheduledPublishAt column
+
+The repository SHALL provide an **optional manual SQL migration script** that adds the **ScheduledPublishAt** column to the **Posts** table (SQLite). The script SHALL be intended for operators who are **upgrading from a version that did not include the scheduled-publish feature** (change add-scheduled-publish-post) and who apply schema changes manually instead of relying on EF Core `MigrateAsync()` at startup. The script SHALL add a column equivalent to `ScheduledPublishAt TEXT` (nullable). The README of the API (`backend/api/README.md`) SHALL describe **when** to use the script (e.g. error "no such column: p.ScheduledPublishAt"), **how** to run it (e.g. `sqlite3 blog.db < Migrations/Scripts/add_scheduled_publish_at_to_posts.sql`), and that if the column already exists the script may fail and the operator should skip or ignore the error.
+
+#### Scenario: Operator resolves "no such column: p.ScheduledPublishAt" using documentation
+
+- **GIVEN** the API fails with `SqliteException: no such column: p.ScheduledPublishAt` (e.g. database was not migrated after add-scheduled-publish-post)
+- **WHEN** the operator consults the API README (Troubleshooting or Migrações manuais)
+- **THEN** they find instructions for this error (rebuild and restart the API so that MigrateAsync() runs, or run the script `add_scheduled_publish_at_to_posts.sql` once)
+- **AND** they find the script in the repository at `backend/api/Migrations/Scripts/add_scheduled_publish_at_to_posts.sql`
+- **AND** after applying the fix (script or rebuild), the API and ScheduledPublishBackgroundService run without that error
+
+### Requirement: Deploy Docker monta volume de uploads de capa e Caddy serve /images/posts/
+
+Para que a **funcionalidade de envio de imagem de capa** funcione no deploy com **Docker + Caddy**, a documentação de deploy (DEPLOY-DOCKER-CADDY.md) **deve** (SHALL) descrever que: (1) o **docker-compose** inclui um **volume** no serviço BFF que monta o diretório do repositório **frontend/public/images/posts** no host (ex.: REPO_DIR/frontend/public/images/posts) no path **/frontend/public/images/posts** dentro do contentor, de forma que o BFF grave os ficheiros enviados nessa pasta no servidor sem necessidade de configurar `Uploads__ImagesPath`; (2) o **Caddy** está configurado com um bloco **handle** para **/images/posts/** (ou /images/*) que serve esse mesmo diretório no host (ex.: `root * REPO_DIR/frontend/public/images` e `file_server`), **antes** do handle dos estáticos do SPA, para que as URLs devolvidas pelo BFF (ex.: /images/posts/xxx.jpg) sejam servidas e a imagem **apareça no post** após o autor fazer upload.
+
+#### Scenario: Operador segue o guia e upload de capa funciona
+
+- **Dado** que o operador fez o deploy conforme DEPLOY-DOCKER-CADDY.md (contentores API e BFF a correr, Caddy a fazer proxy para o BFF e a servir estáticos)
+- **E** o docker-compose inclui o volume para frontend/public/images/posts no BFF e o Caddyfile inclui o handle para /images/posts/ a apontar para essa pasta no host
+- **Quando** um autor faz login, abre Novo post ou Editar post, e envia uma imagem de capa (ficheiro)
+- **Então** o BFF grava o ficheiro em REPO_DIR/frontend/public/images/posts no servidor
+- **E** a URL da capa (ex.: /images/posts/abc123.jpg) é servida pelo Caddy a partir dessa pasta
+- **E** a imagem aparece no formulário e na página pública do post após guardar
+
+### Requirement: CHANGELOG e guia de atualização para a release v1.6
+
+Para a **release versionada v1.6**, o ficheiro **CHANGELOG.md** na raiz **deve** (SHALL) conter a secção **## [1.6]** que descreve as alterações dessa versão: lista das changes OpenSpec incluídas (add-scheduled-publish-post, fix-scheduled-publish-at-missing-column, schedule-publish-toggle-show-calendar-when-on, docker-bff-upload-volume-host-public-images, hide-newsletter-section-until-implemented) com descrição breve. O repositório **pode** incluir um **guia de atualização** em `docs/local/` (ex.: `atualizar-1-4-para-1-6.md`) destinado a operadores que têm o servidor em **v1.4** e pretendem atualizar para **v1.6**, com passos que cubram migrações de base, volume de uploads do BFF, configuração do Caddy para `/images/posts/`, build do frontend e validação.
+
+#### Scenario: Leitor consulta o CHANGELOG para a v1.6
+
+- **Quando** um utilizador abre o CHANGELOG
+- **Então** encontra a secção **## [1.6]** acima de [1.5]
+- **E** vê a lista das changes (agendamento de posts, script SQL ScheduledPublishAt, toggle de agendamento, volume de uploads Docker, secção newsletter oculta)
+- **E** pode usar essa informação para saber o que mudou desde a v1.5
+
+#### Scenario: Operador em v1.4 segue o guia e atualiza para v1.6
+
+- **Dado** que o operador tem o servidor em v1.4 (Docker + Caddy)
+- **Quando** consulta o guia em docs/local/atualizar-1-4-para-1-6.md (se existir e estiver disponível)
+- **Então** encontra passos para: pull/checkout, reconstruir API e BFF, build do frontend, Caddy (handle /images/posts/), scripts manuais opcionais
+- **E** ao seguir os passos consegue atualizar para a v1.6 com agendamento, upload de capa a funcionar e secção newsletter oculta
+

@@ -23,6 +23,7 @@ var resolvedConnectionString = connectionString;
 builder.Services.AddDbContext<BlogDbContext>(options =>
     options.UseSqlite(resolvedConnectionString));
 builder.Services.AddScoped<IAdminService, AdminService>();
+builder.Services.AddHostedService<ScheduledPublishBackgroundService>();
 
 var app = builder.Build();
 

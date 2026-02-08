@@ -14,6 +14,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Calendar as CalendarIcon } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 import {
   fetchPostByIdForEdit,
   fetchNextStoryOrder,
@@ -59,6 +63,9 @@ export default function PostEdit() {
   const [published, setPublished] = useState(true);
   const [storyOrder, setStoryOrder] = useState(1);
   const [includeInStoryOrder, setIncludeInStoryOrder] = useState(true);
+  const [scheduleEnabled, setScheduleEnabled] = useState(false);
+  const [scheduledDate, setScheduledDate] = useState<string>('');
+  const [scheduledTime, setScheduledTime] = useState<string>('');
   const [selectedAuthorId, setSelectedAuthorId] = useState('');
   const [uploadingCover, setUploadingCover] = useState(false);
 
@@ -108,6 +115,20 @@ export default function PostEdit() {
       setPublished(post.published);
       setStoryOrder(post.story_order);
       setIncludeInStoryOrder(post.include_in_story_order ?? true);
+      if (post.scheduled_publish_at) {
+        setScheduleEnabled(true);
+        const d = new Date(post.scheduled_publish_at);
+        setScheduledDate(
+          `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`,
+        );
+        setScheduledTime(
+          `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`,
+        );
+      } else {
+        setScheduleEnabled(false);
+        setScheduledDate('');
+        setScheduledTime('');
+      }
     }
   }, [post]);
 
@@ -153,15 +174,23 @@ export default function PostEdit() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    let scheduledIso: string | null = null;
+    if (scheduleEnabled && scheduledDate && scheduledTime) {
+      const d = new Date(`${scheduledDate}T${scheduledTime}`);
+      if (!Number.isNaN(d.getTime()) && d.getTime() > Date.now()) {
+        scheduledIso = d.toISOString();
+      }
+    }
     const payload: CreateOrUpdatePostPayload = {
       title: title.trim(),
       slug: slug.trim(),
       excerpt: excerpt.trim() || null,
       content: content,
       cover_image: coverImage.trim() || null,
-      published,
+      published: scheduledIso ? false : published,
       story_order: storyOrder,
       include_in_story_order: includeInStoryOrder,
+      scheduled_publish_at: scheduleEnabled ? (scheduledIso ?? null) : null,
     };
     if (isNew) {
       createMutation.mutate(payload);
@@ -282,6 +311,88 @@ export default function PostEdit() {
                 disabled={saving}
               />
               <Label htmlFor="post-published">Publicado</Label>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="post-schedule-enabled"
+                  checked={scheduleEnabled}
+                  onCheckedChange={(checked) => {
+                    setScheduleEnabled(checked);
+                    if (!checked) {
+                      setScheduledDate('');
+                      setScheduledTime('');
+                    }
+                  }}
+                  disabled={saving}
+                />
+                <Label htmlFor="post-schedule-enabled">Agendar publicação</Label>
+              </div>
+              {!scheduleEnabled && (
+                <p className="text-xs text-muted-foreground">
+                  Desligado: o post será publicado imediatamente ao guardar (conforme o switch &quot;Publicado&quot;).
+                </p>
+              )}
+              {scheduleEnabled && (
+                <>
+                  <p className="text-xs text-muted-foreground">
+                    Defina data e hora para publicar automaticamente. Enquanto agendado, o post fica como rascunho.
+                  </p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled={saving}
+                          className={cn(
+                            'min-w-[140px] justify-start text-left font-normal',
+                            !scheduledDate && 'text-muted-foreground',
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {scheduledDate || 'Escolher data'}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={scheduledDate ? new Date(scheduledDate + 'T12:00:00') : undefined}
+                          onSelect={(date) =>
+                            setScheduledDate(
+                              date
+                                ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+                                : '',
+                            )
+                          }
+                          disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <Input
+                      type="time"
+                      value={scheduledTime}
+                      onChange={(e) => setScheduledTime(e.target.value)}
+                      disabled={saving}
+                      className="w-[120px]"
+                    />
+                    {(scheduledDate || scheduledTime) && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        disabled={saving}
+                        onClick={() => {
+                          setScheduledDate('');
+                          setScheduledTime('');
+                        }}
+                      >
+                        Limpar
+                      </Button>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="post-story-order">Ordem na história</Label>

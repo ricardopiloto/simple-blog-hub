@@ -8,6 +8,8 @@ export interface Post {
   cover_image: string | null;
   published: boolean;
   published_at: string | null;
+  /** ISO 8601 UTC; when set, post is scheduled to be published at this time. */
+  scheduled_publish_at?: string | null;
   created_at: string;
   updated_at: string;
   story_order: number;
@@ -54,6 +56,8 @@ export interface CreateOrUpdatePostPayload {
   story_order: number;
   /** When false, post is excluded from Índice da História. Default true. */
   include_in_story_order?: boolean;
+  /** ISO 8601 UTC; when set with a future time, post is saved as draft and published at that time. */
+  scheduled_publish_at?: string | null;
 }
 
 export interface UserListItem {

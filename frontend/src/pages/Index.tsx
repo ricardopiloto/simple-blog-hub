@@ -110,35 +110,37 @@ export default function Index() {
         </div>
       </section>
 
-      {/* Newsletter Section */}
-      <section className="py-20">
-        <div className="container-wide">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="max-w-2xl mx-auto text-center"
-          >
-            <h2 className="font-serif text-3xl font-bold mb-4">
-              Fique por dentro
-            </h2>
-            <p className="text-muted-foreground mb-8">
-              Acompanhe as novidades e não perca nenhum artigo.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
-              <input
-                type="email"
-                placeholder="seu@email.com"
-                className="flex-1 px-4 py-3 rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-accent"
-              />
-              <button className="px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90 transition-opacity">
-                Inscrever
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      </section>
+      {/* Newsletter Section - hidden until add-newsletter-subscribe-and-notify is implemented */}
+      {false && (
+        <section className="py-20">
+          <div className="container-wide">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              className="max-w-2xl mx-auto text-center"
+            >
+              <h2 className="font-serif text-3xl font-bold mb-4">
+                Fique por dentro
+              </h2>
+              <p className="text-muted-foreground mb-8">
+                Acompanhe as novidades e não perca nenhum artigo.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
+                <input
+                  type="email"
+                  placeholder="seu@email.com"
+                  className="flex-1 px-4 py-3 rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-accent"
+                />
+                <button className="px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90 transition-opacity">
+                  Inscrever
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        </section>
+      )}
     </Layout>
   );
 }

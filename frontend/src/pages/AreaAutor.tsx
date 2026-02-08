@@ -149,6 +149,19 @@ export default function AreaAutor() {
                       {(post.author?.name || (post.collaborators && post.collaborators.length > 0)) && (post.slug || post.published) && ' · '}
                       {post.slug}
                       {post.published ? ' · Publicado' : ' · Rascunho'}
+                      {post.scheduled_publish_at && (
+                        <>
+                          {' · '}
+                          Agendado para{' '}
+                          {new Date(post.scheduled_publish_at).toLocaleString('pt-BR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </>
+                      )}
                       {typeof post.view_count === 'number' && ` · ${post.view_count} visualizações`}
                     </span>
                   </div>

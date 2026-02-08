@@ -22,6 +22,7 @@ O `docker-compose.yml` do projeto usa por defeito um **bind mount** `./data:/dat
    sqlite3 data/blog.db < backend/api/Migrations/Scripts/add_view_count_to_posts.sql
    # ou, por exemplo:
    sqlite3 data/blog.db < backend/api/Migrations/Scripts/add_include_in_story_order_to_posts.sql
+   sqlite3 data/blog.db < backend/api/Migrations/Scripts/add_scheduled_publish_at_to_posts.sql
    ```
    Reinicia a API após aplicar o script: `docker compose restart api`. Instala `sqlite3` no host se necessário (ex.: `sudo apt install sqlite3` em Ubuntu/Debian).
 

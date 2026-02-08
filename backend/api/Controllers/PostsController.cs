@@ -185,6 +185,8 @@ public class PostsController : ControllerBase
         if (await _db.Posts.AnyAsync(p => p.Slug == request.Slug.Trim(), cancellationToken))
             return Conflict("Slug already in use");
         var now = DateTime.UtcNow;
+        var scheduledAt = ParseScheduledPublishAt(request.ScheduledPublishAt);
+        var useSchedule = scheduledAt.HasValue && scheduledAt.Value > now;
         var post = new Post
         {
             Id = Guid.NewGuid(),
@@ -193,8 +195,9 @@ public class PostsController : ControllerBase
             Excerpt = request.Excerpt?.Trim(),
             Content = request.Content ?? string.Empty,
             CoverImageUrl = request.CoverImage?.Trim(),
-            Published = request.Published,
-            PublishedAt = request.Published ? now : null,
+            Published = useSchedule ? false : request.Published,
+            PublishedAt = useSchedule ? null : (request.Published ? now : null),
+            ScheduledPublishAt = useSchedule ? scheduledAt : null,
             CreatedAt = now,
             UpdatedAt = now,
             StoryOrder = request.StoryOrder,
@@ -229,8 +232,20 @@ public class PostsController : ControllerBase
         post.Excerpt = request.Excerpt?.Trim();
         post.Content = request.Content ?? string.Empty;
         post.CoverImageUrl = request.CoverImage?.Trim();
-        post.Published = request.Published;
-        post.PublishedAt = request.Published ? (post.PublishedAt ?? DateTime.UtcNow) : null;
+        var scheduledAt = ParseScheduledPublishAt(request.ScheduledPublishAt);
+        var useSchedule = scheduledAt.HasValue && scheduledAt.Value > DateTime.UtcNow;
+        if (useSchedule)
+        {
+            post.Published = false;
+            post.PublishedAt = null;
+            post.ScheduledPublishAt = scheduledAt;
+        }
+        else
+        {
+            post.ScheduledPublishAt = null;
+            post.Published = request.Published;
+            post.PublishedAt = request.Published ? (post.PublishedAt ?? DateTime.UtcNow) : null;
+        }
         post.StoryOrder = request.StoryOrder;
         if (request.IncludeInStoryOrder.HasValue)
             post.IncludeInStoryOrder = request.IncludeInStoryOrder.Value;
@@ -352,6 +367,7 @@ public class PostsController : ControllerBase
             CoverImage = p.CoverImageUrl,
             Published = p.Published,
             PublishedAt = p.PublishedAt?.ToString("O"),
+            ScheduledPublishAt = p.ScheduledPublishAt?.ToString("O"),
             CreatedAt = p.CreatedAt.ToString("O"),
             UpdatedAt = p.UpdatedAt.ToString("O"),
             StoryOrder = p.StoryOrder,
@@ -367,5 +383,13 @@ public class PostsController : ControllerBase
                 .Select(c => new CollaboratorDto { Id = c.AuthorId.ToString(), Name = c.Author.Name })
                 .ToList();
         return dto;
+    }
+
+    private static DateTime? ParseScheduledPublishAt(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return null;
+        if (DateTime.TryParse(value, null, System.Globalization.DateTimeStyles.RoundtripKind, out var dt))
+            return dt.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(dt, DateTimeKind.Utc) : dt.ToUniversalTime();
+        return null;
     }
 }

@@ -122,7 +122,7 @@ seu-dominio.com {
         reverse_proxy 127.0.0.1:5000
     }
     handle /images/posts/* {
-        root * /caminho/para/repo/frontend/public/images
+        root * /caminho/para/repo/frontend/public
         file_server
     }
     handle {
@@ -133,10 +133,12 @@ seu-dominio.com {
 }
 ```
 
-Substituir `/caminho/para/repo` por REPO_DIR no servidor (ex.: `/var/www/blog/repo`), para que as imagens de capa enviadas pelos autores sejam servidas em `/images/posts/`.
+Substituir `/caminho/para/repo` por REPO_DIR no servidor (ex.: `/var/www/blog/repo`). O `root` deve ser a pasta **frontend/public** (e não public/images): o Caddy junta o path do pedido ao root, logo `/images/posts/xxx.jpg` é servido a partir de REPO_DIR/frontend/public/images/posts/xxx.jpg.
 
 - **Ordem importante**: os `handle` de `/sitemap.xml`, `/robots.txt`, `/bff/*` e `/images/posts/*` têm de vir **antes** do `handle` dos estáticos. Assim, `/sitemap.xml` e `/robots.txt` são servidos pelo BFF na raiz do domínio (sitemap dinâmico e robots.txt com a linha Sitemap); pedidos a `/bff/*` (incl. POST de login e upload de capa) são reencaminhados para o BFF em `127.0.0.1:5000`; pedidos a `/images/posts/*` são servidos a partir da pasta de uploads no host. Caso contrário, pedidos POST para `/bff/auth/login` podem ser tratados pelo `file_server` e devolver **405 Method Not Allowed**.
 - **handle** (resto): estáticos e fallback do SPA.
+
+**Se `/sitemap.xml` abrir como HTML** (página do blog em vez de XML): o pedido está a ser servido pelo fallback do SPA (`try_files ... /index.html`) em vez de ir ao BFF. Confirma que no Caddyfile o bloco `handle /sitemap.xml { ... }` (e `handle /robots.txt { ... }`) está **acima** do último `handle` que contém `file_server` e `try_files`. Depois de alterar: `sudo systemctl reload caddy`.
 
 **Imagens de capa (upload local):** O `docker-compose.yml` inclui o volume `./frontend/public/images/posts:/frontend/public/images/posts` no serviço BFF. Os ficheiros enviados pelos autores ficam em **REPO_DIR/frontend/public/images/posts** no servidor (ex.: `/var/www/blog/repo/frontend/public/images/posts`). Não é necessário definir `Uploads__ImagesPath` no bff.env. Para as imagens aparecerem no post, o Caddy deve servir esse diretório em `/images/posts/` (bloco `handle /images/posts/*` no exemplo acima).
 
@@ -219,6 +221,29 @@ Causas comuns:
    docker run --rm -v repo_blog_api_data:/data alpine sh -c "apk add --no-cache sqlite && sqlite3 /data/blog.db 'ALTER TABLE Users ADD COLUMN MustChangePassword INTEGER NOT NULL DEFAULT 0;'"
    docker compose up -d api
    ```
+
+---
+
+## 8.2. Imagem de capa: upload sem erro mas imagem não aparece (404 em /images/posts/)
+
+**Sintoma:** O autor envia uma imagem de capa no formulário de post e o pedido de upload devolve sucesso (sem mensagem de erro). A imagem **não é exibida** no post. No **console do browser** (DevTools → Aba Network), o pedido **GET** a `https://teu-dominio/images/posts/xxx.jpg` devolve **404**.
+
+**Causa:** O Caddy não está a servir o diretório de uploads em `/images/posts/`, ou o volume do BFF que mapeia `frontend/public/images/posts` para o host não está montado. O BFF grava o ficheiro (por exemplo dentro do contentor ou na pasta do host), mas o pedido do browser a `/images/posts/xxx.jpg` é atendido pelo Caddy; se não existir um `handle` para esse path, o Caddy devolve 404.
+
+**Solução:**
+
+1. Confirmar que o `docker-compose.yml` inclui no serviço **bff** o volume: `./frontend/public/images/posts:/frontend/public/images/posts`. Se faltar, adicionar e fazer `docker compose up -d bff`.
+2. No **Caddyfile**, adicionar **antes** do `handle` dos estáticos do SPA o bloco:
+   ```caddyfile
+   handle /images/posts/* {
+       root * REPO_DIR/frontend/public
+       file_server
+   }
+   ```
+   (Substituir **REPO_DIR** pelo caminho real do repositório no servidor, ex.: `/var/www/blog/repo`. O `root` deve ser a pasta **public**, e não **public/images**, para que o pedido `/images/posts/xxx.jpg` seja servido a partir de REPO_DIR/frontend/public/images/posts/xxx.jpg.) Ver a **secção 6** deste guia para o exemplo completo do Caddyfile.
+3. Recarregar o Caddy: `sudo systemctl reload caddy`.
+
+Após isto, os pedidos a `/images/posts/xxx.jpg` passam a ser servidos a partir da pasta de uploads no host e a imagem aparece no post.
 
 ---
 

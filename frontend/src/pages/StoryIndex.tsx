@@ -21,8 +21,9 @@ import { useQueryClient } from '@tanstack/react-query';
 import { updateStoryOrder } from '@/api/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useToast } from '@/hooks/use-toast';
-import type { Post } from '@/api/types';
+import type { Post, StoryType } from '@/api/types';
 
 const ITEMS_PER_PAGE = 6;
 
@@ -139,11 +140,23 @@ export default function StoryIndex() {
 
   const [filterText, setFilterText] = useState('');
   const [page, setPage] = useState(1);
+  const [selectedUniverse, setSelectedUniverse] = useState<StoryType>('velho_mundo');
   const [editingOrder, setEditingOrder] = useState<Post[] | null>(null);
   const [saving, setSaving] = useState(false);
 
   const sorted = useMemo(() => [...posts].sort((a, b) => a.story_order - b.story_order), [posts]);
-  const workingList = editingOrder ?? sorted;
+  const hasVelhoMundo = useMemo(() => posts.some((p) => p.story_type === 'velho_mundo'), [posts]);
+  const hasIdadeDasTrevas = useMemo(() => posts.some((p) => p.story_type === 'idade_das_trevas'), [posts]);
+  const showUniverseToggle = hasVelhoMundo && hasIdadeDasTrevas;
+
+  const effectiveUniverseFilteredList = useMemo(() => {
+    if (showUniverseToggle) return sorted.filter((p) => p.story_type === selectedUniverse);
+    if (hasVelhoMundo) return sorted.filter((p) => p.story_type === 'velho_mundo');
+    if (hasIdadeDasTrevas) return sorted.filter((p) => p.story_type === 'idade_das_trevas');
+    return sorted;
+  }, [sorted, showUniverseToggle, hasVelhoMundo, hasIdadeDasTrevas, selectedUniverse]);
+
+  const workingList = editingOrder ?? effectiveUniverseFilteredList;
   const filtered = useMemo(() => filterPosts(workingList, filterText), [workingList, filterText]);
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
   const currentPage = Math.min(page, totalPages);
@@ -241,17 +254,39 @@ export default function StoryIndex() {
               A ordem aqui define como a história será contada. Use o filtro para buscar por número ou título.
             </p>
 
-            {/* Filtro em tempo real */}
-            <Input
-              type="text"
-              placeholder="Filtrar por número da ordem ou título..."
-              value={filterText}
-              onChange={(e) => {
-                setFilterText(e.target.value);
-                setPage(1);
-              }}
-              className="max-w-md mb-4"
-            />
+            {/* Filtro e toggle de universo */}
+            <div className="flex flex-wrap items-center gap-3 mb-4">
+              <Input
+                type="text"
+                placeholder="Filtrar por número da ordem ou título..."
+                value={filterText}
+                onChange={(e) => {
+                  setFilterText(e.target.value);
+                  setPage(1);
+                }}
+                className="max-w-md"
+              />
+              {showUniverseToggle && !editingOrder && (
+                <ToggleGroup
+                  type="single"
+                  value={selectedUniverse}
+                  onValueChange={(v) => {
+                    if (v) {
+                      setSelectedUniverse(v as StoryType);
+                      setPage(1);
+                    }
+                  }}
+                  className="inline-flex rounded-md border p-1"
+                >
+                  <ToggleGroupItem value="velho_mundo" aria-label="Velho Mundo">
+                    Velho Mundo
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="idade_das_trevas" aria-label="Idade das Trevas">
+                    Idade das Trevas
+                  </ToggleGroupItem>
+                </ToggleGroup>
+              )}
+            </div>
 
             {/* Controles de edição (apenas autenticados) */}
             {isAuthenticated && (

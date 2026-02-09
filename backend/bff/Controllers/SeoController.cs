@@ -75,7 +75,7 @@ public class SeoController : ControllerBase
             writer.WriteEndDocument();
         }
 
-        return Content(xml.ToString(), "application/xml", Encoding.UTF8);
+        return Content(xml.ToString(), "application/xml; charset=utf-8", Encoding.UTF8);
     }
 
     private static void WriteUrl(XmlWriter writer, string loc, string? lastmod)

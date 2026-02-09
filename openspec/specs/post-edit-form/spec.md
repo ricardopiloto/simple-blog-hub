@@ -5,17 +5,26 @@ TBD - created by archiving change fix-post-excerpt-first-32-chars. Update Purpos
 ## Requirements
 ### Requirement: Excerpt auto-filled from first 32 characters of content
 
-In the post creation and edit form, the Excerpt (Resumo) field SHALL be filled automatically with the first 32 characters of the text entered in the Content (Conteúdo) field. When the user types or edits the content, the excerpt SHALL be updated so that it always reflects the first 32 characters of the current content (trimmed if applicable), so that the summary stays in sync with the content and is not limited to a single character.
+In the **new post** form, the Excerpt (Resumo) field SHALL be filled automatically with the first 32 characters of the text entered in the Content (Conteúdo) field, and SHALL be updated as the user types or edits the content (trimmed). In the **edit post** form, the Excerpt field SHALL **not** be updated automatically when the user changes the Content field; the Excerpt SHALL be set once from the saved post when the form loads and SHALL only change if the author edits the Excerpt field manually.
 
-#### Scenario: Excerpt updates as content is typed
+#### Scenario: Novo post — excerpt atualiza ao digitar no Conteúdo
 
-- **WHEN** the user types or edits the Content field
-- **THEN** the Excerpt field is set to the first 32 characters of the content (after trim), and updates as the content changes
+- **Quando** o utilizador está no formulário **Novo post** e digita ou edita o campo Conteúdo
+- **Então** o campo Resumo é preenchido (e atualizado) com os primeiros 32 caracteres do conteúdo (após trim)
 
-#### Scenario: Content shorter than 32 characters
+#### Scenario: Editar post — excerpt NÃO atualiza ao digitar no Conteúdo
 
-- **WHEN** the content has fewer than 32 characters
-- **THEN** the excerpt contains the full content (trimmed)
+- **Dado** que o utilizador abriu o formulário **Editar post** e o Resumo foi carregado do post (ex.: "Primeiros trinta e dois caracteres do artigo...")
+- **Quando** o utilizador altera o texto do campo Conteúdo
+- **Então** o campo Resumo **não** é alterado automaticamente
+- **E** o Resumo só muda se o utilizador editar o campo Resumo diretamente
+
+#### Scenario: Editar post — autor pode editar o Resumo manualmente
+
+- **Dado** que o utilizador está a editar um post
+- **Quando** o utilizador altera o texto no campo Resumo (Input do Resumo)
+- **Então** o valor do Resumo é atualizado conforme a edição manual
+- **E** ao guardar, o excerpt enviado é o valor atual do campo Resumo
 
 ### Requirement: Novo post tem ordem inicial sugerida a partir do último artigo publicado
 
@@ -159,4 +168,53 @@ No formulário de **novo post** e de **edição de post**, o sistema **deve** (S
 - **Dado** que o autor está a editar um post agendado ou a criar um novo
 - **Quando** o autor deixa a data/hora de agendamento vazia e marca "Publicado" (ou não preenche agendamento e marca Publicado)
 - **Então** ao guardar, o post é criado/atualizado com `Published = true` (ou mantido rascunho sem agendamento) e `scheduled_publish_at` é null
+
+### Requirement: Seleção obrigatória do tipo de história (Velho Mundo ou Idade das Trevas)
+
+No formulário de **Novo post** e de **Editar post**, o sistema **deve** (SHALL) incluir um campo **obrigatório** que permite ao autor indicar a que história o post pertence: **"Velho Mundo"** ou **"Idade das Trevas"**. Este campo **deve** ser apresentado como um **toggle** de duas opções: **um lado** do toggle corresponde a "Velho Mundo" e o **outro lado** a "Idade das Trevas" (o autor escolhe clicando num dos lados). O campo **deve** aparecer **antes** do campo "Título". **Não** deve existir valor pré-definido: em novo post, nenhum dos lados do toggle vem selecionado; o utilizador **deve** escolher explicitamente um deles. O sistema **deve** impedir o envio (criar ou atualizar) enquanto nenhuma opção estiver selecionada (validação no frontend e na API). O valor **deve** ser persistido e devolvido nas respostas; ao editar um post, o valor guardado **deve** ser exibido no toggle (um dos lados selecionado) e pode ser alterado.
+
+#### Scenario: Novo post — sem seleção não permite guardar
+
+- **Dado** que o utilizador abre o formulário "Novo post"
+- **Quando** o utilizador preenche título e conteúdo mas **não** seleciona nenhum dos lados do toggle (Velho Mundo / Idade das Trevas)
+- **Então** o sistema impede o envio (ex.: validação no submit)
+- **E** o utilizador é informado que deve selecionar a história (ex.: mensagem ou indicação no campo)
+
+#### Scenario: Novo post — com seleção guarda o valor
+
+- **Dado** que o utilizador abre o formulário "Novo post" e seleciona um lado do toggle ("Velho Mundo" ou "Idade das Trevas")
+- **Quando** o utilizador preenche os demais campos e submete o formulário
+- **Então** o post é criado com o valor de história selecionado persistido
+- **E** em edições futuras desse post, o valor guardado é exibido no toggle
+
+#### Scenario: Editar post — valor guardado é exibido e pode ser alterado
+
+- **Dado** que um post existente tem tipo de história "Idade das Trevas"
+- **Quando** o utilizador abre o formulário "Editar post" para esse post
+- **Então** o toggle mostra "Idade das Trevas" selecionado (o lado correspondente ativo)
+- **E** o utilizador pode alterar para "Velho Mundo" (ou manter) clicando no outro lado do toggle e, ao guardar, o novo valor é persistido
+
+#### Scenario: Campo aparece antes do Título
+
+- **Dado** que o utilizador abre "Novo post" ou "Editar post"
+- **Quando** o formulário é exibido
+- **Então** o toggle da história (Velho Mundo / Idade das Trevas) aparece como **primeiro** campo do formulário, imediatamente **antes** do campo "Título"
+
+#### Scenario: Autor escolhe clicando num dos lados do toggle
+
+- **Dado** que o utilizador está no formulário "Novo post" ou "Editar post"
+- **Quando** o utilizador clica no lado "Velho Mundo" do toggle (ou no lado "Idade das Trevas")
+- **Então** esse lado fica selecionado e o valor correspondente (`velho_mundo` ou `idade_das_trevas`) é guardado no estado
+- **E** ao submeter o formulário, esse valor é enviado no payload `story_type`
+
+### Requirement: Campo História exibe indicador visível de obrigatoriedade
+
+No formulário de **Novo post** e de **Editar post**, o campo **"História"** (toggle Velho Mundo / Idade das Trevas) **deve** (SHALL) exibir de forma **visível** que é **obrigatório** — por exemplo, através de asterisco (*) no label ou do texto "(obrigatório)" junto ao label, de modo a que o autor perceba à primeira vista que deve escolher uma das opções antes de guardar. A validação no submit e a mensagem de erro quando nenhuma opção está selecionada mantêm-se; esta exigência refere-se apenas à **indicação visual** da obrigatoriedade.
+
+#### Scenario: Autor vê que o campo História é obrigatório
+
+- **Dado** que o utilizador abre o formulário "Novo post" ou "Editar post"
+- **Quando** o formulário é exibido
+- **Então** o label ou a área do campo "História" mostra uma indicação clara de que o campo é obrigatório (ex.: "História *" ou "História (obrigatório)")
+- **E** o autor identifica sem ambiguidade que deve escolher "Velho Mundo" ou "Idade das Trevas" antes de poder guardar o post
 

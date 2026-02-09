@@ -13,6 +13,8 @@ export interface Post {
   created_at: string;
   updated_at: string;
   story_order: number;
+  /** Story line: velho_mundo or idade_das_trevas. */
+  story_type: 'velho_mundo' | 'idade_das_trevas';
   /** When false, post is excluded from Índice da História and prev/next sequence. Default true. */
   include_in_story_order?: boolean;
   author_id?: string;
@@ -46,6 +48,8 @@ export interface PagedPostsResponse {
   total: number;
 }
 
+export type StoryType = 'velho_mundo' | 'idade_das_trevas';
+
 export interface CreateOrUpdatePostPayload {
   title: string;
   slug: string;
@@ -54,6 +58,8 @@ export interface CreateOrUpdatePostPayload {
   cover_image?: string | null;
   published: boolean;
   story_order: number;
+  /** Story line: velho_mundo or idade_das_trevas. Required. */
+  story_type: StoryType;
   /** When false, post is excluded from Índice da História. Default true. */
   include_in_story_order?: boolean;
   /** ISO 8601 UTC; when set with a future time, post is saved as draft and published at that time. */

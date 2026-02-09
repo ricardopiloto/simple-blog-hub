@@ -11,6 +11,7 @@ namespace BlogApi.Controllers;
 public class PostsController : ControllerBase
 {
     private const string AuthorIdHeader = "X-Author-Id";
+    private static readonly HashSet<string> AllowedStoryTypes = new(StringComparer.OrdinalIgnoreCase) { "velho_mundo", "idade_das_trevas" };
     private readonly BlogDbContext _db;
     private readonly IAdminService _adminService;
 
@@ -182,11 +183,14 @@ public class PostsController : ControllerBase
             return Unauthorized();
         if (string.IsNullOrWhiteSpace(request.Title) || string.IsNullOrWhiteSpace(request.Slug))
             return BadRequest();
+        if (string.IsNullOrWhiteSpace(request.StoryType) || !AllowedStoryTypes.Contains(request.StoryType.Trim()))
+            return BadRequest("story_type must be 'velho_mundo' or 'idade_das_trevas'");
         if (await _db.Posts.AnyAsync(p => p.Slug == request.Slug.Trim(), cancellationToken))
             return Conflict("Slug already in use");
         var now = DateTime.UtcNow;
         var scheduledAt = ParseScheduledPublishAt(request.ScheduledPublishAt);
         var useSchedule = scheduledAt.HasValue && scheduledAt.Value > now;
+        var storyType = request.StoryType.Trim().ToLowerInvariant();
         var post = new Post
         {
             Id = Guid.NewGuid(),
@@ -201,6 +205,7 @@ public class PostsController : ControllerBase
             CreatedAt = now,
             UpdatedAt = now,
             StoryOrder = request.StoryOrder,
+            StoryType = storyType,
             IncludeInStoryOrder = request.IncludeInStoryOrder ?? true,
             AuthorId = authorId.Value,
             ViewCount = 0
@@ -224,9 +229,12 @@ public class PostsController : ControllerBase
             return Forbid();
         if (string.IsNullOrWhiteSpace(request.Title) || string.IsNullOrWhiteSpace(request.Slug))
             return BadRequest();
+        if (string.IsNullOrWhiteSpace(request.StoryType) || !AllowedStoryTypes.Contains(request.StoryType.Trim()))
+            return BadRequest("story_type must be 'velho_mundo' or 'idade_das_trevas'");
         var slugTaken = await _db.Posts.AnyAsync(p => p.Slug == request.Slug.Trim() && p.Id != id, cancellationToken);
         if (slugTaken)
             return Conflict("Slug already in use");
+        post.StoryType = request.StoryType.Trim().ToLowerInvariant();
         post.Title = request.Title.Trim();
         post.Slug = request.Slug.Trim();
         post.Excerpt = request.Excerpt?.Trim();
@@ -371,6 +379,7 @@ public class PostsController : ControllerBase
             CreatedAt = p.CreatedAt.ToString("O"),
             UpdatedAt = p.UpdatedAt.ToString("O"),
             StoryOrder = p.StoryOrder,
+            StoryType = p.StoryType,
             IncludeInStoryOrder = p.IncludeInStoryOrder,
             ViewCount = p.ViewCount,
             Author = new AuthorDto { Name = p.Author.Name, Avatar = p.Author.AvatarUrl, Bio = p.Author.Bio }

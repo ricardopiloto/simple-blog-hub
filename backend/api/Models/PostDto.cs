@@ -43,6 +43,9 @@ public class PostDto
     [JsonPropertyName("story_order")]
     public int StoryOrder { get; set; }
 
+    [JsonPropertyName("story_type")]
+    public string StoryType { get; set; } = string.Empty;
+
     [JsonPropertyName("include_in_story_order")]
     public bool IncludeInStoryOrder { get; set; }
 
@@ -126,6 +129,9 @@ public class CreateOrUpdatePostRequest
 
     [JsonPropertyName("story_order")]
     public int StoryOrder { get; set; }
+
+    [JsonPropertyName("story_type")]
+    public string StoryType { get; set; } = string.Empty;
 
     [JsonPropertyName("include_in_story_order")]
     public bool? IncludeInStoryOrder { get; set; }

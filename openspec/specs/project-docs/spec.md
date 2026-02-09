@@ -119,32 +119,13 @@ The project documentation (README and, where applicable, openspec/project.md) SH
 
 ### Requirement: README inclui funcionalidades completas, estrutura dos serviços, stack e passo a passo de configuração
 
-O **README** do repositório SHALL incluir: (1) uma **lista completa das funcionalidades** do projeto (leitura pública, índice com paginação/filtro/reordenação, área do autor, gestão de contas, perfil com descrição do autor, critério mínimo de senha, recuperação da senha do Admin, etc.); (2) uma descrição da **estrutura dos serviços** (fluxo Frontend → BFF → API → SQLite e estrutura de pastas relevante: `src/`, `backend/api/`, `backend/bff/` com subpastas); (3) a **stack de desenvolvimento** (versões e tecnologias: Node.js, npm, .NET 9, Vite, React, TypeScript, EF Core, SQLite, etc.) e referência aos comandos de build e scripts principais; (4) um **passo a passo de configuração** numerado, desde o build do projeto até o reset de senha do Admin (clone, instalar dependências, build/executar API e BFF, executar frontend, configurar Admin, primeiro login e troca de senha, e opcionalmente recuperar senha do Admin via ficheiro de trigger). O objetivo é que um novo desenvolvedor ou operador possa seguir uma única sequência lógica para pôr o sistema a funcionar e entender todas as capacidades do produto.
+O README **deve** (SHALL) continuar a incluir lista de funcionalidades, estrutura dos serviços (e estrutura de pastas) e stack, nas secções correspondentes da estrutura em sete secções (secções 2, 5 e 7). O README **deve** (SHALL) referenciar os guias de instalação e atualização (DEPLOY-DOCKER-CADDY, ATUALIZAR-SERVIDOR-DOCKER-CADDY) na secção de Procedimentos (secção 6), de forma que o passo a passo detalhado de configuração **possa** estar nesses guias em vez de duplicado no README. O README **deve** (SHALL) permitir que um novo desenvolvedor ou operador saiba onde encontrar as instruções completas de instalação e atualização (via links) e entenda as capacidades do produto e a estrutura do repositório.
 
-#### Scenario: Leitor encontra lista completa de funcionalidades no README
+#### Scenario: Leitor usa o README para chegar aos guias de instalação
 
-- **WHEN** a developer or operator opens the README
-- **THEN** they find a section (or integrated list) that explicitly covers: public pages (home, posts list, single post with author description), story index (pagination, filter, reorder), theme, login, mandatory password change, author area, Contas (own profile and Admin management), password criteria, post permissions, and Admin password recovery via trigger file
-- **AND** the list matches the current product capabilities described in openspec/project.md
-
-#### Scenario: Leitor entende a estrutura dos serviços
-
-- **WHEN** a developer reads the README
-- **THEN** they find a clear description of the flow Frontend → BFF → API → SQLite and the folder structure (e.g. `src/` for frontend, `backend/api/` and `backend/bff/` with Controllers, Services, etc.)
-- **AND** they can identify where the API, BFF, and frontend code live
-
-#### Scenario: Leitor vê a stack e comandos de build
-
-- **WHEN** a developer looks for technology stack and build instructions
-- **THEN** the README lists Node.js, npm, .NET 9, Vite, React, TypeScript, and other key technologies with versions where relevant
-- **AND** it references the main commands: frontend build (`npm run build`), backend build (`dotnet build` in api and bff), and scripts (dev, test, lint)
-
-#### Scenario: Leitor segue o passo a passo desde o build até ao reset de senha Admin
-
-- **WHEN** a new developer or operator follows the README step-by-step configuration section
-- **THEN** the steps cover in order: clone and install dependencies, build and run API and BFF, run frontend, configure Admin email (and first-run account creation), first login and mandatory password change
-- **AND** the section includes the optional procedure to recover Admin password (create trigger file, restart API, login with default password and change again)
-- **AND** following these steps leads to a working system and ability to log in as Admin and (if needed) recover Admin password
+- **Quando** um operador precisa de instalar o blog em servidor ou atualizar após pull
+- **Então** encontra no README (secção 6) os links para DEPLOY-DOCKER-CADDY.md e ATUALIZAR-SERVIDOR-DOCKER-CADDY.md
+- **E** ao seguir esses links obtém o passo a passo completo de configuração e atualização
 
 ### Requirement: README documenta configuração da chave partilhada BFF–API
 
@@ -437,4 +418,52 @@ Para a **release versionada v1.6**, o ficheiro **CHANGELOG.md** na raiz **deve**
 - **Quando** consulta o guia em docs/local/atualizar-1-4-para-1-6.md (se existir e estiver disponível)
 - **Então** encontra passos para: pull/checkout, reconstruir API e BFF, build do frontend, Caddy (handle /images/posts/), scripts manuais opcionais
 - **E** ao seguir os passos consegue atualizar para a v1.6 com agendamento, upload de capa a funcionar e secção newsletter oculta
+
+### Requirement: Script SQL e documentação para a coluna StoryType; CHANGELOG atualizado
+
+O repositório **deve** (SHALL) incluir um **script SQL manual** em `backend/api/Migrations/Scripts/add_story_type_to_posts.sql` que adiciona a coluna **StoryType** à tabela Posts (para upgrades em que a migração EF Core não foi aplicada). O **README da API** (`backend/api/README.md`) **deve** documentar esse script na secção de migrações manuais e **deve** incluir na secção Troubleshooting uma entrada para o erro "no such column: p.StoryType" (ou "no such column: StoryType") com passos de resolução (reconstruir/restart da API ou executar o script manualmente). O **CHANGELOG** na raiz do repositório **deve** ter uma secção para a versão que inclui estas alterações (ex.: [1.7]) listando as changes OpenSpec aplicadas (incl. tipo de história no post, toggle no Índice da História, campo História como toggle e obrigatório, resumo não atualizado ao editar, e script/docs/changelog).
+
+#### Scenario: Operador aplica o script ou reconstrói a API
+
+- **Dado** que o operador tem uma base de dados criada antes da migração que adiciona StoryType
+- **Quando** a API arranca e devolve erro "no such column: p.StoryType"
+- **Então** o operador pode consultar o README da API (Troubleshooting) e seguir os passos: reconstruir e reiniciar a API, ou executar o script `add_story_type_to_posts.sql` uma vez e reiniciar
+- **E** após aplicar uma das soluções, a API funciona com a coluna StoryType
+
+#### Scenario: Leitor consulta o CHANGELOG e vê a nova versão
+
+- **Dado** que o repositório tem a secção [1.7] (ou a versão acordada) no CHANGELOG
+- **Quando** um leitor ou operador abre o CHANGELOG
+- **Então** vê listadas as alterações dessa versão, incluindo a funcionalidade de tipo de história (Velho Mundo / Idade das Trevas), o toggle no Índice da História, o campo História como toggle e obrigatório no formulário de post, e o script/documentação para a coluna StoryType
+
+### Requirement: Troubleshooting para 404 em GET /images/posts/ após upload de capa
+
+A documentação de deploy com Docker (DEPLOY-DOCKER-CADDY.md) **deve** (SHALL) incluir uma entrada de **troubleshooting** que descreva o cenário em que o **upload** da imagem de capa do post devolve **sucesso** (200 OK) mas a **imagem não é exibida** no post e, no console do browser (DevTools → Network), o pedido **GET** a `https://dominio/images/posts/<ficheiro>.jpg` devolve **404**. A entrada **deve** explicar a **causa** (Caddy não serve o path `/images/posts/` a partir do diretório de uploads no host, ou o volume do BFF não está montado) e os **passos de resolução** (confirmar volume no docker-compose no serviço BFF; adicionar no Caddyfile o bloco `handle /images/posts/*` com `root` apontando para REPO_DIR/frontend/public/images e `file_server`; recarregar o Caddy), com referência à secção do guia onde o exemplo completo do Caddyfile está descrito.
+
+#### Scenario: Operador vê 404 no console após upload de capa
+
+- **Dado** que o operador fez deploy com Docker + Caddy e um autor enviou uma imagem de capa no formulário de post
+- **Quando** a imagem não aparece no post e o operador abre o DevTools → Network (ou o console)
+- **Então** vê um pedido GET a `https://dominio/images/posts/xxx.jpg` com resposta **404**
+- **E** ao consultar o DEPLOY-DOCKER-CADDY (secção de troubleshooting) encontra a entrada que descreve este sintoma
+- **E** segue os passos (volume BFF + Caddy handle /images/posts/*) e, após recarregar o Caddy, as imagens passam a ser servidas e a aparecer no post
+
+### Requirement: README organizado em sete secções e CHANGELOG com versão 1.8
+
+O **README.md** do repositório **deve** (SHALL) estar organizado em **sete secções**, na seguinte ordem: (1) **Explicação breve do projeto** — o que é o blog, fonte de dados (BFF → API → SQLite), interface em português, e URL do repositório; (2) **Stack de desenvolvimento** — tecnologias do frontend e do backend, comandos de build e scripts principais; (3) **Requisitos mínimos** — Node.js/npm e .NET 8 SDK com links de instalação; (4) **Links para CHANGELOG** — referência ao CHANGELOG.md e ao versionamento por tag (ex.: v1.7, v1.8); (5) **Funcionalidades existentes no blog** — lista concisa das capacidades atuais; (6) **Procedimentos de instalação e atualização (com os links)** — links para DEPLOY-DOCKER-CADDY.md (instalação inicial), ATUALIZAR-SERVIDOR-DOCKER-CADDY.md (atualização) e EXPOR-DB-NO-HOST.md (base de dados no host), sem duplicar o conteúdo completo desses guias; (7) **Estrutura de pastas** — árvore do repositório com descrição breve das pastas principais.
+
+O **CHANGELOG.md** **deve** conter a secção **## [1.8]** (ou o número de versão acordado para esta release) descrevendo a simplificação do README, a atualização da documentação e a nova versão no changelog, em conformidade com o requisito existente de que cada release versionada tem uma secção no CHANGELOG.
+
+#### Scenario: Leitor encontra as sete secções e os links no README
+
+- **Quando** um desenvolvedor ou operador abre o README.md
+- **Então** encontra as sete secções na ordem indicada (explicação, stack, requisitos, links CHANGELOG, funcionalidades, procedimentos com links, estrutura de pastas)
+- **E** na secção de procedimentos encontra links para DEPLOY-DOCKER-CADDY.md, ATUALIZAR-SERVIDOR-DOCKER-CADDY.md e EXPOR-DB-NO-HOST.md
+- **E** na secção de links encontra referência ao CHANGELOG e ao versionamento por tag
+
+#### Scenario: Leitor consulta o CHANGELOG para a versão 1.8
+
+- **Quando** um utilizador abre o CHANGELOG.md
+- **Então** encontra a secção **## [1.8]** com a entrada para simplify-readme-docs-changelog-v1-8 (README reorganizado em sete secções, documentação alinhada, nova versão no changelog)
+- **E** pode usar essa informação para saber o que mudou nesta release
 

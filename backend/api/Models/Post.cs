@@ -15,6 +15,8 @@ public class Post
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     public int StoryOrder { get; set; }
+    /// <summary>Story line: velho_mundo or idade_das_trevas. Required.</summary>
+    public string StoryType { get; set; } = "velho_mundo";
     /// <summary>When true, post appears in Índice da História and in prev/next sequence. Default true.</summary>
     public bool IncludeInStoryOrder { get; set; } = true;
     public Guid AuthorId { get; set; }

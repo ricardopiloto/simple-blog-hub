@@ -85,6 +85,10 @@ namespace BlogApi.Migrations
                     b.Property<int>("StoryOrder")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("StoryType")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("TEXT");

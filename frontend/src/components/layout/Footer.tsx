@@ -97,6 +97,9 @@ export function Footer() {
               Código no GitHub
             </a>
           </p>
+          <p className="text-xs text-muted-foreground/80">
+            {__APP_VERSION__ === '0.0.0' ? 'Versão dev' : `Versão ${__APP_VERSION__}`}
+          </p>
         </div>
       </div>
     </footer>

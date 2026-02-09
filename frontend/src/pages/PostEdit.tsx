@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -28,7 +29,7 @@ import {
   removeCollaborator,
   uploadCoverImage,
 } from '@/api/client';
-import type { CreateOrUpdatePostPayload } from '@/api/types';
+import type { CreateOrUpdatePostPayload, StoryType } from '@/api/types';
 import { useAuth } from '@/contexts/AuthContext';
 
 /**
@@ -55,6 +56,7 @@ export default function PostEdit() {
   const { author } = useAuth();
   const isNew = !id;
 
+  const [storyType, setStoryType] = useState<'' | StoryType>('');
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
   const [excerpt, setExcerpt] = useState('');
@@ -68,6 +70,7 @@ export default function PostEdit() {
   const [scheduledTime, setScheduledTime] = useState<string>('');
   const [selectedAuthorId, setSelectedAuthorId] = useState('');
   const [uploadingCover, setUploadingCover] = useState(false);
+  const [storyTypeError, setStoryTypeError] = useState('');
 
   const { data: post, isLoading: loadingPost } = useQuery({
     queryKey: ['post', 'edit', id],
@@ -107,6 +110,7 @@ export default function PostEdit() {
 
   useEffect(() => {
     if (post) {
+      setStoryType(post.story_type ?? '');
       setTitle(post.title);
       setSlug(post.slug);
       setExcerpt(post.excerpt ?? '');
@@ -169,11 +173,16 @@ export default function PostEdit() {
 
   function handleContentChange(value: string) {
     setContent(value);
-    setExcerpt(value.slice(0, EXCERPT_LENGTH).trim());
+    if (isNew) setExcerpt(value.slice(0, EXCERPT_LENGTH).trim());
   }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setStoryTypeError('');
+    if (storyType !== 'velho_mundo' && storyType !== 'idade_das_trevas') {
+      setStoryTypeError('Selecione a história (Velho Mundo ou Idade das Trevas).');
+      return;
+    }
     let scheduledIso: string | null = null;
     if (scheduleEnabled && scheduledDate && scheduledTime) {
       const d = new Date(`${scheduledDate}T${scheduledTime}`);
@@ -189,6 +198,7 @@ export default function PostEdit() {
       cover_image: coverImage.trim() || null,
       published: scheduledIso ? false : published,
       story_order: storyOrder,
+      story_type: storyType,
       include_in_story_order: includeInStoryOrder,
       scheduled_publish_at: scheduleEnabled ? (scheduledIso ?? null) : null,
     };
@@ -223,6 +233,31 @@ export default function PostEdit() {
           </h1>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="post-story-type">História (obrigatório)</Label>
+              <ToggleGroup
+                id="post-story-type"
+                type="single"
+                value={storyType === '' ? undefined : storyType}
+                onValueChange={(v) => {
+                  if (v) {
+                    setStoryType(v as StoryType);
+                    setStoryTypeError('');
+                  }
+                }}
+                className={cn('inline-flex rounded-md border p-1', storyTypeError && 'border-destructive')}
+              >
+                <ToggleGroupItem value="velho_mundo" aria-label="Velho Mundo">
+                  Velho Mundo
+                </ToggleGroupItem>
+                <ToggleGroupItem value="idade_das_trevas" aria-label="Idade das Trevas">
+                  Idade das Trevas
+                </ToggleGroupItem>
+              </ToggleGroup>
+              {storyTypeError && (
+                <p className="text-sm text-destructive">{storyTypeError}</p>
+              )}
+            </div>
             <div className="space-y-2">
               <Label htmlFor="post-title">Título</Label>
               <Input

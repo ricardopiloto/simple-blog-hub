@@ -1,6 +1,19 @@
 # Changelog
 
-Os releases são versionados por tag (ex.: `v1.3`, `v1.4`, `v1.5`, `v1.6`). O resumo detalhado das changes OpenSpec aplicadas pode ser usado na mensagem do commit de release e está também na proposta da respetiva versão em `openspec/changes/`.
+Os releases são versionados por tag (ex.: `v1.3`, `v1.4`, `v1.5`, `v1.6`, `v1.7`, `v1.8`). O resumo detalhado das changes OpenSpec aplicadas pode ser usado na mensagem do commit de release e está também na proposta da respetiva versão em `openspec/changes/`.
+
+## [1.8]
+
+- simplify-readme-docs-changelog-v1-8: README reorganizado em sete secções (explicação breve do projeto, stack de desenvolvimento, requisitos mínimos, links para CHANGELOG, funcionalidades existentes no blog, procedimentos de instalação e atualização com links para os guias, estrutura de pastas); documentação alinhada; nova versão no changelog.
+
+## [1.7]
+
+- add-post-story-type-velho-mundo-idade-das-trevas: Tipo de história obrigatório no post (Velho Mundo / Idade das Trevas); coluna StoryType na API; campo antes do Título no formulário Novo/Editar post; validação na API e no frontend.
+- add-story-index-universe-toggle: Toggle no Índice da História para o leitor escolher o universo (Velho Mundo ou Idade das Trevas); por defeito Velho Mundo; toggle só visível quando existem posts dos dois tipos; paginação e filtro aplicam-se à lista filtrada por universo.
+- post-edit-historia-field-toggle-ui: Campo "História" no formulário de post apresentado como toggle (dois lados) em vez de select.
+- clarify-historia-required-in-post-edit: Label "História (obrigatório)" no formulário de post para indicar claramente que o campo é obrigatório.
+- disable-auto-excerpt-when-editing-post: Campo Resumo não é atualizado automaticamente ao editar o conteúdo no formulário de Editar post (apenas no Novo post continua a sincronizar com os primeiros 32 caracteres).
+- add-story-type-script-docs-changelog: Script SQL manual `add_story_type_to_posts.sql` para a coluna StoryType; documentação no README da API (migrações manuais e troubleshooting "no such column: p.StoryType"); CHANGELOG atualizado com a secção [1.7].
 
 ## [1.6]
 

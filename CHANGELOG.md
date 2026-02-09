@@ -1,6 +1,10 @@
 # Changelog
 
-Os releases são versionados por tag (ex.: `v1.3`, `v1.4`, `v1.5`, `v1.6`, `v1.7`, `v1.8`). O resumo detalhado das changes OpenSpec aplicadas pode ser usado na mensagem do commit de release e está também na proposta da respetiva versão em `openspec/changes/`.
+Os releases são versionados por tag (ex.: `v1.3`, `v1.4`, `v1.5`, `v1.6`, `v1.7`, `v1.8`, `v1.9`). O resumo detalhado das changes OpenSpec aplicadas pode ser usado na mensagem do commit de release e está também na proposta da respetiva versão em `openspec/changes/`.
+
+## [1.9]
+
+- fix-sitemap-xml-declaration-validation: Correção da declaração XML do sitemap (resposta GET /sitemap.xml sem BOM, primeira linha `<?xml version="1.0" encoding="UTF-8" ?>` com espaço antes de `?>`) para validadores externos (ex.: xml-sitemaps.com).
 
 ## [1.8]
 

@@ -31,7 +31,7 @@ public class SeoController : ControllerBase
         var baseUrl = $"{Request.Scheme}://{Request.Host}".TrimEnd('/');
 
         var xml = new StringBuilder();
-        using (var writer = XmlWriter.Create(xml, new XmlWriterSettings { Indent = true, OmitXmlDeclaration = false, Encoding = Encoding.UTF8 }))
+        using (var writer = XmlWriter.Create(xml, new XmlWriterSettings { Indent = true, OmitXmlDeclaration = true, Encoding = Encoding.UTF8 }))
         {
             writer.WriteStartDocument(false);
             writer.WriteStartElement("urlset", SitemapNamespace);
@@ -75,7 +75,8 @@ public class SeoController : ControllerBase
             writer.WriteEndDocument();
         }
 
-        return Content(xml.ToString(), "application/xml; charset=utf-8", Encoding.UTF8);
+        var xmlBody = $"<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n{xml}";
+        return Content(xmlBody, "application/xml; charset=utf-8", new UTF8Encoding(false));
     }
 
     private static void WriteUrl(XmlWriter writer, string loc, string? lastmod)

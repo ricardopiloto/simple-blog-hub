@@ -8,9 +8,8 @@ namespace BlogApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class AuthorsController : ControllerBase
+public class AuthorsController : AuthorizedApiControllerBase
 {
-    private const string AuthorIdHeader = "X-Author-Id";
     private readonly BlogDbContext _db;
 
     public AuthorsController(BlogDbContext db)
@@ -24,7 +23,7 @@ public class AuthorsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<AuthorListDto>>> GetAuthors(CancellationToken cancellationToken = default)
     {
-        if (!Request.Headers.TryGetValue(AuthorIdHeader, out var value) || string.IsNullOrWhiteSpace(value))
+        if (GetAuthorIdFromHeader() == null)
             return Unauthorized();
         var authors = await _db.Authors
             .OrderBy(a => a.Name)

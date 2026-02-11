@@ -8,33 +8,27 @@ namespace BlogApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class UsersController : ControllerBase
+public class UsersController : AuthorizedApiControllerBase
 {
-    private const string AuthorIdHeader = "X-Author-Id";
     private readonly BlogDbContext _db;
     private readonly IAdminService _adminService;
+    private readonly ILogger<UsersController> _logger;
 
-    public UsersController(BlogDbContext db, IAdminService adminService)
+    public UsersController(BlogDbContext db, IAdminService adminService, ILogger<UsersController> logger)
     {
         _db = db;
         _adminService = adminService;
-    }
-
-    private bool TryGetAuthorId(out Guid authorId)
-    {
-        authorId = default;
-        if (!Request.Headers.TryGetValue(AuthorIdHeader, out var value) || string.IsNullOrWhiteSpace(value))
-            return false;
-        return Guid.TryParse(value.ToString().Trim(), out authorId);
+        _logger = logger;
     }
 
     /// <summary>GET /api/users — list users (Admin only).</summary>
     [HttpGet]
     public async Task<ActionResult<IEnumerable<UserListDto>>> GetUsers(CancellationToken cancellationToken = default)
     {
-        if (!TryGetAuthorId(out var authorId))
+        var authorId = GetAuthorIdFromHeader();
+        if (authorId == null)
             return Unauthorized();
-        if (!await _adminService.IsAdminAsync(authorId, cancellationToken))
+        if (!await _adminService.IsAdminAsync(authorId.Value, cancellationToken))
             return Forbid();
 
         var users = await _db.Users
@@ -56,12 +50,13 @@ public class UsersController : ControllerBase
     [HttpGet("me")]
     public async Task<ActionResult<UserListDto>> GetCurrentUser(CancellationToken cancellationToken = default)
     {
-        if (!TryGetAuthorId(out var authorId))
+        var authorId = GetAuthorIdFromHeader();
+        if (authorId == null)
             return Unauthorized();
 
         var user = await _db.Users
             .Include(u => u.Author)
-            .FirstOrDefaultAsync(u => u.AuthorId == authorId, cancellationToken);
+            .FirstOrDefaultAsync(u => u.AuthorId == authorId.Value, cancellationToken);
         if (user == null)
             return Unauthorized();
 
@@ -79,19 +74,21 @@ public class UsersController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<UserListDto>> CreateUser([FromBody] CreateUserRequest request, CancellationToken cancellationToken = default)
     {
-        if (!TryGetAuthorId(out var authorId))
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var authorId = GetAuthorIdFromHeader();
+        if (authorId == null)
             return Unauthorized();
-        if (!await _adminService.IsAdminAsync(authorId, cancellationToken))
+        if (!await _adminService.IsAdminAsync(authorId.Value, cancellationToken))
             return Forbid();
 
-        var email = request.Email?.Trim() ?? string.Empty;
-        var authorName = request.AuthorName?.Trim() ?? string.Empty;
+        var email = request.Email.Trim();
+        var authorName = request.AuthorName.Trim();
         var passwordProvided = request.Password != null && request.Password.Trim().Length > 0;
         var password = string.IsNullOrWhiteSpace(request.Password) ? SeedData.InitialAdminDefaultPassword : request.Password!.Trim();
         if (passwordProvided && !PasswordValidation.IsValid(password))
             return BadRequest(PasswordValidation.ErrorMessage);
-        if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(authorName))
-            return BadRequest();
 
         if (await _db.Users.AnyAsync(u => u.Email == email, cancellationToken))
             return Conflict();
@@ -119,6 +116,7 @@ public class UsersController : ControllerBase
         };
         _db.Users.Add(user);
         await _db.SaveChangesAsync(cancellationToken);
+        _logger.LogInformation("Audit: UserCreated By={AuthorId} TargetUserId={UserId} TargetEmail={Email}", authorId.Value, user.Id, email);
 
         return CreatedAtAction(nameof(GetUsers), (object?)null, new UserListDto
         {
@@ -133,14 +131,18 @@ public class UsersController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UpdateUserRequest request, CancellationToken cancellationToken = default)
     {
-        if (!TryGetAuthorId(out var authorId))
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var authorId = GetAuthorIdFromHeader();
+        if (authorId == null)
             return Unauthorized();
 
-        var callerUser = await _db.Users.FirstOrDefaultAsync(u => u.AuthorId == authorId, cancellationToken);
+        var callerUser = await _db.Users.FirstOrDefaultAsync(u => u.AuthorId == authorId.Value, cancellationToken);
         if (callerUser == null)
             return Unauthorized();
 
-        var isAdmin = await _adminService.IsAdminAsync(authorId, cancellationToken);
+        var isAdmin = await _adminService.IsAdminAsync(authorId.Value, cancellationToken);
         var isSelf = callerUser.Id == id;
 
         if (!isAdmin && !isSelf)
@@ -196,9 +198,10 @@ public class UsersController : ControllerBase
     [HttpPost("{id}/reset-password")]
     public async Task<IActionResult> ResetPassword(Guid id, CancellationToken cancellationToken = default)
     {
-        if (!TryGetAuthorId(out var authorId))
+        var authorId = GetAuthorIdFromHeader();
+        if (authorId == null)
             return Unauthorized();
-        if (!await _adminService.IsAdminAsync(authorId, cancellationToken))
+        if (!await _adminService.IsAdminAsync(authorId.Value, cancellationToken))
             return Forbid();
 
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
@@ -208,6 +211,7 @@ public class UsersController : ControllerBase
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(SeedData.InitialAdminDefaultPassword);
         user.MustChangePassword = true;
         await _db.SaveChangesAsync(cancellationToken);
+        _logger.LogInformation("Audit: PasswordReset By={AuthorId} TargetUserId={UserId}", authorId.Value, id);
         return NoContent();
     }
 
@@ -215,9 +219,10 @@ public class UsersController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteUser(Guid id, CancellationToken cancellationToken = default)
     {
-        if (!TryGetAuthorId(out var authorId))
+        var authorId = GetAuthorIdFromHeader();
+        if (authorId == null)
             return Unauthorized();
-        if (!await _adminService.IsAdminAsync(authorId, cancellationToken))
+        if (!await _adminService.IsAdminAsync(authorId.Value, cancellationToken))
             return Forbid();
 
         var user = await _db.Users.Include(u => u.Author).FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
@@ -226,6 +231,7 @@ public class UsersController : ControllerBase
 
         _db.Users.Remove(user);
         await _db.SaveChangesAsync(cancellationToken);
+        _logger.LogInformation("Audit: UserDeleted By={AuthorId} TargetUserId={UserId}", authorId.Value, id);
         return NoContent();
     }
 }

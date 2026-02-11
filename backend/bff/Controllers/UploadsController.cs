@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace BlogBff.Controllers;
 
@@ -36,10 +37,11 @@ public class UploadsController : ControllerBase
     }
 
     /// <summary>
-    /// POST /bff/uploads/cover — upload de imagem de capa do post. Autenticado; aceita image/jpeg, image/png, image/webp (máx. 5 MB).
+    /// POST /bff/uploads/cover — upload de imagem de capa do post. Autenticado; aceita image/jpeg, image/png, image/webp (máx. 5 MB). Validates magic bytes before saving.
     /// </summary>
     [HttpPost("cover")]
     [Authorize]
+    [EnableRateLimiting("Uploads")]
     [RequestSizeLimit(MaxFileSizeBytes)]
     [RequestFormLimits(MultipartBodyLengthLimit = MaxFileSizeBytes)]
     public async Task<IActionResult> UploadCover(IFormFile? file, CancellationToken cancellationToken = default)
@@ -54,8 +56,13 @@ public class UploadsController : ControllerBase
         if (!AllowedContentTypes.Contains(contentType))
             return BadRequest(new { error = "Tipo de ficheiro não permitido. Use JPEG, PNG ou WebP." });
 
-        if (!ContentTypeToExtension.TryGetValue(contentType, out var ext))
-            ext = ".jpg";
+        string? ext = null;
+        await using (var stream = file.OpenReadStream())
+        {
+            ext = GetExtensionFromMagicBytes(stream);
+        }
+        if (ext == null)
+            return BadRequest(new { error = "Conteúdo do ficheiro não corresponde a JPEG, PNG ou WebP. Verifique o formato." });
 
         var uploadsPath = GetUploadsPath();
         Directory.CreateDirectory(uploadsPath);
@@ -69,6 +76,26 @@ public class UploadsController : ControllerBase
 
         var publicUrl = "/images/posts/" + fileName;
         return Ok(new { url = publicUrl });
+    }
+
+    /// <summary>Reads first bytes and returns extension if magic bytes match JPEG, PNG or WebP; otherwise null.</summary>
+    private static string? GetExtensionFromMagicBytes(Stream stream)
+    {
+        var header = new byte[12];
+        var read = stream.Read(header, 0, header.Length);
+        if (read < 3) return null;
+        // JPEG: FF D8 FF
+        if (read >= 3 && header[0] == 0xFF && header[1] == 0xD8 && header[2] == 0xFF)
+            return ".jpg";
+        // PNG: 89 50 4E 47 0D 0A 1A 0A
+        if (read >= 8 && header[0] == 0x89 && header[1] == 0x50 && header[2] == 0x4E && header[3] == 0x47
+            && header[4] == 0x0D && header[5] == 0x0A && header[6] == 0x1A && header[7] == 0x0A)
+            return ".png";
+        // WebP: RIFF (52 49 46 46) .... WEBP (57 45 42 50)
+        if (read >= 12 && header[0] == 0x52 && header[1] == 0x49 && header[2] == 0x46 && header[3] == 0x46
+            && header[8] == 0x57 && header[9] == 0x45 && header[10] == 0x42 && header[11] == 0x50)
+            return ".webp";
+        return null;
     }
 
     private string GetUploadsPath()

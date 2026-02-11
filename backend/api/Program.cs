@@ -27,6 +27,14 @@ builder.Services.AddHostedService<ScheduledPublishBackgroundService>();
 
 var app = builder.Build();
 
+// Production: require API:InternalKey
+if (app.Environment.IsProduction())
+{
+    var key = app.Configuration["API:InternalKey"]?.Trim();
+    if (string.IsNullOrEmpty(key))
+        throw new InvalidOperationException("In production, API:InternalKey must be configured (shared secret between BFF and API).");
+}
+
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<BlogDbContext>();
@@ -41,6 +49,17 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseHttpsRedirection();
+
+// Security headers
+app.Use(async (context, next) =>
+{
+    context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+    context.Response.Headers["X-Frame-Options"] = "DENY";
+    context.Response.Headers["Referrer-Policy"] = "no-referrer";
+    if (app.Environment.IsProduction() && context.Request.IsHttps)
+        context.Response.Headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
+    await next(context);
+});
 
 // Optional shared key between BFF and API: when API:InternalKey is set, require X-Api-Key header (constant-time comparison).
 var internalKey = app.Configuration["API:InternalKey"]?.Trim();

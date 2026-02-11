@@ -12,7 +12,7 @@ import Posts from "./pages/Posts";
 import PostPage from "./pages/PostPage";
 import StoryIndex from "./pages/StoryIndex";
 import Login from "./pages/Login";
-import AreaAutor from "./pages/AreaAutor";
+import AreaAutorDashboard from "./pages/AreaAutorDashboard";
 import AreaContas from "./pages/AreaContas";
 import PostEdit from "./pages/PostEdit";
 import NotFound from "./pages/NotFound";
@@ -34,7 +34,8 @@ const App = () => (
             <Route path="/post/:slug" element={<PostPage />} />
             <Route path="/indice" element={<StoryIndex />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/area-autor" element={<ProtectedRoute><AreaAutor /></ProtectedRoute>} />
+            <Route path="/area-autor" element={<ProtectedRoute><AreaAutorDashboard /></ProtectedRoute>} />
+            <Route path="/area-autor/publicacoes" element={<Navigate to="/area-autor" replace />} />
             <Route path="/area-autor/contas" element={<ProtectedRoute><AreaContas /></ProtectedRoute>} />
             <Route path="/area-autor/posts/novo" element={<ProtectedRoute><PostEdit /></ProtectedRoute>} />
             <Route path="/area-autor/posts/:id/editar" element={<ProtectedRoute><PostEdit /></ProtectedRoute>} />

@@ -8,24 +8,18 @@ namespace BlogApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class PostsController : ControllerBase
+public class PostsController : AuthorizedApiControllerBase
 {
-    private const string AuthorIdHeader = "X-Author-Id";
     private static readonly HashSet<string> AllowedStoryTypes = new(StringComparer.OrdinalIgnoreCase) { "velho_mundo", "idade_das_trevas" };
     private readonly BlogDbContext _db;
     private readonly IAdminService _adminService;
+    private readonly ILogger<PostsController> _logger;
 
-    public PostsController(BlogDbContext db, IAdminService adminService)
+    public PostsController(BlogDbContext db, IAdminService adminService, ILogger<PostsController> logger)
     {
         _db = db;
         _adminService = adminService;
-    }
-
-    private Guid? GetAuthorIdFromHeader()
-    {
-        if (!Request.Headers.TryGetValue(AuthorIdHeader, out var value) || string.IsNullOrWhiteSpace(value))
-            return null;
-        return Guid.TryParse(value.ToString().Trim(), out var id) ? id : null;
+        _logger = logger;
     }
 
     /// <summary>
@@ -175,14 +169,15 @@ public class PostsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<PostDto>> CreatePost([FromBody] CreateOrUpdatePostRequest request, CancellationToken cancellationToken = default)
     {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
         var authorId = GetAuthorIdFromHeader();
         if (authorId == null)
             return Unauthorized();
         var author = await _db.Authors.FindAsync(new object[] { authorId.Value }, cancellationToken);
         if (author == null)
             return Unauthorized();
-        if (string.IsNullOrWhiteSpace(request.Title) || string.IsNullOrWhiteSpace(request.Slug))
-            return BadRequest();
         if (string.IsNullOrWhiteSpace(request.StoryType) || !AllowedStoryTypes.Contains(request.StoryType.Trim()))
             return BadRequest("story_type must be 'velho_mundo' or 'idade_das_trevas'");
         if (await _db.Posts.AnyAsync(p => p.Slug == request.Slug.Trim(), cancellationToken))
@@ -212,6 +207,8 @@ public class PostsController : ControllerBase
         };
         _db.Posts.Add(post);
         await _db.SaveChangesAsync(cancellationToken);
+        if (post.Published)
+            _logger.LogInformation("Audit: PostPublished By={AuthorId} PostId={PostId}", authorId.Value, post.Id);
         await _db.Entry(post).Reference(p => p.Author).LoadAsync(cancellationToken);
         return CreatedAtAction(nameof(GetByIdForEdit), new { id = post.Id }, ToDto(post, contentAsHtml: false, includeAuthorId: true, includeCollaborators: false));
     }
@@ -219,6 +216,9 @@ public class PostsController : ControllerBase
     [HttpPut("{id:guid}")]
     public async Task<ActionResult<PostDto>> UpdatePost(Guid id, [FromBody] CreateOrUpdatePostRequest request, CancellationToken cancellationToken = default)
     {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
         var authorId = GetAuthorIdFromHeader();
         if (authorId == null)
             return Unauthorized();
@@ -227,13 +227,12 @@ public class PostsController : ControllerBase
             return NotFound();
         if (!await CanEditAsync(post.Id, authorId.Value, cancellationToken))
             return Forbid();
-        if (string.IsNullOrWhiteSpace(request.Title) || string.IsNullOrWhiteSpace(request.Slug))
-            return BadRequest();
         if (string.IsNullOrWhiteSpace(request.StoryType) || !AllowedStoryTypes.Contains(request.StoryType.Trim()))
             return BadRequest("story_type must be 'velho_mundo' or 'idade_das_trevas'");
         var slugTaken = await _db.Posts.AnyAsync(p => p.Slug == request.Slug.Trim() && p.Id != id, cancellationToken);
         if (slugTaken)
             return Conflict("Slug already in use");
+        var wasPublished = post.Published;
         post.StoryType = request.StoryType.Trim().ToLowerInvariant();
         post.Title = request.Title.Trim();
         post.Slug = request.Slug.Trim();
@@ -259,6 +258,8 @@ public class PostsController : ControllerBase
             post.IncludeInStoryOrder = request.IncludeInStoryOrder.Value;
         post.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync(cancellationToken);
+        if (post.Published && !wasPublished)
+            _logger.LogInformation("Audit: PostPublished By={AuthorId} PostId={PostId}", authorId.Value, post.Id);
         await _db.Entry(post).Collection(p => p.Collaborators).Query().Include(c => c.Author).LoadAsync(cancellationToken);
         return Ok(ToDto(post, contentAsHtml: false, includeAuthorId: true, includeCollaborators: true));
     }
@@ -277,6 +278,7 @@ public class PostsController : ControllerBase
             return Forbid();
         _db.Posts.Remove(post);
         await _db.SaveChangesAsync(cancellationToken);
+        _logger.LogInformation("Audit: PostDeleted By={AuthorId} PostId={PostId}", authorId.Value, id);
         return NoContent();
     }
 

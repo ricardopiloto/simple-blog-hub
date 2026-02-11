@@ -1,0 +1,9 @@
+# Tasks: Ordenação configurável e filtro por linha da história (Publicações)
+
+- [x] **Frontend (estado):** Na página /area-autor (AreaAutorDashboard), adicionar estado para ordenação (`sortBy`: date | story_order; `sortDir`: asc | desc; default date + desc) e para filtro por linha da história (`storyTypeFilter`: all | velho_mundo | idade_das_trevas; default all).
+- [x] **Frontend (lista):** Aplicar filtro por `storyTypeFilter` na lista da secção Publicações (após filtro por estado, se existir; antes do filtro de texto). Ordenar a lista filtrada por `sortBy` e `sortDir` (date = `created_at` ou `updated_at`; story_order = `story_order`). Garantir ordem estável quando valores empatam.
+- [x] **Frontend (UI — filtro story type):** Adicionar ao lado do campo de pesquisa (filtro de texto) um toggle ou selector para linha da história com opções: Todos, Velho Mundo, Idade das Trevas. Colocação: mesmo bloco/linha que o input de pesquisa (ex.: à direita do input ou logo abaixo em mobile).
+- [x] **Frontend (UI — ordenação):** Adicionar selector de ordenação no lado oposto ao do filtro de texto (ex.: filtro + story type à esquerda, "Ordenar por" à direita). Opções equivalentes: por data (asc/desc) e por ordem da história (asc/desc). Default: data descendente (mais novo primeiro).
+- [x] **Frontend (responsividade):** Em viewports pequenos, manter filtro + story type agrupados e ordenação visível (pode empilhar numa segunda linha). Garantir labels/acessibilidade para ambos os controlos.
+- [x] **Spec:** Adicionar em author-area-dashboard (delta) requisito ADDED: secção Publicações SHALL ter ordenação configurável (data asc/desc, story_order asc/desc; default data desc) e filtro por linha da história (Todos | Velho Mundo | Idade das Trevas); layout: filtro de texto + story type de um lado, ordenação do outro; cenários verificáveis.
+- [x] Executar `openspec validate add-author-area-sort-and-story-type-filter --strict` e corrigir até passar.

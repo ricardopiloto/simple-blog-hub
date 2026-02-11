@@ -1,6 +1,29 @@
 # Changelog
 
-Os releases são versionados por tag (ex.: `v1.3`, `v1.4`, `v1.5`, `v1.6`, `v1.7`, `v1.8`, `v1.9`). O resumo detalhado das changes OpenSpec aplicadas pode ser usado na mensagem do commit de release e está também na proposta da respetiva versão em `openspec/changes/`.
+Os releases são versionados por tag (ex.: `v1.9`, `v1.10`, `v2.0`). O resumo detalhado das changes OpenSpec aplicadas pode ser usado na mensagem do commit de release e está também na proposta da respetiva versão em `openspec/changes/`.
+
+## [2.0]
+
+- add-author-dashboard-inicial-v2: Dashboard como tela inicial da área do autor; seis indicadores (total de posts, publicados, planejados, rascunho, visualizações, autores); rota /area-autor para o dashboard; rota /area-autor/publicacoes para a lista de posts.
+- add-dashboard-rascunho-metric: Indicador "Rascunho" (draft_count) no dashboard da área do autor.
+- merge-dashboard-publications-single-page: Página única em /area-autor com "Visão geral do blog" (dashboard) no topo e secção "Publicações" (lista de posts) em baixo; /area-autor/publicacoes redireciona para /area-autor.
+- style-dashboard-rascunho-card-yellow-border: Borda fina amarela no card Rascunho do dashboard (depois substituída por indicador dinâmico na indicate-dashboard-card-filter-with-yellow-border).
+- make-dashboard-cards-clickable: Cards Total, Publicados, Planejados e Rascunho clicáveis (filtram a lista por estado); card Autores leva a /area-autor/contas; scroll suave até à secção Publicações ao clicar nos cards de filtro.
+- add-author-area-sort-and-story-type-filter: Ordenação configurável na secção Publicações (por data ou ordem da história, asc/desc; default mais recentes); filtro por linha da história (Todos / Velho Mundo / Idade das Trevas); layout: pesquisa + linha da história de um lado, ordenação do outro.
+- widen-author-area-search-input: Campo de pesquisa da secção Publicações com largura mínima para o placeholder "Pesquisar por autor, título ou data" ficar visível.
+- indicate-dashboard-card-filter-with-yellow-border: Borda amarela fixa do card Rascunho removida; borda amarela indica o card de filtro ativo (Total, Publicados, Planejados ou Rascunho); ao alterar pesquisa, linha da história ou ordenação, o filtro por estado é desmarcado (nenhum card com borda).
+- update-docs-and-changelog-for-v2: Atualização da documentação do projeto e CHANGELOG para a versão 2.0 (README, openspec/project.md, versão no frontend).
+
+## [1.10]
+
+- add-security-hardening-assessment: Avaliação de segurança do projeto (frontend, BFF, API, infra); documento SECURITY-HARDENING.md em docs/security/ com plano de melhorias em cinco fases; spec security-hardening com requisitos ADDED e cenários; sem alterações de código.
+- add-security-remediation-proposal: Plano de correção de segurança; documento SECURITY-REMEDIATION.md em docs/security/; spec security-hardening; sem alterações de código.
+- add-code-improvements-evaluation: Avaliação de melhorias de código (segurança, simplificação, reaproveitamento); documento CODE-IMPROVEMENTS.md em docs/improvements/ com propostas e prioridade; spec code-improvements com requisitos ADDED; sem alterações de código.
+- add-changelog-1-10-docs-update: Atualização da documentação do projeto: reorganização em docs/ (changelog, deploy, database, security, improvements, local); CHANGELOG em docs/changelog/; README com referências a CHANGELOG, SECURITY-HARDENING e CODE-IMPROVEMENTS nos caminhos corretos, exemplos de tags v1.8–v1.10, estrutura de pastas com docs/ e openspec/ no local original; docs/README.md com tabela e nota OpenSpec; .gitignore para docs/local/; versão no rodapé (package.json); secção [1.10] inicial no changelog.
+- harden-login-credentials-exposure: Redução da exposição de credenciais: documentação sem senha em texto claro; appsettings com placeholder; frontend sem string literal da senha; spec security-hardening.
+- add-remaining-hardening-improvements-and-db-script-rule: Validação de slug com regex na API; documentação de logging e permissões da pasta data/; regra no README da API para alterações de esquema (script manual obrigatório); spec project-docs.
+- apply-code-improvements: BFF: helper GetAuthorId(ClaimsPrincipal); API: base controller com X-Author-Id, Data Annotations e ModelState; frontend: requestPublic/requestWithAuth e refatoração do cliente BFF.
+- apply-security-hardening: Sanitização HTML (backend + DOMPurify no frontend); CORS e security headers; validação de secrets em produção (Cors:AllowedOrigins, Jwt:Secret ≥ 32, API:InternalKey); magic bytes em uploads; política de senha 8 caracteres + maiúscula, minúscula e número; rate limiting e auditoria; Docker não-root (uid 1000); Caddyfile.example; PRODUCTION-CHECKLIST.md e TOKEN-STORAGE.md em docs/security/.
 
 ## [1.9]
 

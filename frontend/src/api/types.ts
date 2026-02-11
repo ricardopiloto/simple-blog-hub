@@ -42,6 +42,16 @@ export interface NextStoryOrderResponse {
   next_story_order: number;
 }
 
+/** Response from GET /bff/dashboard/stats (author area dashboard). */
+export interface DashboardStats {
+  total_posts: number;
+  published_count: number;
+  scheduled_count: number;
+  draft_count: number;
+  total_views: number;
+  authors_count: number;
+}
+
 /** Response from GET /bff/posts when using page and pageSize (paginated list). */
 export interface PagedPostsResponse {
   items: Post[];
@@ -77,7 +87,7 @@ export interface UserListItem {
 
 export interface CreateUserPayload {
   email: string;
-  /** Optional; when omitted, API uses default password (senha123). User should change on first login. */
+  /** Optional; when omitted, API uses a default initial password. User must change it on first login. */
   password?: string;
   author_name: string;
 }

@@ -1,0 +1,33 @@
+# Example Caddyfile for simple-blog-hub (Docker BFF + Caddy on host).
+# Replace seu-dominio.com with your domain and paths with your REPO_DIR and DOCUMENT_ROOT.
+# Add this block to your existing Caddyfile if you have other sites; do not replace the whole file.
+
+seu-dominio.com {
+    # HTTPS is automatic; redirect HTTP to HTTPS
+    # Security headers (Caddy sets some by default; these reinforce)
+    header {
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Referrer-Policy no-referrer
+        -Server
+    }
+
+    handle /sitemap.xml {
+        reverse_proxy 127.0.0.1:5000
+    }
+    handle /robots.txt {
+        reverse_proxy 127.0.0.1:5000
+    }
+    handle /bff/* {
+        reverse_proxy 127.0.0.1:5000
+    }
+    handle /images/posts/* {
+        root * REPO_DIR/frontend/public
+        file_server
+    }
+    handle {
+        root * DOCUMENT_ROOT
+        file_server
+        try_files {path} /index.html
+    }
+}

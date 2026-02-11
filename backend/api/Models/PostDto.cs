@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
 namespace BlogApi.Models;
@@ -109,15 +110,22 @@ public class StoryOrderItemRequest
 
 public class CreateOrUpdatePostRequest
 {
+    [Required]
+    [MaxLength(500)]
     [JsonPropertyName("title")]
     public string Title { get; set; } = string.Empty;
 
+    /// <summary>URL-safe slug: lowercase letters, numbers, hyphens only (e.g. my-post-1).</summary>
+    [Required]
+    [RegularExpression(@"^[a-z0-9]+(?:-[a-z0-9]+)*$", ErrorMessage = "Slug must contain only lowercase letters, numbers and hyphens.")]
     [JsonPropertyName("slug")]
     public string Slug { get; set; } = string.Empty;
 
+    [MaxLength(1000)]
     [JsonPropertyName("excerpt")]
     public string? Excerpt { get; set; }
 
+    [Required]
     [JsonPropertyName("content")]
     public string Content { get; set; } = string.Empty;
 
@@ -130,6 +138,7 @@ public class CreateOrUpdatePostRequest
     [JsonPropertyName("story_order")]
     public int StoryOrder { get; set; }
 
+    [Required]
     [JsonPropertyName("story_type")]
     public string StoryType { get; set; } = string.Empty;
 

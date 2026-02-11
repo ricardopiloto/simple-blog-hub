@@ -478,3 +478,128 @@ O ficheiro **CHANGELOG.md** na raiz **deve** (SHALL) conter a secção **## [1.9
 - **E** vê a entrada para fix-sitemap-xml-declaration-validation (correção do sitemap para validação externa)
 - **E** a frase introdutória menciona v1.9 nas tags de release
 
+### Requirement: CHANGELOG em docs/changelog/ com secção [1.10] (SHALL)
+
+O ficheiro **CHANGELOG.md** **deve** (SHALL) estar em **docs/changelog/CHANGELOG.md**. A frase introdutória **deve** incluir **v1.10** na lista de tags de release (ex.: v1.8, v1.9, v1.10). **Deve** existir a secção **## [1.10]** acima de `## [1.9]` com **uma entrada por change** para cada uma das changes em openspec/changes/ (add-security-hardening-assessment, add-code-improvements-evaluation, add-changelog-1-10-docs-update). A entrada add-changelog-1-10-docs-update descreve a atualização da documentação do projeto: reorganização em docs/, README com referências a CHANGELOG, SECURITY-HARDENING e CODE-IMPROVEMENTS nos caminhos corretos, exemplos de tags, estrutura de pastas com docs/ e openspec/ no local original; existência de docs/README.md com tabela e nota sobre OpenSpec; .gitignore para docs/local/; versão no rodapé (package.json); secção [1.10] contempla todas as changes em openspec/changes/; nova versão no changelog.
+
+#### Scenario: Leitor consulta o CHANGELOG e vê a versão 1.10
+
+- **Quando** um utilizador abre docs/changelog/CHANGELOG.md
+- **Então** encontra a secção **## [1.10]** acima de [1.9]
+- **E** vê uma entrada por change para add-security-hardening-assessment, add-code-improvements-evaluation e add-changelog-1-10-docs-update
+- **E** a entrada add-changelog-1-10-docs-update descreve a atualização da documentação (estrutura docs/, referências, OpenSpec, docs/README.md, que [1.10] contempla todas as changes em openspec/changes/)
+- **E** a frase introdutória menciona v1.10 nas tags de release (ex.: v1.8, v1.9, v1.10)
+
+---
+
+### Requirement: README com referências e estrutura de pastas (SHALL)
+
+O **README.md** na raiz **deve** (SHALL): (a) na secção 4 (Links para CHANGELOG) incluir o link para **docs/changelog/CHANGELOG.md** e o exemplo de tags com v1.8, v1.9 e v1.10; (b) na secção 6 (Procedimentos) referenciar **docs/security/SECURITY-HARDENING.md** (avaliação de segurança e plano de hardening) e **docs/improvements/CODE-IMPROVEMENTS.md** (avaliação de melhorias de código); (c) na secção 7 (Estrutura de pastas) mostrar a árvore com **docs/** (changelog, deploy, database, security, improvements, local) e **openspec/** mantido no local original (project.md, AGENTS.md, specs/, changes/).
+
+#### Scenario: Leitor encontra referências e estrutura no README
+
+- **Quando** um utilizador abre o README.md
+- **Então** na secção 4 o link do CHANGELOG aponta para docs/changelog/CHANGELOG.md e o exemplo de tags inclui v1.8, v1.9 e v1.10
+- **E** na secção 6 existem links para SECURITY-HARDENING (docs/security/) e CODE-IMPROVEMENTS (docs/improvements/)
+- **E** na secção 7 a árvore inclui docs/ (changelog, deploy, database, security, improvements, local) e openspec/ no local original
+
+---
+
+### Requirement: docs/README.md com tabela e nota OpenSpec (SHALL)
+
+**Deve** (SHALL) existir o ficheiro **docs/README.md** com uma tabela que descreva a estrutura da pasta docs/ (changelog, deploy, database, security, improvements, local). O documento **deve** incluir uma nota explícita de que os ficheiros OpenSpec (especificações, changes, openspec/AGENTS.md, etc.) permanecem nos **locais originais** (pasta openspec/ na raiz) e não são movidos para docs/.
+
+#### Scenario: Leitor consulta a estrutura de docs/
+
+- **Quando** um utilizador abre docs/README.md
+- **Então** vê uma tabela com as pastas de docs/ (changelog, deploy, database, security, improvements, local) e o respetivo conteúdo
+- **E** vê a nota de que os ficheiros OpenSpec permanecem em openspec/ (local original)
+
+### Requirement: Alterações de esquema de base de dados exigem script manual e documentação
+
+Quando uma **change** introduz **alteração de esquema de base de dados** (nova tabela, nova coluna, ou migração EF Core que altere o esquema persistido), o projeto **deve** (SHALL): (1) disponibilizar um **script SQL** em `backend/api/Migrations/Scripts/` destinado à **execução manual** por operadores que não usem apenas `MigrateAsync()` ao arranque; (2) referenciar esse script no **README da API** (`backend/api/README.md`), na secção de migrações manuais ou equivalente, e nas **tarefas da change**. Isto aplica-se sempre que a alteração de esquema for relevante para upgrades (ex.: nova coluna ou tabela); alterações que não alterem o esquema (ex.: apenas lógica) não exigem script.
+
+#### Scenario: Change com nova coluna inclui script e documentação
+
+- **Dado** que uma change adiciona uma nova coluna a uma tabela existente (ex.: via migração EF Core)
+- **Quando** a change está implementada e aprovada
+- **Então** existe um ficheiro SQL em `backend/api/Migrations/Scripts/` que aplica essa alteração (ex.: `ALTER TABLE ... ADD COLUMN ...`)
+- **E** o README da API lista ou referencia esse script na secção de migrações manuais (e/ou Troubleshooting)
+- **E** as tarefas da change incluem a criação do script e a atualização do README
+
+#### Scenario: Operador aplica upgrade com script manual
+
+- **Dado** que o operador está a atualizar uma instalação existente e prefere aplicar o esquema manualmente antes de iniciar a nova API
+- **Quando** a nova versão inclui alteração de esquema (nova coluna ou tabela)
+- **Então** o operador encontra no README da API (ou no guia de atualização) a referência ao script em `Migrations/Scripts/`
+- **E** pode executar o script uma vez contra o ficheiro da base de dados (ex.: `sqlite3 blog.db < Migrations/Scripts/nome.sql`) e depois iniciar a API
+
+### Requirement: CHANGELOG [1.10] descreve todas as changes da release (SHALL)
+
+A secção **## [1.10]** do ficheiro **docs/changelog/CHANGELOG.md** **deve** (SHALL) listar e descrever **todas** as changes que integram a release v1.10, com uma entrada por change: add-security-hardening-assessment, add-security-remediation-proposal, add-code-improvements-evaluation, add-changelog-1-10-docs-update, harden-login-credentials-exposure, add-remaining-hardening-improvements-and-db-script-rule, apply-code-improvements, apply-security-hardening. Cada entrada **deve** ter uma descrição breve do que a change introduz (avaliações, documentação, implementações de hardening ou melhorias de código).
+
+#### Scenario: Leitor consulta o CHANGELOG e vê a release 1.10 completa
+
+- **Quando** um utilizador abre docs/changelog/CHANGELOG.md
+- **Então** encontra a secção **## [1.10]** com entradas para as oito changes acima
+- **E** cada entrada tem descrição suficiente para entender o âmbito da change (avaliação, doc, hardening, melhorias de código)
+- **E** a frase introdutória do changelog continua a mencionar v1.10 nas tags de release
+
+#### Scenario: Operador verifica o histórico da release 1.10
+
+- **Quando** um operador ou desenvolvedor consulta o CHANGELOG para saber o que mudou na v1.10
+- **Então** vê listadas as changes de avaliação (security hardening, remediation, code improvements), a atualização de docs/changelog, a redução de exposição de credenciais, as melhorias restantes (slug, logging, regra de script BD), as melhorias de código (BFF/API/frontend) e o hardening aplicado (sanitização, CORS, headers, secrets, magic bytes, senha 8 chars, rate limiting, Docker não-root, PRODUCTION-CHECKLIST, etc.)
+
+---
+
+### Requirement: Guia de atualização da versão 1.9 para a 1.10 (SHALL)
+
+**Deve** (SHALL) existir um guia de atualização da **versão 1.9 para a 1.10**, acessível a operadores que já têm o servidor em produção na v1.9. O guia **deve** estar em **docs/deploy/** (ex.: ATUALIZAR-1-9-PARA-1-10.md). O conteúdo **deve** incluir: (a) público-alvo (operadores em v1.9); (b) passos de atualização (pull, reconstruir imagens Docker quando aplicável, build do frontend, atualização de variáveis de ambiente); (c) **variáveis obrigatórias em produção** para a v1.10: Cors:AllowedOrigins (BFF), Jwt:Secret com pelo menos 32 caracteres (BFF), API:InternalKey (BFF e API); (d) avisos: alteração da política de senha (8 caracteres, maiúscula, minúscula, número); falha ao arranque do BFF/API em produção se CORS, Jwt:Secret ou API:InternalKey não estiverem configurados; contentores Docker a correr como utilizador não-root (uid 1000) e permissões no volume de dados se necessário; (e) referências a PRODUCTION-CHECKLIST.md, DEPLOY-DOCKER-CADDY.md e ATUALIZAR-SERVIDOR-DOCKER-CADDY.md; (f) nota de que a v1.10 **não** introduz novas migrações ou scripts SQL obrigatórios para alteração de esquema.
+
+#### Scenario: Operador em v1.9 segue o guia para atualizar para 1.10
+
+- **Quando** um operador com servidor em v1.9 abre o guia de atualização 1.9→1.10
+- **Então** encontra os passos (pull, rebuild, build frontend, variáveis de ambiente)
+- **E** vê claramente as variáveis obrigatórias em produção (Cors:AllowedOrigins, Jwt:Secret ≥ 32, API:InternalKey)
+- **E** é informado da nova política de senha e do comportamento em produção (falha ao arranque sem config)
+- **E** tem referências aos documentos de deploy e ao PRODUCTION-CHECKLIST
+- **E** sabe que não precisa de executar scripts SQL adicionais para esta atualização
+
+#### Scenario: Leitor confirma que o guia existe em docs/deploy
+
+- **Quando** um utilizador lista ou navega em docs/deploy/
+- **Então** encontra um ficheiro dedicado à atualização 1.9→1.10 (ex.: ATUALIZAR-1-9-PARA-1-10.md)
+- **E** o README ou a documentação principal pode referenciar este guia para quem atualiza de 1.9 para 1.10
+
+### Requirement: CHANGELOG e documentação atualizados para a release v2.0 (SHALL)
+
+Para a **release versionada v2.0**, o ficheiro **docs/changelog/CHANGELOG.md** SHALL conter a secção **## [2.0]** no topo (acima de [1.10]) que descreve as alterações dessa versão, com uma entrada por change OpenSpec incluída na release: add-author-dashboard-inicial-v2, add-dashboard-rascunho-metric, merge-dashboard-publications-single-page, style-dashboard-rascunho-card-yellow-border, make-dashboard-cards-clickable, add-author-area-sort-and-story-type-filter, widen-author-area-search-input, indicate-dashboard-card-filter-with-yellow-border, update-docs-and-changelog-for-v2. Cada entrada SHALL ter uma descrição breve. A frase introdutória do CHANGELOG SHALL incluir **v2.0** na lista de tags de release (ex.: v1.9, v1.10, v2.0).
+
+O **README.md** na raiz SHALL refletir o estado da aplicação na v2.0: na secção de links para o CHANGELOG (ex.: secção 4), os exemplos de tags SHALL incluir **v2.0**; na secção de funcionalidades (ex.: secção 5), a descrição da **Área do autor** SHALL corresponder ao comportamento atual: página única em `/area-autor` com dashboard (seis indicadores), cards clicáveis (Total, Publicados, Planejados, Rascunho para filtrar; borda amarela no card ativo; desmarcar ao alterar filtros manuais; Autores → Contas) e secção Publicações (lista, pesquisa, filtro por linha da história, ordenação, Novo post, editar/excluir).
+
+O ficheiro **openspec/project.md** SHALL descrever a área do autor em conformidade com a v2.0: rota `/area-autor` como página única com "Visão geral do blog" e "Publicações"; cards do dashboard clicáveis; filtros e ordenação na secção Publicações.
+
+O projeto frontend SHALL expor a versão **2.0.0** (ex.: campo `version` em `frontend/package.json` definido como `"2.0.0"`) para que o rodapé ou outros elementos que exibam a versão mostrem 2.0.
+
+#### Scenario: Leitor consulta o CHANGELOG e vê a versão 2.0
+
+- **GIVEN** o repositório tem a documentação atualizada para v2.0
+- **WHEN** um leitor abre docs/changelog/CHANGELOG.md
+- **THEN** encontra a secção **## [2.0]** no topo (acima de [1.10])
+- **AND** a secção lista as changes da release 2.0 com descrição breve
+- **AND** a frase introdutória menciona v2.0 nas tags de release
+
+#### Scenario: README descreve a Área do autor na v2.0
+
+- **GIVEN** o README foi atualizado para v2.0
+- **WHEN** um leitor abre o README e consulta a secção de funcionalidades
+- **THEN** a "Área do autor" é descrita como página única em /area-autor com dashboard (seis indicadores), cards clicáveis (filtro por estado, borda amarela no ativo, Autores → Contas) e secção Publicações com lista, pesquisa, filtro por linha da história, ordenação e ações (Novo post, editar/excluir)
+- **AND** a secção de links para o CHANGELOG inclui v2.0 nos exemplos de tags
+
+#### Scenario: project.md reflete o comportamento da área do autor v2.0
+
+- **GIVEN** openspec/project.md foi atualizado
+- **WHEN** um leitor consulta o Domain Context (Páginas ou Rotas)
+- **THEN** a área do autor é descrita como página única em /area-autor com visão geral (dashboard, cards clicáveis) e secção Publicações (filtros, ordenação)
+- **AND** não há contradição com o comportamento implementado na v2.0
+

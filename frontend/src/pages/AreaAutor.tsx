@@ -83,10 +83,15 @@ export default function AreaAutor() {
     <Layout>
       <section className="py-16">
         <div className="container-wide">
+          <div className="mb-4">
+            <Link to="/area-autor" className="text-sm text-muted-foreground hover:text-foreground">
+              ← Área do autor
+            </Link>
+          </div>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
             <div>
               <h1 className="font-serif text-3xl md:text-4xl font-bold text-foreground">
-                Área do autor
+                Publicações
               </h1>
               <p className="text-muted-foreground mt-1">
                 Gerencie seus artigos e colaborações.

@@ -1,4 +1,6 @@
+using System.Threading.RateLimiting;
 using System.Text;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using BlogBff.Services;
@@ -37,6 +39,23 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 builder.Services.AddAuthorization();
 
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = 429;
+    options.AddPolicy("Login", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions { Window = TimeSpan.FromMinutes(1), PermitLimit = 10 }));
+    options.AddPolicy("Uploads", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions { Window = TimeSpan.FromMinutes(1), PermitLimit = 20 }));
+    options.AddPolicy("Users", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions { Window = TimeSpan.FromMinutes(1), PermitLimit = 60 }));
+});
+
 var corsAllowedOrigins = builder.Configuration["Cors:AllowedOrigins"]?.Trim();
 builder.Services.AddCors(options =>
 {
@@ -57,7 +76,31 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// Production: require CORS and strong JWT secret
+if (app.Environment.IsProduction())
+{
+    var cors = app.Configuration["Cors:AllowedOrigins"]?.Trim();
+    if (string.IsNullOrEmpty(cors))
+        throw new InvalidOperationException("In production, Cors:AllowedOrigins must be configured (e.g. semicolon-separated list of allowed origins).");
+    var secret = app.Configuration["Jwt:Secret"] ?? "";
+    if (secret.Length < 32)
+        throw new InvalidOperationException("In production, Jwt:Secret must be at least 32 characters.");
+}
+
 app.UseHttpsRedirection();
+
+// Security headers
+app.Use(async (context, next) =>
+{
+    context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+    context.Response.Headers["X-Frame-Options"] = "DENY";
+    context.Response.Headers["Referrer-Policy"] = "no-referrer";
+    if (app.Environment.IsProduction() && context.Request.IsHttps)
+        context.Response.Headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
+    await next(context);
+});
+
+app.UseRateLimiter();
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();

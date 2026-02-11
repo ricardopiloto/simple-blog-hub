@@ -156,8 +156,8 @@ Validar a configuração (opcional): `sudo caddy validate --config /etc/caddy/Ca
 ## 7. Primeiro acesso
 
 1. Abrir no browser a URL do teu domínio (ex.: **https://seu-dominio.com**).
-2. Ir a **Login** e entrar com o e-mail do Admin (ex.: definido em `Admin__Email` ou **admin@admin.com**) e senha **senha123**.
-3. Concluir a **troca obrigatória de senha** no modal.
+2. Ir a **Login** e entrar com o e-mail do Admin (definido em `Admin__Email` ou e-mail padrão quando não configurado) e com a **senha padrão inicial**.
+3. Concluir a **troca obrigatória de senha** no modal. Em produção o operador **deve** configurar `Admin__Email` e **deve** alterar a senha no primeiro acesso.
 
 ---
 
@@ -258,7 +258,7 @@ touch data/admin-password-reset.trigger
 docker compose restart api
 ```
 
-(Em alternativa: `docker compose exec api touch /data/admin-password-reset.trigger`.) Depois fazer login com a senha **senha123** e alterar no modal. A API remove o ficheiro após o reset.
+(Em alternativa: `docker compose exec api touch /data/admin-password-reset.trigger`.) Depois fazer login com a **senha padrão inicial** (a mesma usada após reset) e alterar no modal. A API remove o ficheiro após o reset.
 
 ---
 

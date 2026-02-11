@@ -77,6 +77,13 @@ public class ApiClient
         return await _http.SendAsync(req, cancellationToken);
     }
 
+    public async Task<HttpResponseMessage> GetDashboardStatsAsync(Guid authorId, CancellationToken cancellationToken = default)
+    {
+        var req = new HttpRequestMessage(HttpMethod.Get, "api/dashboard/stats");
+        WithAuthorId(req, authorId);
+        return await _http.SendAsync(req, cancellationToken);
+    }
+
     public async Task<HttpResponseMessage> CreatePostAsync(object body, Guid authorId, CancellationToken cancellationToken = default)
     {
         var req = new HttpRequestMessage(HttpMethod.Post, "api/posts") { Content = JsonContent.Create(body) };

@@ -31,7 +31,7 @@ O `docker-compose.yml` do projeto usa por defeito um **bind mount** `./data:/dat
    touch data/admin-password-reset.trigger
    docker compose restart api
    ```
-   Depois faz login com a senha **senha123** e altera no modal.
+   Depois faz login com a **senha padrão inicial** e altera no modal.
 
 ## Migração desde o volume nomeado (quem já usava `blog_api_data`)
 

@@ -1,7 +1,7 @@
-using System.Security.Claims;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using BlogBff.Extensions;
 using BlogBff.Models;
 using BlogBff.Services;
 
@@ -16,12 +16,6 @@ public class PostsController : ControllerBase
     public PostsController(ApiClient api)
     {
         _api = api;
-    }
-
-    private static Guid? GetAuthorId(ClaimsPrincipal user)
-    {
-        var value = user.FindFirst("author_id")?.Value ?? user.FindFirst(c => c.Type.EndsWith("/author_id", StringComparison.Ordinal))?.Value;
-        return Guid.TryParse(value, out var id) ? id : null;
     }
 
     /// <summary>
@@ -44,7 +38,7 @@ public class PostsController : ControllerBase
     [Authorize]
     public async Task<IActionResult> GetEditable(CancellationToken cancellationToken = default)
     {
-        var authorId = GetAuthorId(User);
+        var authorId = User.GetAuthorId();
         if (authorId == null)
             return Unauthorized();
         var response = await _api.GetEditablePostsAsync(authorId.Value, cancellationToken);
@@ -61,7 +55,7 @@ public class PostsController : ControllerBase
     [Authorize]
     public async Task<IActionResult> GetForAuthorArea(CancellationToken cancellationToken = default)
     {
-        var authorId = GetAuthorId(User);
+        var authorId = User.GetAuthorId();
         if (authorId == null)
             return Unauthorized();
         var response = await _api.GetAllPostsForAuthorAreaAsync(authorId.Value, cancellationToken);
@@ -78,7 +72,7 @@ public class PostsController : ControllerBase
     [Authorize]
     public async Task<IActionResult> GetNextStoryOrder(CancellationToken cancellationToken = default)
     {
-        var authorId = GetAuthorId(User);
+        var authorId = User.GetAuthorId();
         if (authorId == null)
             return Unauthorized();
         var response = await _api.GetNextStoryOrderAsync(authorId.Value, cancellationToken);
@@ -95,7 +89,7 @@ public class PostsController : ControllerBase
     [Authorize]
     public async Task<IActionResult> GetByIdForEdit(Guid id, CancellationToken cancellationToken = default)
     {
-        var authorId = GetAuthorId(User);
+        var authorId = User.GetAuthorId();
         if (authorId == null)
             return Unauthorized();
         var response = await _api.GetPostByIdForEditAsync(id, authorId.Value, cancellationToken);
@@ -116,7 +110,7 @@ public class PostsController : ControllerBase
     [Authorize]
     public async Task<IActionResult> CreatePost([FromBody] object body, CancellationToken cancellationToken = default)
     {
-        var authorId = GetAuthorId(User);
+        var authorId = User.GetAuthorId();
         if (authorId == null)
             return Unauthorized();
         var response = await _api.CreatePostAsync(body, authorId.Value, cancellationToken);
@@ -135,7 +129,7 @@ public class PostsController : ControllerBase
     [Authorize]
     public async Task<IActionResult> UpdatePost(Guid id, [FromBody] object body, CancellationToken cancellationToken = default)
     {
-        var authorId = GetAuthorId(User);
+        var authorId = User.GetAuthorId();
         if (authorId == null)
             return Unauthorized();
         var response = await _api.UpdatePostAsync(id, body, authorId.Value, cancellationToken);
@@ -158,7 +152,7 @@ public class PostsController : ControllerBase
     [Authorize]
     public async Task<IActionResult> UpdateStoryOrder([FromBody] object body, CancellationToken cancellationToken = default)
     {
-        var authorId = GetAuthorId(User);
+        var authorId = User.GetAuthorId();
         if (authorId == null)
             return Unauthorized();
         var response = await _api.UpdateStoryOrderAsync(body, authorId.Value, cancellationToken);
@@ -172,7 +166,7 @@ public class PostsController : ControllerBase
     [Authorize]
     public async Task<IActionResult> DeletePost(Guid id, CancellationToken cancellationToken = default)
     {
-        var authorId = GetAuthorId(User);
+        var authorId = User.GetAuthorId();
         if (authorId == null)
             return Unauthorized();
         var response = await _api.DeletePostAsync(id, authorId.Value, cancellationToken);
@@ -190,7 +184,7 @@ public class PostsController : ControllerBase
     [Authorize]
     public async Task<IActionResult> AddCollaborator(Guid id, [FromBody] AddCollaboratorRequest body, CancellationToken cancellationToken = default)
     {
-        var authorId = GetAuthorId(User);
+        var authorId = User.GetAuthorId();
         if (authorId == null)
             return Unauthorized();
         if (string.IsNullOrWhiteSpace(body?.AuthorId))
@@ -214,7 +208,7 @@ public class PostsController : ControllerBase
     [Authorize]
     public async Task<IActionResult> RemoveCollaborator(Guid id, Guid authorId, CancellationToken cancellationToken = default)
     {
-        var callerId = GetAuthorId(User);
+        var callerId = User.GetAuthorId();
         if (callerId == null)
             return Unauthorized();
         var response = await _api.RemoveCollaboratorAsync(id, authorId, callerId.Value, cancellationToken);

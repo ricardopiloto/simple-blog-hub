@@ -25,8 +25,8 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest request, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
-            return BadRequest();
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
 
         var user = await _db.Users
             .Include(u => u.Author)

@@ -1,0 +1,9 @@
+# Tasks: Atualizar documentação, CHANGELOG 1.10 completo e guia de atualização 1.9→1.10
+
+- [x] Expandir a secção **## [1.10]** em `docs/changelog/CHANGELOG.md` para incluir **todas** as changes da release: add-security-hardening-assessment, add-security-remediation-proposal, add-code-improvements-evaluation, add-changelog-1-10-docs-update, harden-login-credentials-exposure, add-remaining-hardening-improvements-and-db-script-rule, apply-code-improvements, apply-security-hardening — cada uma com descrição breve.
+- [x] Atualizar **README.md**: secção 5 (Funcionalidades) — critério de senha 8 caracteres, maiúscula, minúscula e número; secção 6 — referência a PRODUCTION-CHECKLIST e TOKEN-STORAGE; indicar que o plano de hardening foi aplicado; secção 7 — incluir Caddyfile.example, PRODUCTION-CHECKLIST.md e TOKEN-STORAGE.md na estrutura de pastas/docs.
+- [x] Atualizar **docs/README.md**: tabela com Caddyfile.example em deploy/ e PRODUCTION-CHECKLIST.md e TOKEN-STORAGE.md em security/.
+- [x] Criar **docs/deploy/ATUALIZAR-1-9-PARA-1-10.md** com: público-alvo (operadores em v1.9); passos (pull, rebuild, build frontend, variáveis obrigatórias em produção: Cors:AllowedOrigins, Jwt:Secret ≥ 32, API:InternalKey); avisos (política de senha 8 chars, falha ao arranque sem config em produção, Docker não-root e permissões no volume); referências a PRODUCTION-CHECKLIST, DEPLOY-DOCKER-CADDY, ATUALIZAR-SERVIDOR-DOCKER-CADDY; nota de que não há novas migrações/scripts SQL para 1.10.
+- [x] Atualizar **openspec/project.md** (se existir menção ao critério de senha ou produção) para 8 caracteres e obrigatoriedade de CORS/secrets em produção.
+- [x] Adicionar requisitos e cenários no spec **project-docs** (delta ADDED): CHANGELOG [1.10] descreve todas as changes da release; existe guia de atualização 1.9→1.10 com passos e requisitos de produção.
+- [x] Executar `openspec validate update-docs-changelog-v1-10-and-upgrade-guide --strict` e corrigir até passar.

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using BlogBff.Models;
 using BlogBff.Services;
 
@@ -21,6 +22,7 @@ public class AuthController : ControllerBase
     /// POST /bff/auth/login — validate with API, return JWT + author.
     /// </summary>
     [HttpPost("login")]
+    [EnableRateLimiting("Login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request, CancellationToken cancellationToken = default)
     {
         var loginResponse = await _api.LoginAsync(request.Email, request.Password, cancellationToken);

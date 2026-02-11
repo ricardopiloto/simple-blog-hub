@@ -1,6 +1,6 @@
 # Atualizar o código (local e Docker)
 
-Este guia descreve como **atualizar** o projeto após um `git pull`. Há duas secções: **Atualização local** (desenvolvimento) e **Atualização Docker** (produção). Para instalação inicial em servidor com Docker e Caddy, ver **[DEPLOY-DOCKER-CADDY.md](DEPLOY-DOCKER-CADDY.md)**.
+Este guia descreve como **atualizar** o projeto após um `git pull`. Há duas secções: **Atualização local** (desenvolvimento) e **Atualização Docker** (produção). Para instalação inicial em servidor com Docker e Caddy, ver **[DEPLOY-DOCKER-CADDY.md](DEPLOY-DOCKER-CADDY.md)** (nesta pasta).
 
 **Repositório:** [https://github.com/ricardopiloto/simple-blog-hub](https://github.com/ricardopiloto/simple-blog-hub)
 
@@ -87,7 +87,7 @@ Se precisares de aplicar scripts de banco manualmente em Docker (ex.: coluna em 
 
 ## Scripts de banco de dados (aplicação manual)
 
-Quando a API falha com "no such column" (ex.: ViewCount, IncludeInStoryOrder), podes aplicar o esquema manualmente com os scripts em `backend/api/Migrations/Scripts/`. Com a pasta de dados no host (bind mount `data/`, predefinido), podes executar os scripts **no host** a partir de REPO_DIR — ver **[EXPOR-DB-NO-HOST.md](EXPOR-DB-NO-HOST.md)**. Detalhes completos (incl. Docker com volume nomeado) estão no **README da API** (`backend/api/README.md`, Troubleshooting).
+Quando a API falha com "no such column" (ex.: ViewCount, IncludeInStoryOrder), podes aplicar o esquema manualmente com os scripts em `backend/api/Migrations/Scripts/`. Com a pasta de dados no host (bind mount `data/`, predefinido), podes executar os scripts **no host** a partir de REPO_DIR — ver **[EXPOR-DB-NO-HOST.md](../database/EXPOR-DB-NO-HOST.md)**. Detalhes completos (incl. Docker com volume nomeado) estão no **README da API** (`backend/api/README.md`, Troubleshooting).
 
 | Script | Coluna | Quando usar |
 |--------|--------|-------------|
@@ -112,7 +112,7 @@ Substitui `blog.db` pelo caminho do teu ficheiro SQLite se for outro. Executa **
 
 ### Docker
 
-**Se usas a pasta `data/` no host (bind mount, predefinido):** a partir de REPO_DIR, executa no host: `sqlite3 data/blog.db < backend/api/Migrations/Scripts/add_view_count_to_posts.sql` (ou o script adequado, ex.: `add_scheduled_publish_at_to_posts.sql`). Depois: `docker compose restart api`. Ver **[EXPOR-DB-NO-HOST.md](EXPOR-DB-NO-HOST.md)**.
+**Se usas a pasta `data/` no host (bind mount, predefinido):** a partir de REPO_DIR, executa no host: `sqlite3 data/blog.db < backend/api/Migrations/Scripts/add_view_count_to_posts.sql` (ou o script adequado, ex.: `add_scheduled_publish_at_to_posts.sql`). Depois: `docker compose restart api`. Ver **[EXPOR-DB-NO-HOST.md](../database/EXPOR-DB-NO-HOST.md)**.
 
 **Se ainda usas volume nomeado** (configuração antiga):
 

@@ -20,6 +20,7 @@ O comando `dotnet run` faz restore e build automaticamente quando necessário.
 
 - **Connection string**: `appsettings.json` ou variável de ambiente. Padrão: `Data Source=blog.db` (arquivo SQLite na pasta do projeto).
 - **Porta**: por padrão `http://localhost:5001` (ver `Properties/launchSettings.json`).
+- **Admin (Admin:Email / Admin__Email)**: o ficheiro versionado usa apenas placeholder (ex.: admin@example.com). Em produção configurar via variável de ambiente `Admin__Email` ou ficheiro não versionado (appsettings.Production.json, etc.); não commitar e-mails ou credenciais reais.
 
 ## Como rodar
 
@@ -58,6 +59,10 @@ Para a coluna **IncludeInStoryOrder** (posts "faz parte da ordem da história"),
 Para a coluna **ScheduledPublishAt** (agendamento de publicação de posts), use o script `Migrations/Scripts/add_scheduled_publish_at_to_posts.sql` da mesma forma (executar uma vez; se a coluna já existir, ignorar o erro).
 
 Para a coluna **StoryType** (tipo de história do post: Velho Mundo / Idade das Trevas), use o script `Migrations/Scripts/add_story_type_to_posts.sql` da mesma forma (executar uma vez; se a coluna já existir, ignorar o erro).
+
+### Regra para alterações de esquema
+
+**Qualquer change** que introduza **alteração de esquema de base de dados** (nova tabela, nova coluna, ou migração EF Core que altere o esquema) **deve** incluir um script SQL em `backend/api/Migrations/Scripts/` para execução manual quando aplicável, e a change **deve** referenciar esse script neste README (na lista acima ou na secção Troubleshooting) e nas suas tarefas. Isto permite upgrades em ambientes onde as migrações não são aplicadas automaticamente ao arranque e garante rastreabilidade.
 
 ## Troubleshooting
 

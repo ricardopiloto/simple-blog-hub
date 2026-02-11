@@ -1,12 +1,14 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using BlogBff.Extensions;
 using BlogBff.Services;
 
 namespace BlogBff.Controllers;
 
 [ApiController]
 [Route("bff/[controller]")]
+[EnableRateLimiting("Users")]
 public class UsersController : ControllerBase
 {
     private readonly ApiClient _api;
@@ -16,18 +18,12 @@ public class UsersController : ControllerBase
         _api = api;
     }
 
-    private static Guid? GetAuthorId(ClaimsPrincipal user)
-    {
-        var value = user.FindFirst("author_id")?.Value ?? user.FindFirst(c => c.Type.EndsWith("/author_id", StringComparison.Ordinal))?.Value;
-        return Guid.TryParse(value, out var id) ? id : null;
-    }
-
     /// <summary>GET /bff/users — list users (Admin only; API enforces).</summary>
     [HttpGet]
     [Authorize]
     public async Task<IActionResult> GetUsers(CancellationToken cancellationToken = default)
     {
-        var authorId = GetAuthorId(User);
+        var authorId = User.GetAuthorId();
         if (authorId == null)
             return Unauthorized();
         var response = await _api.GetUsersAsync(authorId.Value, cancellationToken);
@@ -44,7 +40,7 @@ public class UsersController : ControllerBase
     [Authorize]
     public async Task<IActionResult> GetCurrentUser(CancellationToken cancellationToken = default)
     {
-        var authorId = GetAuthorId(User);
+        var authorId = User.GetAuthorId();
         if (authorId == null)
             return Unauthorized();
         var response = await _api.GetCurrentUserAsync(authorId.Value, cancellationToken);
@@ -59,7 +55,7 @@ public class UsersController : ControllerBase
     [Authorize]
     public async Task<IActionResult> CreateUser([FromBody] object body, CancellationToken cancellationToken = default)
     {
-        var authorId = GetAuthorId(User);
+        var authorId = User.GetAuthorId();
         if (authorId == null)
             return Unauthorized();
         var response = await _api.CreateUserAsync(body, authorId.Value, cancellationToken);
@@ -78,7 +74,7 @@ public class UsersController : ControllerBase
     [Authorize]
     public async Task<IActionResult> UpdateUser(Guid id, [FromBody] object body, CancellationToken cancellationToken = default)
     {
-        var authorId = GetAuthorId(User);
+        var authorId = User.GetAuthorId();
         if (authorId == null)
             return Unauthorized();
         var response = await _api.UpdateUserAsync(id, body, authorId.Value, cancellationToken);
@@ -98,7 +94,7 @@ public class UsersController : ControllerBase
     [Authorize]
     public async Task<IActionResult> ResetPassword(Guid id, CancellationToken cancellationToken = default)
     {
-        var authorId = GetAuthorId(User);
+        var authorId = User.GetAuthorId();
         if (authorId == null)
             return Unauthorized();
         var response = await _api.ResetUserPasswordAsync(id, authorId.Value, cancellationToken);
@@ -116,7 +112,7 @@ public class UsersController : ControllerBase
     [Authorize]
     public async Task<IActionResult> DeleteUser(Guid id, CancellationToken cancellationToken = default)
     {
-        var authorId = GetAuthorId(User);
+        var authorId = User.GetAuthorId();
         if (authorId == null)
             return Unauthorized();
         var response = await _api.DeleteUserAsync(id, authorId.Value, cancellationToken);

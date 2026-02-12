@@ -7,6 +7,7 @@ namespace BlogBff.Controllers;
 
 [ApiController]
 [Route("bff/[controller]")]
+[Route("[controller]")] // Also accept /dashboard/stats when reverse proxy strips /bff prefix
 public class DashboardController : ControllerBase
 {
     private readonly ApiClient _api;

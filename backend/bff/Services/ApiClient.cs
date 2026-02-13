@@ -21,7 +21,7 @@ public class ApiClient
         return await response.Content.ReadFromJsonAsync<LoginResponse>(cancellationToken);
     }
 
-    public async Task<HttpResponseMessage> GetPostsAsync(bool? published = true, string order = "date", int? page = null, int? pageSize = null, string? search = null, CancellationToken cancellationToken = default)
+    public async Task<HttpResponseMessage> GetPostsAsync(bool? published = true, string order = "date", int? page = null, int? pageSize = null, string? search = null, string? fromDate = null, string? toDate = null, CancellationToken cancellationToken = default)
     {
         var query = new List<string>();
         if (published.HasValue)
@@ -34,6 +34,10 @@ public class ApiClient
             query.Add($"pageSize={pageSize.Value}");
         if (!string.IsNullOrEmpty(search))
             query.Add($"search={Uri.EscapeDataString(search)}");
+        if (!string.IsNullOrEmpty(fromDate))
+            query.Add($"fromDate={Uri.EscapeDataString(fromDate)}");
+        if (!string.IsNullOrEmpty(toDate))
+            query.Add($"toDate={Uri.EscapeDataString(toDate)}");
         var qs = query.Count > 0 ? "?" + string.Join("&", query) : "";
         return await _http.GetAsync($"api/posts{qs}", cancellationToken);
     }

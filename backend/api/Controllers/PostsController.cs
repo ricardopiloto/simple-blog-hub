@@ -32,6 +32,8 @@ public class PostsController : AuthorizedApiControllerBase
         [FromQuery] int? page = null,
         [FromQuery] int? pageSize = null,
         [FromQuery] string? search = null,
+        [FromQuery] string? fromDate = null,
+        [FromQuery] string? toDate = null,
         [FromQuery] bool editable = false,
         [FromQuery] bool forAuthorArea = false,
         CancellationToken cancellationToken = default)
@@ -86,6 +88,19 @@ public class PostsController : AuthorizedApiControllerBase
 
         if (page.HasValue && pageSize.HasValue && page.Value >= 1 && pageSize.Value >= 1)
         {
+            var fromDateParsed = ParseDateOnly(fromDate);
+            var toDateParsed = ParseDateOnly(toDate);
+            if (fromDateParsed.HasValue || toDateParsed.HasValue)
+            {
+                list = list.Where(p =>
+                {
+                    var d = p.PublishedAt ?? p.CreatedAt;
+                    var postDate = d.Date;
+                    if (fromDateParsed.HasValue && postDate < fromDateParsed.Value) return false;
+                    if (toDateParsed.HasValue && postDate > toDateParsed.Value) return false;
+                    return true;
+                }).ToList();
+            }
             var searchTrim = search?.Trim();
             if (!string.IsNullOrEmpty(searchTrim))
             {
@@ -396,11 +411,24 @@ public class PostsController : AuthorizedApiControllerBase
         return dto;
     }
 
+    /// <summary>
+    /// Parses scheduled publish date/time from ISO 8601 string (e.g. with offset: 2025-02-14T10:00:00-03:00).
+    /// Converts to UTC for storage so the background job (which compares with DateTime.UtcNow) publishes at the correct moment in the author's timezone.
+    /// </summary>
     private static DateTime? ParseScheduledPublishAt(string? value)
     {
         if (string.IsNullOrWhiteSpace(value)) return null;
-        if (DateTime.TryParse(value, null, System.Globalization.DateTimeStyles.RoundtripKind, out var dt))
+        var style = System.Globalization.DateTimeStyles.RoundtripKind | System.Globalization.DateTimeStyles.AdjustToUniversal;
+        if (DateTime.TryParse(value, System.Globalization.CultureInfo.InvariantCulture, style, out var dt))
             return dt.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(dt, DateTimeKind.Utc) : dt.ToUniversalTime();
+        return null;
+    }
+
+    private static DateTime? ParseDateOnly(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return null;
+        if (DateTime.TryParseExact(value.Trim(), "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var dt))
+            return DateTime.SpecifyKind(dt, DateTimeKind.Utc).Date;
         return null;
     }
 }

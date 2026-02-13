@@ -29,6 +29,32 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
+import { DateRangePicker } from '@/components/ui/date-range-picker';
+
+const MAX_SUGGESTIONS = 10;
+
+function buildAuthorAreaSuggestions(
+  posts: Post[],
+  q: string
+): string[] {
+  const lower = q.trim().toLowerCase();
+  if (!lower) return [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const p of posts) {
+    if (p.author?.name && p.author.name.toLowerCase().includes(lower) && !seen.has(p.author.name)) {
+      seen.add(p.author.name);
+      out.push(p.author.name);
+      if (out.length >= MAX_SUGGESTIONS) return out;
+    }
+    if (p.title && p.title.toLowerCase().includes(lower) && !seen.has(p.title)) {
+      seen.add(p.title);
+      out.push(p.title);
+      if (out.length >= MAX_SUGGESTIONS) return out;
+    }
+  }
+  return out;
+}
 
 export default function AreaAutorDashboard() {
   const navigate = useNavigate();
@@ -75,6 +101,10 @@ export default function AreaAutorDashboard() {
   };
 
   const [filterQuery, setFilterQuery] = useState('');
+  const [fromDate, setFromDate] = useState<string | null>(null);
+  const [toDate, setToDate] = useState<string | null>(null);
+  const [searchFocused, setSearchFocused] = useState(false);
+  const [suggestionIndex, setSuggestionIndex] = useState(-1);
   type StatusFilter = 'all' | 'published' | 'scheduled' | 'draft';
   type SortBy = 'date' | 'story_order';
   type SortDir = 'asc' | 'desc';
@@ -113,6 +143,19 @@ export default function AreaAutorDashboard() {
         return titleMatch || authorMatch || dateMatch;
       });
     }
+    if (fromDate || toDate) {
+      list = list.filter((post: Post) => {
+        const postDateStr = post.published_at
+          ? new Date(post.published_at).toISOString().slice(0, 10)
+          : post.created_at
+            ? new Date(post.created_at).toISOString().slice(0, 10)
+            : '';
+        if (!postDateStr) return false;
+        if (fromDate && postDateStr < fromDate) return false;
+        if (toDate && postDateStr > toDate) return false;
+        return true;
+      });
+    }
     const sorted = [...list].sort((a, b) => {
       if (sortBy === 'date') {
         const tA = new Date(a.created_at).getTime();
@@ -124,8 +167,41 @@ export default function AreaAutorDashboard() {
       return a.id.localeCompare(b.id);
     });
     return sorted;
-  }, [posts, filterQuery, statusFilter, storyTypeFilter, sortBy, sortDir]);
+  }, [posts, filterQuery, statusFilter, storyTypeFilter, sortBy, sortDir, fromDate, toDate]);
   const showScroll = filteredPosts.length > 10;
+
+  const authorAreaSuggestions = useMemo(
+    () => buildAuthorAreaSuggestions(posts ?? [], filterQuery),
+    [posts, filterQuery]
+  );
+  const showAuthorAreaSuggestions = searchFocused && filterQuery.trim().length >= 1 && authorAreaSuggestions.length > 0;
+
+  const handleAuthorAreaSuggestionSelect = (value: string) => {
+    setFilterQuery(value);
+    setSearchFocused(false);
+    setSuggestionIndex(-1);
+  };
+
+  const handleAuthorAreaSearchKeyDown = (e: React.KeyboardEvent) => {
+    if (!showAuthorAreaSuggestions) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSuggestionIndex((i) => (i < authorAreaSuggestions.length - 1 ? i + 1 : 0));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSuggestionIndex((i) => (i <= 0 ? authorAreaSuggestions.length - 1 : i - 1));
+    } else if (e.key === 'Enter' && suggestionIndex >= 0 && authorAreaSuggestions[suggestionIndex]) {
+      e.preventDefault();
+      handleAuthorAreaSuggestionSelect(authorAreaSuggestions[suggestionIndex]);
+    } else if (e.key === 'Escape') {
+      setSearchFocused(false);
+      setSuggestionIndex(-1);
+    }
+  };
+
+  useEffect(() => {
+    setSuggestionIndex(-1);
+  }, [authorAreaSuggestions.length]);
 
   return (
     <Layout>
@@ -264,8 +340,8 @@ export default function AreaAutorDashboard() {
             ) : posts && posts.length > 0 ? (
               <>
                 <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-4">
-                    <div className="space-y-2">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-4 flex-wrap">
+                    <div className="space-y-2 relative">
                       <Label htmlFor="author-area-search" className="sr-only">
                         Pesquisar por autor, título ou data
                       </Label>
@@ -278,8 +354,53 @@ export default function AreaAutorDashboard() {
                           setFilterQuery(e.target.value);
                           setStatusFilter('all');
                         }}
+                        onFocus={() => setSearchFocused(true)}
+                        onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
+                        onKeyDown={handleAuthorAreaSearchKeyDown}
                         className="min-w-[20rem] max-w-md"
                         aria-label="Pesquisar por autor, título ou data"
+                        aria-autocomplete="list"
+                        aria-expanded={showAuthorAreaSuggestions}
+                        aria-controls="author-area-suggestions"
+                        aria-activedescendant={suggestionIndex >= 0 && authorAreaSuggestions[suggestionIndex] ? `author-suggestion-${suggestionIndex}` : undefined}
+                      />
+                      {showAuthorAreaSuggestions && (
+                        <ul
+                          id="author-area-suggestions"
+                          role="listbox"
+                          className="absolute top-full left-0 z-50 mt-1 min-w-[20rem] max-w-md rounded-md border bg-popover text-popover-foreground shadow-md max-h-60 overflow-auto py-1"
+                        >
+                          {authorAreaSuggestions.map((s, i) => (
+                            <li
+                              key={`${s}-${i}`}
+                              id={`author-suggestion-${i}`}
+                              role="option"
+                              aria-selected={i === suggestionIndex}
+                              className={cn(
+                                'cursor-pointer px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground',
+                                i === suggestionIndex && 'bg-accent text-accent-foreground'
+                              )}
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                handleAuthorAreaSuggestionSelect(s);
+                              }}
+                            >
+                              {s}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="sr-only">Filtrar por data</Label>
+                      <DateRangePicker
+                        fromDate={fromDate}
+                        toDate={toDate}
+                        onChange={(from, to) => {
+                          setFromDate(from ?? null);
+                          setToDate(to ?? null);
+                        }}
+                        placeholder="Filtrar por data"
                       />
                     </div>
                     <div className="space-y-2">

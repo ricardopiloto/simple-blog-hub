@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Layout } from '@/components/layout/Layout';
@@ -49,6 +49,30 @@ function slugify(text: string): string {
     .replace(/^-|-$/g, '');
 }
 
+/**
+ * Constrói ISO 8601 com offset do fuso do browser (ex.: 2025-02-14T10:00:00-03:00)
+ * para que o servidor interprete a hora como a hora local do autor.
+ * Retorna null se a data/hora for inválida ou não for futura.
+ */
+function toScheduledIsoWithOffset(dateStr: string, timeStr: string): string | null {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const [h, min] = timeStr.split(':').map(Number);
+  if ([y, m, d, h, min].some(Number.isNaN)) return null;
+  const date = new Date(y, m - 1, d, h, min, 0, 0);
+  if (Number.isNaN(date.getTime()) || date.getTime() <= Date.now()) return null;
+  const offsetMin = -date.getTimezoneOffset();
+  const sign = offsetMin >= 0 ? '+' : '-';
+  const oh = Math.floor(Math.abs(offsetMin) / 60);
+  const om = Math.abs(offsetMin) % 60;
+  const offsetStr = `${sign}${String(oh).padStart(2, '0')}:${String(om).padStart(2, '0')}`;
+  const yy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  const hh = String(date.getHours()).padStart(2, '0');
+  const minStr = String(date.getMinutes()).padStart(2, '0');
+  return `${yy}-${mm}-${dd}T${hh}:${minStr}:00${offsetStr}`;
+}
+
 export default function PostEdit() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -71,12 +95,27 @@ export default function PostEdit() {
   const [selectedAuthorId, setSelectedAuthorId] = useState('');
   const [uploadingCover, setUploadingCover] = useState(false);
   const [storyTypeError, setStoryTypeError] = useState('');
+  const [coverPreviewError, setCoverPreviewError] = useState(false);
+
+  const resolveCoverUrl = useCallback((url: string) => {
+    const trimmed = url.trim();
+    if (!trimmed) return '';
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
+    const base = (typeof import.meta.env?.VITE_BFF_URL === 'string' && import.meta.env.VITE_BFF_URL.trim())
+      ? import.meta.env.VITE_BFF_URL.trim().replace(/\/$/, '')
+      : window.location.origin;
+    return base + (trimmed.startsWith('/') ? trimmed : `/${trimmed}`);
+  }, []);
 
   const { data: post, isLoading: loadingPost } = useQuery({
     queryKey: ['post', 'edit', id],
     queryFn: () => fetchPostByIdForEdit(id!),
     enabled: !isNew && Boolean(id),
   });
+
+  useEffect(() => {
+    setCoverPreviewError(false);
+  }, [coverImage]);
 
   const isOwner = Boolean(!isNew && post && author && post.author_id === author.id);
 
@@ -185,10 +224,7 @@ export default function PostEdit() {
     }
     let scheduledIso: string | null = null;
     if (scheduleEnabled && scheduledDate && scheduledTime) {
-      const d = new Date(`${scheduledDate}T${scheduledTime}`);
-      if (!Number.isNaN(d.getTime()) && d.getTime() > Date.now()) {
-        scheduledIso = d.toISOString();
-      }
+      scheduledIso = toScheduledIsoWithOffset(scheduledDate, scheduledTime);
     }
     const payload: CreateOrUpdatePostPayload = {
       title: title.trim(),
@@ -308,6 +344,20 @@ export default function PostEdit() {
             <div className="space-y-2">
               <Label htmlFor="post-cover">URL da imagem de capa</Label>
               <p className="text-xs text-muted-foreground">Proporção recomendada 16:9 (ex.: 1200×675 px) para não cortar a imagem na visualização.</p>
+              {!isNew && coverImage.trim() && (
+                <div className="rounded-lg border bg-muted/30 overflow-hidden max-w-lg aspect-video">
+                  {!coverPreviewError ? (
+                    <img
+                      src={resolveCoverUrl(coverImage)}
+                      alt="Preview da capa"
+                      className="w-full h-full object-contain"
+                      onError={() => setCoverPreviewError(true)}
+                    />
+                  ) : (
+                    <p className="p-4 text-sm text-muted-foreground">Não foi possível carregar a imagem.</p>
+                  )}
+                </div>
+              )}
               <Input
                 id="post-cover"
                 value={coverImage}

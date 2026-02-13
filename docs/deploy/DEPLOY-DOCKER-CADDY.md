@@ -142,7 +142,7 @@ Substituir `/caminho/para/repo` por REPO_DIR no servidor (ex.: `/var/www/blog/re
 
 **Imagens de capa (upload local):** O `docker-compose.yml` inclui o volume `./frontend/public/images/posts:/frontend/public/images/posts` no serviço BFF. Os ficheiros enviados pelos autores ficam em **REPO_DIR/frontend/public/images/posts** no servidor (ex.: `/var/www/blog/repo/frontend/public/images/posts`). Não é necessário definir `Uploads__ImagesPath` no bff.env. Para as imagens aparecerem no post, o Caddy deve servir esse diretório em `/images/posts/` (bloco `handle /images/posts/*` no exemplo acima).
 
-**Permissões:** A pasta `frontend/public/images/posts` já existe no repositório (com `.gitkeep`) após o clone. Se o BFF não conseguir gravar (erro de permissão), criar a pasta no host e ajustar permissões: `mkdir -p frontend/public/images/posts` (a partir de REPO_DIR) e, se necessário, `chown` para o UID com que o processo do BFF corre no contentor (ex.: `docker compose exec bff id` para ver o utilizador).
+**Permissões:** A pasta `frontend/public/images/posts` já existe no repositório (com `.gitkeep`) após o clone. Os contentores correm como **root**; se o BFF não conseguir gravar (erro de permissão), criar a pasta no host e garantir que é gravável: `mkdir -p frontend/public/images/posts` (a partir de REPO_DIR) e, se necessário, ajustar dono ou permissões da pasta no host.
 
 Recarregar o Caddy:
 
@@ -194,12 +194,7 @@ Causas comuns:
    Se `api.env` não existir, criar e voltar a subir: `docker compose up -d api`.
 
 2. **Permissões no volume**  
-   Se o log indicar "Permission denied" em `/data`, o contentor pode não conseguir criar `blog.db`. Nesse caso, forçar permissões no volume (uma vez):
-   ```bash
-   docker compose run --rm --entrypoint "" api chown -R 1000:1000 /data
-   docker compose up -d api
-   ```
-   (Se o processo não correr como UID 1000, ajustar conforme o log.)
+   Os contentores correm como **root**. Se o log indicar "Permission denied" em `/data`, verificar no host se a pasta `data/` (ou o caminho montado) existe e é gravável pelo utilizador que executa o Docker (ex.: `chmod` ou dono da pasta). Normalmente não é necessário `chown` para um UID específico.
 
 3. **Correr a API uma vez sem restart**  
    Para ver a mensagem de erro no terminal:

@@ -55,12 +55,20 @@ export async function fetchPosts(order: OrderBy = 'date'): Promise<Post[]> {
 }
 
 /**
- * Fetch a page of published posts with optional search (title, author, date).
+ * Fetch a page of published posts with optional search (title, author, date) and date range (fromDate, toDate as yyyy-MM-dd).
  * Returns { items, total } for pagination.
  */
-export async function fetchPostsPage(page: number, pageSize: number, search?: string): Promise<PagedPostsResponse> {
+export async function fetchPostsPage(
+  page: number,
+  pageSize: number,
+  search?: string,
+  fromDate?: string,
+  toDate?: string
+): Promise<PagedPostsResponse> {
   const params = new URLSearchParams({ order: 'date', page: String(page), pageSize: String(pageSize) });
   if (search?.trim()) params.set('search', search.trim());
+  if (fromDate?.trim()) params.set('fromDate', fromDate.trim());
+  if (toDate?.trim()) params.set('toDate', toDate.trim());
   const data = await requestPublic<PagedPostsResponse>(`bff/posts?${params.toString()}`);
   return data ?? { items: [], total: 0 };
 }

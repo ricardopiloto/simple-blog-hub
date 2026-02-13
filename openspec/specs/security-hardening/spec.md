@@ -150,13 +150,14 @@ O sistema **DEVE** (SHALL) registar em log (auditoria) as ações administrativa
 
 ### Requirement: Hardening de infra e documentação de segurança SHALL be aplicados
 
-Os Dockerfiles da API e do BFF **DEVEM** (SHALL) executar o processo como utilizador não-root (ex.: USER com UID/GID não privilegiados). O repositório **DEVE** dispor de documentação (ou ficheiro versionado) que descreva as variáveis de ambiente e configurações obrigatórias para produção, recomendações de firewall e permissões no host, e um Caddyfile de exemplo (ou equivalente) que inclua redirecionamento HTTP→HTTPS e os headers de segurança referidos no requisito de headers. A pasta de dados (ex.: `data/` com SQLite) **DEVE** ter permissões restritivas no host.
+Os Dockerfiles da API e do BFF **PODEM** (MAY) executar como utilizador não-root quando viável; **PODEM** (MAY) executar como **root** quando a operação com volumes montados no host (ex.: `./data` para SQLite) assim o exigir, para evitar erro "readonly database" e dependência de `chown` no host. O repositório **DEVE** dispor de documentação (ou ficheiro versionado) que descreva as variáveis de ambiente e configurações obrigatórias para produção, recomendações de firewall e permissões no host, e um Caddyfile de exemplo (ou equivalente) que inclua redirecionamento HTTP→HTTPS e os headers de segurança referidos no requisito de headers. A pasta de dados (ex.: `data/` com SQLite) **DEVE** ter permissões adequadas no host. O trade-off entre segurança (não-root) e operacionalidade (root para evitar readonly database) **DEVE** estar documentado.
 
-#### Scenario: Container não corre como root
+#### Scenario: Container pode correr como root para compatibilidade com volumes
 
-- **Quando** a imagem da API ou do BFF é executada (ex.: docker run)
-- **Então** o processo principal do container **não** corre com UID 0 (root)
-- **E** o Dockerfile declara USER com um utilizador não privilegiado
+- **Dado** que o docker-compose monta `./data` no host no contentor da API
+- **Quando** o processo da API precisa de escrever no SQLite (migrações, dados)
+- **Então** o Dockerfile **PODE** declarar o processo a correr como root (sem USER não-root) de modo que a escrita no volume montado funcione sem exigir chown no host
+- **E** a documentação indica que os contentores correm como root e documenta o trade-off (operacionalidade vs. não-root)
 
 #### Scenario: Documentação de produção existe
 

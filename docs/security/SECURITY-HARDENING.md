@@ -95,8 +95,8 @@ flowchart LR
 ### Fase 5 — Hardening de infra e documentação
 
 - **Docker e permissões**
-  - Rever Dockerfiles da API e BFF para usar um **user não-root**.
-  - Garantir permissões restritivas na pasta `data/` (onde fica o SQLite) no host.
+  - Os Dockerfiles da API e BFF **podem** executar como **root** quando a operação com volumes montados (ex.: `data/` no host) assim o exigir, para evitar o erro "readonly database" da API; o trade-off (segurança vs. operacionalidade) está documentado no spec e neste documento.
+  - Garantir que a pasta `data/` no host é gravável pelo processo (quando os contentores correm como root, tipicamente já o é).
 - **Caddy e HTTPS**
   - Versionar um `Caddyfile` de exemplo alinhado com `DEPLOY-DOCKER-CADDY.md`, incluindo:
     - Redirecionamento HTTP → HTTPS.
@@ -126,4 +126,4 @@ Os pontos de logging existentes e futuros **não** devem registar senhas, tokens
 
 ### Permissões da pasta de dados no host
 
-Em deploy com a base SQLite no **host** (ex.: pasta `data/` exposta ao contentor da API via bind mount), a pasta que contém o ficheiro da base de dados **deve** ter permissões restritivas: apenas o utilizador com que corre o processo da API (ou o utilizador do contentor, quando aplicável) deve ter leitura e escrita. Exemplo em Linux: `chmod 700 data` (apenas o dono acede) e garantir que o dono é o utilizador do serviço; ou `chown` da pasta para o utilizador não-root do contentor. Isto reduz o risco de leitura ou alteração não autorizada do ficheiro SQLite por outros processos ou utilizadores no mesmo host.
+Em deploy com a base SQLite no **host** (ex.: pasta `data/` exposta ao contentor da API via bind mount), a pasta **deve** ser gravável pelo processo da API. Na implementação atual os contentores correm como **root** por compatibilidade com volumes (evita "readonly database" e dependência de `chown` no host); a pasta no host deve existir e ser gravável (ex.: pelo utilizador que executa o Docker). Quando os contentores usarem utilizador não-root, a documentação deve indicar o passo de `chown` para o UID do contentor. O trade-off entre segurança (não-root) e operacionalidade (root) está documentado.

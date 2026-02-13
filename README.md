@@ -30,7 +30,7 @@ Blog de leitura para **contos e aventuras** de RPG. Interface em português. Os 
 
 ## 4. Links para CHANGELOG
 
-Os releases são versionados por tag (ex.: `v1.9`, `v1.10`, `v2.0`). O histórico de alterações está em **[CHANGELOG](docs/changelog/CHANGELOG.md)**.
+Os releases são versionados por tag (ex.: `v1.9`, `v1.10`, `v2.0`, `v2.1`). O histórico de alterações está em **[CHANGELOG](docs/changelog/CHANGELOG.md)**.
 
 A versão exibida no rodapé do site vem do campo `version` do `frontend/package.json` (ou de `VITE_APP_VERSION` à build); ao preparar uma release, atualizar esse valor antes do build.
 
@@ -38,16 +38,16 @@ A versão exibida no rodapé do site vem do campo `version` do `frontend/package
 
 ## 5. Funcionalidades existentes no blog
 
-- **Página inicial:** destaque (último post criado entre publicados) e artigos recentes por data de criação; apenas posts publicados; rascunhos só na Área do autor.
-- **Lista de posts:** artigos em ordem de criação (somente publicados), com paginação e pesquisa.
+- **Página inicial:** post em destaque com etiqueta **"Novo"** (último post criado entre publicados) e artigos recentes por data de criação; apenas posts publicados; rascunhos só na Área do autor.
+- **Lista de posts:** artigos em ordem de criação (somente publicados), com paginação, pesquisa e **filtro por data** (calendário: data única ou intervalo); **auto-complete** no campo de pesquisa (sugestões por autor e título).
 - **Post individual:** leitura por slug; conteúdo em HTML (Markdown no backend); descrição do autor (Contas) quando existir; navegação anterior/próximo na ordem da história.
 - **Índice da história** (`/indice`): ordem narrativa (`story_order`), paginação (6 por página), filtro em tempo real; toggle por universo (Velho Mundo / Idade das Trevas) quando existem posts dos dois tipos; utilizadores autenticados podem editar a ordem (número ou arrastar) e salvar.
 - **Tema:** modo claro/escuro (persistido em `localStorage`).
 - **Login** (`/login`): e-mail e senha; BFF valida na API e retorna JWT. Admin por defeito: e-mail padrão do Admin quando não configurado e senha padrão inicial (em produção o operador **deve** configurar `Admin__Email` e **deve** alterar a senha no primeiro acesso).
 - **Troca obrigatória de senha:** no primeiro acesso com senha padrão, modal bloqueante até alterar a senha.
-- **Área do autor** (`/area-autor`): página única com secção "Visão geral do blog" (dashboard com seis indicadores: total de posts, publicados, planejados, rascunho, visualizações, autores). Os cards Total, Publicados, Planejados e Rascunho são clicáveis (filtram a lista; borda amarela indica o filtro ativo; ao alterar pesquisa, linha da história ou ordenação a seleção é desmarcada). O card Autores leva a Contas. Abaixo, a secção "Publicações" com lista de posts, pesquisa por autor/título/data, filtro por linha da história (Todos / Velho Mundo / Idade das Trevas), ordenação (data ou ordem da história, asc/desc), botão Novo post e ações editar/excluir conforme permissões (Admin, dono, colaborador).
+- **Área do autor** (`/area-autor`): página única com secção "Visão geral do blog" (dashboard com seis indicadores: total de posts, publicados, planejados, rascunho, visualizações, autores). Os cards Total, Publicados, Planejados e Rascunho são clicáveis (filtram a lista; borda amarela indica o filtro ativo; ao alterar pesquisa, linha da história ou ordenação a seleção é desmarcada). O card Autores leva a Contas. Abaixo, a secção "Publicações" com lista de posts, **pesquisa com auto-complete** (sugestões por autor e título), **filtro por data** (calendário: data única ou intervalo), filtro por linha da história (Todos / Velho Mundo / Idade das Trevas), ordenação (data ou ordem da história, asc/desc), botão Novo post e ações editar/excluir conforme permissões (Admin, dono, colaborador).
 - **Contas** (`/area-autor/contas`): qualquer autor edita o próprio perfil (nome, descrição, senha); Admin gere todas as contas (criar, editar, resetar senha, excluir). Critério mínimo de senha: 8 caracteres, uma maiúscula, uma minúscula e um número.
-- **Edição de posts:** título, slug, resumo, Markdown, capa (recomendado 16:9), Publicado, ordem; tipo de história (Velho Mundo / Idade das Trevas) obrigatório.
+- **Edição de posts:** título, slug, resumo, Markdown, capa (recomendado 16:9; em **Editar post** é exibido preview da imagem de capa quando há URL), Publicado, ordem; tipo de história (Velho Mundo / Idade das Trevas) obrigatório.
 - **Recuperação da senha do Admin:** ficheiro de trigger no servidor, reiniciar API, login com senha padrão e trocar (detalhe em [DEPLOY-DOCKER-CADDY](docs/deploy/DEPLOY-DOCKER-CADDY.md) e [ATUALIZAR-SERVIDOR-DOCKER-CADDY](docs/deploy/ATUALIZAR-SERVIDOR-DOCKER-CADDY.md)).
 - **SEO:** sitemap dinâmico e robots.txt servidos pelo BFF (`/sitemap.xml`, `/robots.txt`); em deploy com Caddy, encaminhar para o BFF (ver [docs/deploy](docs/deploy/)).
 

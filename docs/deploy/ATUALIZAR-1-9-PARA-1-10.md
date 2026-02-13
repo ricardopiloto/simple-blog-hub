@@ -8,7 +8,7 @@ Este guia destina-se a **operadores** que já têm o blog em produção na **v1.
 
 ## O que mudou na 1.10
 
-A release 1.10 inclui avaliações de segurança e de melhorias de código, documentação reorganizada, redução da exposição de credenciais, validação de slug, melhorias no BFF/API/frontend e **hardening aplicado**: sanitização HTML, CORS e security headers, validação de secrets em produção, política de senha mais forte, rate limiting, contentores Docker não-root, e novos documentos (PRODUCTION-CHECKLIST, TOKEN-STORAGE, Caddyfile.example). **Não há novas colunas ou tabelas** na base de dados — não é necessário executar scripts SQL manuais para esta atualização.
+A release 1.10 inclui avaliações de segurança e de melhorias de código, documentação reorganizada, redução da exposição de credenciais, validação de slug, melhorias no BFF/API/frontend e **hardening aplicado**: sanitização HTML, CORS e security headers, validação de secrets em produção, política de senha mais forte, rate limiting, e novos documentos (PRODUCTION-CHECKLIST, TOKEN-STORAGE, Caddyfile.example). Os contentores Docker correm como **root** por compatibilidade com volumes montados (evita erro "readonly database" da API). **Não há novas colunas ou tabelas** na base de dados — não é necessário executar scripts SQL manuais para esta atualização.
 
 ---
 
@@ -66,7 +66,7 @@ sudo systemctl reload caddy
 
 - **Produção sem config:** Se em produção não configurares `Cors:AllowedOrigins`, `Jwt:Secret` (≥ 32 chars) no BFF e `API:InternalKey` no BFF e na API, o BFF e a API **não arrancam** (falham na validação ao startup).
 
-- **Docker não-root:** Os contentores da API e do BFF correm como utilizador não-root (uid 1000). Se a pasta de dados (ex.: `data/` no host) tiver dono/permissões que impeçam escrita por esse utilizador, ajusta as permissões (ex.: `chown` no host). Ver [SECURITY-HARDENING.md](../security/SECURITY-HARDENING.md) e [PRODUCTION-CHECKLIST.md](../security/PRODUCTION-CHECKLIST.md).
+- **Docker:** Os contentores da API e do BFF correm como **root** (por compatibilidade com volumes montados; evita erro "readonly database" quando a pasta `data/` no host não tem permissões para outro UID). A pasta `data/` no host deve ser gravável; tipicamente já o é. Ver [SECURITY-HARDENING.md](../security/SECURITY-HARDENING.md) e [PRODUCTION-CHECKLIST.md](../security/PRODUCTION-CHECKLIST.md).
 
 ---
 

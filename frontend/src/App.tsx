@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { SceneEffectsProvider } from "@/contexts/SceneEffectsContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ForceChangePasswordGate } from "@/components/ForceChangePasswordGate";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -24,6 +25,7 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
+      <SceneEffectsProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
@@ -50,6 +52,7 @@ const App = () => (
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
+      </SceneEffectsProvider>
     </ThemeProvider>
   </QueryClientProvider>
 );

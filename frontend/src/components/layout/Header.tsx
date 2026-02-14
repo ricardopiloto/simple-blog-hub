@@ -1,8 +1,9 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Menu, X, Sun, Moon, BookOpen, LogIn, LogOut, User } from 'lucide-react';
+import { Menu, X, Sun, Moon, BookOpen, LogIn, LogOut, User, CloudRain, CloudOff } from 'lucide-react';
 import { useState } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useSceneEffects } from '@/contexts/SceneEffectsContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { DiceIcon } from '@/components/layout/DiceIcon';
@@ -11,6 +12,7 @@ export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
+  const { sceneEffectsEnabled, toggleSceneEffects } = useSceneEffects();
   const { isAuthenticated, isAdmin, logout } = useAuth();
 
   const handleLogout = () => {
@@ -97,6 +99,19 @@ export function Header() {
             <Button
               variant="ghost"
               size="icon"
+              onClick={toggleSceneEffects}
+              className="text-muted-foreground hover:text-foreground"
+              title={sceneEffectsEnabled ? 'Desativar efeitos de clima' : 'Ativar efeitos de clima'}
+            >
+              {sceneEffectsEnabled ? (
+                <CloudRain className="h-5 w-5" />
+              ) : (
+                <CloudOff className="h-5 w-5" />
+              )}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={toggleTheme}
               className="text-muted-foreground hover:text-foreground"
             >
@@ -110,6 +125,19 @@ export function Header() {
 
           {/* Mobile Menu Button */}
           <div className="flex md:hidden items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleSceneEffects}
+              className="text-muted-foreground hover:text-foreground"
+              title={sceneEffectsEnabled ? 'Desativar efeitos de clima' : 'Ativar efeitos de clima'}
+            >
+              {sceneEffectsEnabled ? (
+                <CloudRain className="h-5 w-5" />
+              ) : (
+                <CloudOff className="h-5 w-5" />
+              )}
+            </Button>
             <Button
               variant="ghost"
               size="icon"

@@ -603,3 +603,25 @@ O projeto frontend SHALL expor a versão **2.0.0** (ex.: campo `version` em `fro
 - **THEN** a área do autor é descrita como página única em /area-autor com visão geral (dashboard, cards clicáveis) e secção Publicações (filtros, ordenação)
 - **AND** não há contradição com o comportamento implementado na v2.0
 
+### Requirement: Versão no rodapé atualizada ao preparar uma release (SHALL)
+
+Ao preparar uma **release versionada** (tag, ex.: v2.1, v2.2), o repositório **deve** (SHALL) garantir que a **versão exibida no rodapé** do site corresponda a essa release. Para isso, o campo **`version`** em **`frontend/package.json`** **deve** ser atualizado para o valor da release (ex.: `"2.1.0"`) **antes** do build do frontend para produção. A versão é injetada em build pelo Vite (a partir de `npm_package_version` ou `VITE_APP_VERSION`) e exibida no componente Footer; se o campo não for atualizado, o rodapé continuará a mostrar a versão anterior. O **README** (na secção de links para CHANGELOG ou de versionamento) **deve** referir explicitamente que, ao preparar uma release, se deve atualizar o campo `version` em `frontend/package.json` antes do build.
+
+#### Scenario: Release v2.1 preparada com versão correta no rodapé
+
+- **Dado** que a equipa prepara uma release com tag v2.1
+- **Quando** o campo `version` em `frontend/package.json` é atualizado para `"2.1.0"` e o frontend é construído (`npm run build`)
+- **Então** o rodapé do site exibe "Versão 2.1.0" (ou equivalente) após o deploy
+- **E** o README menciona que ao preparar uma release se deve atualizar esse campo antes do build
+
+### Requirement: CHANGELOG e versão atualizados para a release v2.2 (SHALL)
+
+Para a **release versionada v2.2**, o ficheiro **docs/changelog/CHANGELOG.md** **deve** (SHALL) conter a secção **## [2.2]** que descreve as alterações dessa versão: add-scene-weather-effect (efeito de clima chuva/neve na leitura e controlo no header), ensure-version-footer-updated-on-release (formalização da atualização do campo version no package.json ao preparar uma release), e a atualização da documentação/versão para 2.2.0. O **frontend/package.json** **deve** ter o campo `version` definido como **"2.2.0"** para que o rodapé exiba a versão correta após o build. O **README** (secção 4, Links para CHANGELOG) **deve** incluir **v2.2** na lista de tags de release (ex.: v2.0, v2.1, v2.2).
+
+#### Scenario: Leitor consulta o CHANGELOG para a v2.2
+
+- **Quando** um utilizador abre docs/changelog/CHANGELOG.md
+- **Então** existe a secção **## [2.2]** com as changes add-scene-weather-effect e ensure-version-footer-updated-on-release e a linha de documentação/versão
+- **E** o package.json do frontend tem version "2.2.0"
+- **E** o README secção 4 menciona v2.2 nas tags de release
+

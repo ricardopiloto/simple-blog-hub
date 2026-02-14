@@ -150,7 +150,7 @@ O sistema **DEVE** (SHALL) registar em log (auditoria) as ações administrativa
 
 ### Requirement: Hardening de infra e documentação de segurança SHALL be aplicados
 
-Os Dockerfiles da API e do BFF **PODEM** (MAY) executar como utilizador não-root quando viável; **PODEM** (MAY) executar como **root** quando a operação com volumes montados no host (ex.: `./data` para SQLite) assim o exigir, para evitar erro "readonly database" e dependência de `chown` no host. O repositório **DEVE** dispor de documentação (ou ficheiro versionado) que descreva as variáveis de ambiente e configurações obrigatórias para produção, recomendações de firewall e permissões no host, e um Caddyfile de exemplo (ou equivalente) que inclua redirecionamento HTTP→HTTPS e os headers de segurança referidos no requisito de headers. A pasta de dados (ex.: `data/` com SQLite) **DEVE** ter permissões adequadas no host. O trade-off entre segurança (não-root) e operacionalidade (root para evitar readonly database) **DEVE** estar documentado.
+Os Dockerfiles da API e do BFF **PODEM** (MAY) executar como utilizador não-root quando viável; **PODEM** (MAY) executar como **root** quando a operação com volumes montados no host (ex.: `./data` para SQLite) assim o exigir, para evitar erro "readonly database" e dependência de `chown` no host. O repositório **DEVE** (SHALL) dispor de documentação (ou ficheiro versionado) que descreva as variáveis de ambiente e configurações obrigatórias para produção, recomendações de firewall e permissões no host, e um Caddyfile de exemplo (ou equivalente) que inclua redirecionamento HTTP→HTTPS e os headers de segurança referidos no requisito de headers. A pasta de dados (ex.: `data/` com SQLite) **DEVE** ter permissões adequadas no host. O trade-off entre segurança (não-root) e operacionalidade (root para evitar readonly database) **DEVE** estar documentado.
 
 #### Scenario: Container pode correr como root para compatibilidade com volumes
 
@@ -255,4 +255,22 @@ As alterações de segurança definidas no spec **security-hardening** e nos doc
 - **Então** em ambiente de produção o BFF não arranca sem Cors:AllowedOrigins e Jwt:Secret forte
 - **E** a API em produção não arranca sem API:InternalKey
 - **E** as respostas do BFF e da API incluem X-Content-Type-Options, X-Frame-Options e Referrer-Policy
+
+### Requirement: Dependência HtmlSanitizer SHALL be free of known unpatched vulnerabilities (SHALL)
+
+The backend API uses the **HtmlSanitizer** package (e.g. in `MarkdownService`) to sanitize HTML content and mitigate XSS. The project SHALL use a version of HtmlSanitizer that is **not affected by known unpatched moderate-or-higher severity vulnerabilities**. In particular, the version SHALL remediate advisory **GHSA-j92c-7v7g-gj3f** (template-tag bypass, moderate severity) or any successor advisory that applies to the same or later package versions. The recommended approach is to use a stable version that is explicitly listed as not vulnerable (e.g. HtmlSanitizer 9.0.892 or later stable release as indicated by NuGet and the package maintainers).
+
+#### Scenario: HtmlSanitizer version does not report known moderate vulnerability
+
+- **GIVEN** the API project references the HtmlSanitizer NuGet package
+- **WHEN** the project is checked for vulnerable dependencies (e.g. `dotnet list package --vulnerable`, or the advisory GHSA-j92c-7v7g-gj3f)
+- **THEN** the HtmlSanitizer package version in use is **not** reported as affected by GHSA-j92c-7v7g-gj3f (or by an equivalent unpatched moderate-or-higher vulnerability)
+- **AND** the MarkdownService continues to sanitize post HTML for public reading as required by the existing sanitization requirement
+
+#### Scenario: Sanitization behavior preserved after upgrade
+
+- **GIVEN** the HtmlSanitizer package has been updated to a version that remediates GHSA-j92c-7v7g-gj3f
+- **WHEN** the API serves post content for public reading (Markdown or HTML pass-through)
+- **THEN** the content is still sanitized (script, iframe, on*, javascript: etc. removed) as before
+- **AND** the existing scenarios for "Conteúdo HTML de posts MUST ser sanitizado" still hold
 

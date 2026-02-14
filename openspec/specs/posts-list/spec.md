@@ -37,36 +37,15 @@ No change to the existing scenarios for search by title, author, or date string;
 
 ### Requirement: Filtro por data com calendário (data única ou intervalo) na página Artigos (SHALL)
 
-A página **Artigos** (`/posts`) SHALL provide a **date filter** next to the text search field. When the user interacts with the date control (e.g. clicks it), a **calendar** (date picker) SHALL open allowing the user to choose **a single date** or a **date range** (start and end date). By **default**, no date filter SHALL be applied — the list shows all published posts with existing pagination. When the user selects a date or range, the list SHALL be filtered to posts whose **publication date** (`published_at`) falls on that date or within that range (inclusive). Pagination SHALL apply to the filtered result; when the date filter changes, the page SHALL reset to 1. The API/BFF SHALL support optional query parameters (e.g. `fromDate`, `toDate` in ISO date format) for the paginated public list so that filtering by date is performed server-side.
+**Scope update:** The date filter on the **Artigos** page (`/posts`) SHALL be **visible and usable by all visitors**, whether or not they are authenticated. The control (e.g. date range picker or calendar trigger) SHALL **not** be hidden or disabled based on authentication state; any visitor who opens `/posts` SHALL see the date filter next to the search field and SHALL be able to select a single date or a date range to filter the list. The existing behaviour (calendar opens on interaction, filtering by publication date, pagination reset) remains unchanged; this requirement adds that **no authentication condition** SHALL hide the date filter.
 
-#### Scenario: No date filter by default
+#### Scenario: Visitante não autenticado vê e usa o filtro de data
 
-- **GIVEN** the user is on the Artigos page
-- **WHEN** they have not selected any date
-- **THEN** the list shows all published posts (with pagination)
-- **AND** no date filter is applied
-
-#### Scenario: User selects a single date
-
-- **GIVEN** the user opens the date picker next to the search field
-- **WHEN** they select a single date (e.g. 15/02/2025)
-- **THEN** the list shows only posts whose publication date is on that day
-- **AND** pagination applies to this filtered result
-- **AND** the current page is reset to 1
-
-#### Scenario: User selects a date range
-
-- **GIVEN** the user opens the date picker
-- **WHEN** they select a start date and an end date (range)
-- **THEN** the list shows only posts whose publication date is between those dates (inclusive)
-- **AND** pagination applies to this filtered result
-- **AND** the current page is reset to 1
-
-#### Scenario: Calendar opens on interaction
-
-- **GIVEN** the user is on the Artigos page
-- **WHEN** they click (or focus) the date filter control
-- **THEN** a calendar is displayed allowing selection of one date or a range of dates
+- **Dado** que o utilizador **não** está autenticado (visitante anónimo)
+- **Quando** o utilizador acede à página Artigos (`/posts`)
+- **Então** o controlo de filtro por data (ex.: botão ou campo "Filtrar por data") está **visível** ao lado do campo de pesquisa
+- **E** o utilizador pode clicar ou focar o controlo, abrir o calendário e selecionar uma data ou intervalo
+- **E** a lista de artigos é filtrada conforme a seleção (e a API/BFF aceita fromDate/toDate na lista pública sem exigir autenticação)
 
 ### Requirement: Auto-complete no campo de pesquisa da página Artigos (SHALL)
 

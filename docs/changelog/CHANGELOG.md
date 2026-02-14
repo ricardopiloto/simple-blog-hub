@@ -2,6 +2,13 @@
 
 Os releases são versionados por tag (ex.: `v1.9`, `v1.10`, `v2.0`). O resumo detalhado das changes OpenSpec aplicadas pode ser usado na mensagem do commit de release e está também na proposta da respetiva versão em `openspec/changes/`.
 
+## [2.2]
+
+- add-scene-weather-effect: **Efeito de clima (chuva/neve) na leitura**: ao abrir um artigo, o sistema analisa o texto em busca de palavras que indiquem chuva ou neve (incluindo sinónimos e conjugações verbais: chuva, choveu, chovendo, neva, nevou, nevava, etc., e equivalentes em inglês). Se detectar e o utilizador tiver os efeitos ativados, é exibido um efeito visual discreto (chuva ou neve) sobre a área de leitura. **Controlo no header**: botão (ao lado do tema claro/escuro) para ativar ou desativar os efeitos; preferência persistida em localStorage e aplicada a todas as páginas de artigo. Prioridade neve sobre chuva quando o texto contém ambos.
+- ensure-version-footer-updated-on-release: Formalização no spec project-docs e no README: ao preparar uma **release versionada**, o campo **`version`** em **`frontend/package.json`** deve ser atualizado antes do build para que o rodapé exiba a versão correta; README secção 4 (Links para CHANGELOG) reforça esse passo.
+- fix-date-filter-visible-to-all-visitors: **Filtro de data na página Artigos visível a todos**: o filtro por data (calendário, data única ou intervalo) na página **Artigos** (`/posts`) passou a ser **visível e utilizável por qualquer visitante**, independentemente de estar ou não autenticado. O spec posts-list exige que nenhuma condição de autenticação oculte o controlo; o DateRangePicker em `Posts.tsx` é sempre exibido; a listagem pública (BFF) já aceitava `fromDate`/`toDate` sem auth. Cenário no spec: visitante não autenticado em `/posts` vê o filtro ao lado da pesquisa e pode filtrar por data.
+- Documentação e versão: CHANGELOG com secção [2.2]; versão no frontend (package.json) definida como 2.2.0; README secção 4 com tag v2.2.
+
 ## [2.1]
 
 - fix-scheduled-publish-author-timezone: Correção do agendamento de publicação para respeitar a **timezone do autor**: quando o autor agenda para uma hora (ex.: 10:00), a publicação ocorre às 10:00 no fuso horário do utilizador. O frontend passou a enviar a data/hora em ISO 8601 **com offset do fuso** (ex.: `2025-02-14T10:00:00-03:00`); a API interpreta e armazena em UTC; o job em background mantém a comparação com `DateTime.UtcNow`. Elimina o desvio de horas (ex.: 3 horas) causado pela interpretação inconsistente de strings sem timezone entre browsers.

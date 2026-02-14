@@ -1,18 +1,28 @@
 import DOMPurify from 'dompurify';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useMemo } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ArrowLeft, ArrowRight, Eye } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { DEFAULT_POST_COVER_IMAGE } from '@/lib/constants';
 import { usePost, usePostsByStoryOrder } from '@/hooks/usePosts';
+import { useSceneEffects } from '@/contexts/SceneEffectsContext';
+import { detectSceneWeather } from '@/lib/sceneWeather';
+import { SceneWeatherEffect } from '@/components/blog/SceneWeatherEffect';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function PostPage() {
   const { slug } = useParams<{ slug: string }>();
   const { data: post, isLoading, error } = usePost(slug || '');
   const { data: storyOrderedPosts = [] } = usePostsByStoryOrder();
+  const { sceneEffectsEnabled } = useSceneEffects();
+  const sceneWeather = useMemo(
+    () => (post?.content ? detectSceneWeather(post.content) : null),
+    [post?.content]
+  );
+  const showWeatherEffect = sceneEffectsEnabled && (sceneWeather === 'rain' || sceneWeather === 'snow');
 
   if (isLoading) {
     return (
@@ -71,7 +81,10 @@ export default function PostPage() {
   return (
     <Layout>
       <article className="py-16">
-        <div className="container-blog">
+        <div className="container-blog relative">
+          {showWeatherEffect && sceneWeather && (
+            <SceneWeatherEffect type={sceneWeather} />
+          )}
           {/* Back Link */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}

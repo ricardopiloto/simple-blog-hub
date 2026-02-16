@@ -95,8 +95,8 @@ flowchart LR
 ### Fase 5 — Hardening de infra e documentação
 
 - **Docker e permissões**
-  - Os Dockerfiles da API e BFF **podem** executar como **root** quando a operação com volumes montados (ex.: `data/` no host) assim o exigir, para evitar o erro "readonly database" da API; o trade-off (segurança vs. operacionalidade) está documentado no spec e neste documento.
-  - Garantir que a pasta `data/` no host é gravável pelo processo (quando os contentores correm como root, tipicamente já o é).
+  - Os contentores da API e do BFF **não** correm como root; executam como utilizador não-root (UID 10000). Para que a API e o BFF possam escrever nos volumes (`data/`, `frontend/public/images/posts`), o operador deve configurar as permissões no servidor **uma vez** conforme o guia **[CONFIGURAR-SERVIDOR-NAO-ROOT.md](../deploy/CONFIGURAR-SERVIDOR-NAO-ROOT.md)** (comandos `chown` para 10000:10000).
+  - Garantir que as pastas `data/` e `frontend/public/images/posts` no host pertencem ao UID 10000 (ver o guia acima).
 - **Caddy e HTTPS**
   - Versionar um `Caddyfile` de exemplo alinhado com `DEPLOY-DOCKER-CADDY.md`, incluindo:
     - Redirecionamento HTTP → HTTPS.
@@ -126,4 +126,4 @@ Os pontos de logging existentes e futuros **não** devem registar senhas, tokens
 
 ### Permissões da pasta de dados no host
 
-Em deploy com a base SQLite no **host** (ex.: pasta `data/` exposta ao contentor da API via bind mount), a pasta **deve** ser gravável pelo processo da API. Na implementação atual os contentores correm como **root** por compatibilidade com volumes (evita "readonly database" e dependência de `chown` no host); a pasta no host deve existir e ser gravável (ex.: pelo utilizador que executa o Docker). Quando os contentores usarem utilizador não-root, a documentação deve indicar o passo de `chown` para o UID do contentor. O trade-off entre segurança (não-root) e operacionalidade (root) está documentado.
+Em deploy com a base SQLite no **host** (ex.: pasta `data/` exposta ao contentor da API via bind mount), a pasta **deve** ser gravável pelo processo da API. Os contentores da API e do BFF correm como **não-root** (UID 10000); a pasta `data/` (e `frontend/public/images/posts` para o BFF) no host deve ter dono 10000:10000. Ver o guia **[CONFIGURAR-SERVIDOR-NAO-ROOT.md](../deploy/CONFIGURAR-SERVIDOR-NAO-ROOT.md)** para os comandos no servidor (deploy novo e migração desde root).

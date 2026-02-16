@@ -150,27 +150,16 @@ O sistema **DEVE** (SHALL) registar em log (auditoria) as ações administrativa
 
 ### Requirement: Hardening de infra e documentação de segurança SHALL be aplicados
 
-Os Dockerfiles da API e do BFF **PODEM** (MAY) executar como utilizador não-root quando viável; **PODEM** (MAY) executar como **root** quando a operação com volumes montados no host (ex.: `./data` para SQLite) assim o exigir, para evitar erro "readonly database" e dependência de `chown` no host. O repositório **DEVE** (SHALL) dispor de documentação (ou ficheiro versionado) que descreva as variáveis de ambiente e configurações obrigatórias para produção, recomendações de firewall e permissões no host, e um Caddyfile de exemplo (ou equivalente) que inclua redirecionamento HTTP→HTTPS e os headers de segurança referidos no requisito de headers. A pasta de dados (ex.: `data/` com SQLite) **DEVE** ter permissões adequadas no host. O trade-off entre segurança (não-root) e operacionalidade (root para evitar readonly database) **DEVE** estar documentado.
+**Change:** The API and BFF containers SHALL run as **non-root** (fixed UID, e.g. 10000) by default. The repository SHALL provide documentation that includes a **step-by-step guide for the server** (commands and changes) so that volume permissions are set correctly (e.g. `chown` to the container UID on the host for `data/` and `frontend/public/images/posts`), allowing the API to write to the database and trigger file and the BFF to write uploads without "readonly database" or "Permission denied" errors. The previous wording that allowed (MAY) running as root for volume compatibility is replaced by this requirement: operators SHALL configure the host once according to the guide so that non-root execution is possible. The rest of the requirement (documentation of env vars, Caddyfile example, data directory permissions, trade-off documentation) remains; the "trade-off" is now documented as "non-root with one-time host setup" vs. "root without host setup".
 
-#### Scenario: Container pode correr como root para compatibilidade com volumes
+#### Scenario: Contentores correm como não-root após configuração no servidor
 
-- **Dado** que o docker-compose monta `./data` no host no contentor da API
-- **Quando** o processo da API precisa de escrever no SQLite (migrações, dados)
-- **Então** o Dockerfile **PODE** declarar o processo a correr como root (sem USER não-root) de modo que a escrita no volume montado funcione sem exigir chown no host
-- **E** a documentação indica que os contentores correm como root e documenta o trade-off (operacionalidade vs. não-root)
-
-#### Scenario: Documentação de produção existe
-
-- **Quando** um operador consulta o repositório para preparar um deploy em produção
-- **Então** existe documentação (ex.: SECURITY-HARDENING.md, DEPLOY, ou docs/) que lista variáveis obrigatórias (Jwt:Secret, API:InternalKey, Cors:AllowedOrigins, etc.)
-- **E** existe referência a HTTPS, headers de segurança e, quando aplicável, um Caddyfile de exemplo versionado
-
-#### Scenario: Caddyfile de exemplo inclui segurança
-
-- **Dado** que existe um Caddyfile de exemplo no repositório (ou em docs)
-- **Quando** o operador o utiliza como base
-- **Então** o ficheiro inclui redirecionamento de HTTP para HTTPS
-- **E** inclui configuração para os headers de segurança (X-Content-Type-Options, X-Frame-Options, etc.) ou indica que devem ser aplicados no BFF/API
+- **GIVEN** the operator has followed the step-by-step server guide (e.g. CONFIGURAR-SERVIDOR-NAO-ROOT.md) and has set ownership of the `data/` and `frontend/public/images/posts` directories on the host to the container UID (e.g. 10000:10000)
+- **WHEN** the operator runs `docker compose up -d` with the images that use a non-root USER
+- **THEN** the API and BFF containers run as non-root (e.g. `docker compose exec api id` shows uid=10000)
+- **AND** the API can write to the SQLite database and the Admin password-reset trigger file in `/data`
+- **AND** the BFF can write uploaded cover images to `/frontend/public/images/posts`
+- **AND** no "readonly database" or "Permission denied" errors occur when using the application normally
 
 ### Requirement: Implementação das fases de hardening e documento de remediação (SHALL)
 

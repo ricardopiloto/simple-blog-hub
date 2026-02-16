@@ -32,7 +32,7 @@ Quando `ASPNETCORE_ENVIRONMENT=Production` (ou equivalente), a aplicação **fal
 - [ ] **API key:** `API:InternalKey` definido e igual no BFF e na API; não expor ao frontend.
 - [ ] **Admin:** `Admin__Email` configurado; senha padrão alterada no primeiro acesso.
 - [ ] **HTTPS:** Caddy (ou proxy) a terminar HTTPS e a enviar o header correto para o backend (ex.: `X-Forwarded-Proto`).
-- [ ] **Dados:** Pasta de dados (ex.: `data/` no host) gravável pelo processo. Os contentores correm como **root**; tipicamente a pasta já é gravável. Ver SECURITY-HARDENING.md.
+- [ ] **Dados:** Pastas `data/` e `frontend/public/images/posts` no host com dono 10000:10000 (contentores não-root). Ver [CONFIGURAR-SERVIDOR-NAO-ROOT.md](../deploy/CONFIGURAR-SERVIDOR-NAO-ROOT.md) e SECURITY-HARDENING.md.
 - [ ] **Logs:** Confirmar que nenhum log regista senhas, tokens ou dados sensíveis em texto claro.
 
 ## Referências

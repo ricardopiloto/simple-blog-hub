@@ -2,6 +2,12 @@
 
 Os releases são versionados por tag (ex.: `v1.9`, `v1.10`, `v2.0`). O resumo detalhado das changes OpenSpec aplicadas pode ser usado na mensagem do commit de release e está também na proposta da respetiva versão em `openspec/changes/`.
 
+## [2.3]
+
+- run-backend-containers-non-root: **Contentores do backend como não-root**: a API e o BFF passam a correr como utilizador **não-root** (UID 10000) em vez de root, reduzindo a superfície de ataque. Dockerfiles com `USER app` (UID 10000); docker-compose com `user: "10000:10000"`. Novo guia **CONFIGURAR-SERVIDOR-NAO-ROOT.md** com passo a passo no servidor (criar pastas, `chown -R 10000:10000` em `data/` e `frontend/public/images/posts`); DEPLOY, ATUALIZAR, SECURITY-HARDENING, PRODUCTION-CHECKLIST e EXPOR-DB-NO-HOST atualizados. Spec security-hardening exige execução não-root e documentação do servidor; project-docs exige referência ao guia de configuração.
+- fix-terms-page: Correção na página **Termos de Uso** (`Terms.tsx`): ajustes de conteúdo ou apresentação conforme especificação.
+- Documentação e versão: CHANGELOG com secção [2.3]; versão no frontend (package.json) definida como 2.3.0; README secção 4 com tag v2.3.
+
 ## [2.2]
 
 - add-scene-weather-effect: **Efeito de clima (chuva/neve) na leitura**: ao abrir um artigo, o sistema analisa o texto em busca de palavras que indiquem chuva ou neve (incluindo sinónimos e conjugações verbais: chuva, choveu, chovendo, neva, nevou, nevava, etc., e equivalentes em inglês). Se detectar e o utilizador tiver os efeitos ativados, é exibido um efeito visual discreto (chuva ou neve) sobre a área de leitura. **Controlo no header**: botão (ao lado do tema claro/escuro) para ativar ou desativar os efeitos; preferência persistida em localStorage e aplicada a todas as páginas de artigo. Prioridade neve sobre chuva quando o texto contém ambos.

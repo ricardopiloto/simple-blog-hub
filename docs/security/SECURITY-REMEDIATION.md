@@ -42,7 +42,7 @@ Este documento descreve a **análise de segurança** do código (riscos confirma
 
 | Risco | Ficheiro(s) | Evidência / ação de correção |
 |-------|-------------|------------------------------|
-| Docker como root | Dockerfiles (backend/api, backend/bff) | Imagens executam como root por compatibilidade com volumes montados (evita "readonly database" da API). **Estado:** Aceite como trade-off operacional; documentado em SECURITY-HARDENING.md e no spec. Operadores que queiram não-root podem usar Dockerfile customizado e `chown` no host. |
+| Docker não-root | Dockerfiles (backend/api, backend/bff) | Os contentores da API e do BFF **não** correm como root; executam como UID 10000. **Estado:** Implementado. O operador configura as permissões no servidor uma vez conforme [CONFIGURAR-SERVIDOR-NAO-ROOT.md](../deploy/CONFIGURAR-SERVIDOR-NAO-ROOT.md) (`chown` para 10000:10000 em `data/` e `frontend/public/images/posts`). |
 | Caddyfile não versionado | docs | HTTPS e headers dependem da documentação. **Correção:** Caddyfile de exemplo no repositório com HTTPS e headers de segurança. |
 | Documentação de hardening | docs | Variáveis obrigatórias e checklist não centralizados. **Correção:** Documento com variáveis obrigatórias para produção e checklist de revisão. |
 
@@ -54,6 +54,6 @@ Este documento descreve a **análise de segurança** do código (riscos confirma
 2. **Fase 2** — CORS restritivo em produção; middleware de security headers; Jwt:Secret e API:InternalKey obrigatórios em produção.
 3. **Fase 3** — Validação de uploads por magic bytes; Data Annotations e ModelState nos DTOs; política de senha reforçada.
 4. **Fase 4** — Rate limiting (login, uploads, admin); logs de auditoria para ações sensíveis.
-5. **Fase 5** — Docker (atualmente como root por compatibilidade com volumes); Caddyfile versionado; documentação de hardening.
+5. **Fase 5** — Docker não-root (implementado; ver CONFIGURAR-SERVIDOR-NAO-ROOT.md); Caddyfile versionado; documentação de hardening.
 
 Requisitos formais: spec **security-hardening** em `openspec/changes/add-security-hardening-assessment/specs/security-hardening/spec.md` e delta em `openspec/changes/harden-login-credentials-exposure` e `add-security-remediation-proposal`.

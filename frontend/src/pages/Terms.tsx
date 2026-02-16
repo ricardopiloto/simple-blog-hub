@@ -87,13 +87,6 @@ export default function Terms() {
               </p>
             </div>
 
-            <div>
-              <h2 className="font-sans font-semibold text-foreground text-lg mb-2">Lei aplicável e foro</h2>
-              <p>
-                Aplica-se a lei brasileira. O foro competente para resolução de litígios é o da comarca do domicílio do responsável pelo blog no Brasil (preencha aqui a comarca e estado, ex.: foro da comarca de São Paulo/SP).
-              </p>
-            </div>
-
           </div>
         </div>
       </section>

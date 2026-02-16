@@ -67,7 +67,21 @@ O `API__InternalKey` deve ser **igual** nos dois ficheiros.
 
 ---
 
-## 4. Build e arranque dos contentores
+## 4. Permissões no servidor (contentores não-root)
+
+Os contentores da API e do BFF correm como **não-root** (UID 10000) por segurança. As pastas `data/` e `frontend/public/images/posts` no host **têm de pertencer** a 10000:10000 para a API gravar a base de dados e o BFF gravar as imagens de capa. **Antes** do primeiro `docker compose up -d`, executa (substituir REPO_DIR pelo caminho do repositório no servidor):
+
+```bash
+cd REPO_DIR
+sudo mkdir -p data frontend/public/images/posts
+sudo chown -R 10000:10000 data frontend/public/images/posts
+```
+
+Guia completo (deploy novo, migração desde root, verificação e troubleshooting): **[CONFIGURAR-SERVIDOR-NAO-ROOT.md](CONFIGURAR-SERVIDOR-NAO-ROOT.md)**.
+
+---
+
+## 5. Build e arranque dos contentores
 
 Na raiz do repositório:
 
@@ -88,7 +102,7 @@ O BFF fica exposto em **127.0.0.1:5000** no host (apenas localhost). A API não 
 
 ---
 
-## 5. Build do frontend (no host)
+## 6. Build do frontend (no host)
 
 O frontend continua a ser construído no host e servido pelo Caddy (não corre em contentor).
 
@@ -106,7 +120,7 @@ cp -r REPO_DIR/frontend/dist DOCUMENT_ROOT
 
 ---
 
-## 6. Caddy: site e reverse proxy
+## 7. Caddy: site e reverse proxy
 
 O Caddy já está no host. Configurar o **teu domínio** no Caddyfile (ex.: `/etc/caddy/Caddyfile`). Substituir `seu-dominio.com` pelo teu domínio e `/caminho/para/estaticos` por DOCUMENT_ROOT (pasta onde copiaste o `dist`):
 
@@ -142,7 +156,7 @@ Substituir `/caminho/para/repo` por REPO_DIR no servidor (ex.: `/var/www/blog/re
 
 **Imagens de capa (upload local):** O `docker-compose.yml` inclui o volume `./frontend/public/images/posts:/frontend/public/images/posts` no serviço BFF. Os ficheiros enviados pelos autores ficam em **REPO_DIR/frontend/public/images/posts** no servidor (ex.: `/var/www/blog/repo/frontend/public/images/posts`). Não é necessário definir `Uploads__ImagesPath` no bff.env. Para as imagens aparecerem no post, o Caddy deve servir esse diretório em `/images/posts/` (bloco `handle /images/posts/*` no exemplo acima).
 
-**Permissões:** A pasta `frontend/public/images/posts` já existe no repositório (com `.gitkeep`) após o clone. Os contentores correm como **root**; se o BFF não conseguir gravar (erro de permissão), criar a pasta no host e garantir que é gravável: `mkdir -p frontend/public/images/posts` (a partir de REPO_DIR) e, se necessário, ajustar dono ou permissões da pasta no host.
+**Permissões:** Os contentores correm como **não-root** (UID 10000). A pasta `frontend/public/images/posts` (e `data/`) no host deve ter dono 10000:10000. Ver **[CONFIGURAR-SERVIDOR-NAO-ROOT.md](CONFIGURAR-SERVIDOR-NAO-ROOT.md)**. Se o BFF não conseguir gravar (erro de permissão), no host: `sudo chown -R 10000:10000 REPO_DIR/frontend/public/images/posts` e `docker compose restart bff`.
 
 Recarregar o Caddy:
 
@@ -153,7 +167,7 @@ Validar a configuração (opcional): `sudo caddy validate --config /etc/caddy/Ca
 
 ---
 
-## 7. Primeiro acesso
+## 8. Primeiro acesso
 
 1. Abrir no browser a URL do teu domínio (ex.: **https://seu-dominio.com**).
 2. Ir a **Login** e entrar com o e-mail do Admin (definido em `Admin__Email` ou e-mail padrão quando não configurado) e com a **senha padrão inicial**.
@@ -161,7 +175,7 @@ Validar a configuração (opcional): `sudo caddy validate --config /etc/caddy/Ca
 
 ---
 
-## 8. Comandos úteis
+## 9. Comandos úteis
 
 | Ação | Comando |
 |------|--------|
@@ -173,7 +187,7 @@ Validar a configuração (opcional): `sudo caddy validate --config /etc/caddy/Ca
 
 ---
 
-## 8.1. API a reiniciar sem ficar em pé
+## 9.1. API a reiniciar sem ficar em pé
 
 Se o contentor da API reinicia constantemente, ver o erro real:
 
@@ -194,7 +208,7 @@ Causas comuns:
    Se `api.env` não existir, criar e voltar a subir: `docker compose up -d api`.
 
 2. **Permissões no volume**  
-   Os contentores correm como **root**. Se o log indicar "Permission denied" em `/data`, verificar no host se a pasta `data/` (ou o caminho montado) existe e é gravável pelo utilizador que executa o Docker (ex.: `chmod` ou dono da pasta). Normalmente não é necessário `chown` para um UID específico.
+   Os contentores correm como **não-root** (UID 10000). Se o log indicar "Permission denied" em `/data` ou "readonly database", no host a pasta `data/` (e `frontend/public/images/posts`) deve pertencer a 10000:10000: `sudo chown -R 10000:10000 REPO_DIR/data REPO_DIR/frontend/public/images/posts`. Ver **[CONFIGURAR-SERVIDOR-NAO-ROOT.md](CONFIGURAR-SERVIDOR-NAO-ROOT.md)**.
 
 3. **Correr a API uma vez sem restart**  
    Para ver a mensagem de erro no terminal:
@@ -219,7 +233,7 @@ Causas comuns:
 
 ---
 
-## 8.2. Imagem de capa: upload sem erro mas imagem não aparece (404 em /images/posts/)
+## 9.2. Imagem de capa: upload sem erro mas imagem não aparece (404 em /images/posts/)
 
 **Sintoma:** O autor envia uma imagem de capa no formulário de post e o pedido de upload devolve sucesso (sem mensagem de erro). A imagem **não é exibida** no post. No **console do browser** (DevTools → Aba Network), o pedido **GET** a `https://teu-dominio/images/posts/xxx.jpg` devolve **404**.
 
@@ -242,7 +256,7 @@ Após isto, os pedidos a `/images/posts/xxx.jpg` passam a ser servidos a partir 
 
 ---
 
-## 9. Persistência e recuperar senha do Admin
+## 10. Persistência e recuperar senha do Admin
 
 - **Base de dados**: o ficheiro SQLite da API fica **no servidor**, na pasta `data/` na raiz do repositório (bind mount para `/data` no contentor). O `blog.db` está em `REPO_DIR/data/blog.db`; podes executar scripts manuais no host com `sqlite3 data/blog.db < backend/api/Migrations/Scripts/nome.sql` (a partir de REPO_DIR). Ver **[EXPOR-DB-NO-HOST.md](EXPOR-DB-NO-HOST.md)** para detalhes e para migrar desde o volume nomeado antigo.
 
@@ -257,7 +271,7 @@ docker compose restart api
 
 ---
 
-## 10. Atualizar a aplicação (deploy posterior)
+## 11. Atualizar a aplicação (deploy posterior)
 
 As atualizações subsequentes seguem o guia **[ATUALIZAR-SERVIDOR-DOCKER-CADDY.md](ATUALIZAR-SERVIDOR-DOCKER-CADDY.md)**. Esse documento descreve os passos de atualização **Docker** (e também **local**, para desenvolvimento) e lista os **scripts de banco de dados** que podem ser aplicados manualmente (ViewCount, IncludeInStoryOrder), com instruções para cada ambiente.
 

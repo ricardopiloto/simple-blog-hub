@@ -47,6 +47,8 @@ Se a base de dados estiver desatualizada e preferires aplicar scripts SQL manual
 
 Para quem **já instalou** o blog no servidor com Docker (API e BFF em contentores, Caddy no host). Pré-requisitos: diretório do repositório no servidor (ex.: REPO_DIR), `api.env` e `bff.env` na raiz do repositório, Caddy a servir estáticos e proxy `/bff`.
 
+Os contentores da API e do BFF correm como **não-root** (UID 10000). Na **primeira vez** que atualizas para uma versão que usa contentores não-root (ou se mudaste de servidor), deves seguir **[CONFIGURAR-SERVIDOR-NAO-ROOT.md](CONFIGURAR-SERVIDOR-NAO-ROOT.md)** (secção "Migração desde root") para aplicar as permissões às pastas `data/` e `frontend/public/images/posts` antes de `docker compose up -d`. Depois disso, as atualizações seguem os passos abaixo.
+
 ### 1. Backend (API e BFF)
 
 Na raiz do repositório no servidor (REPO_DIR):

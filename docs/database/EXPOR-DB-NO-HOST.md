@@ -54,7 +54,7 @@ Se já tens dados no **volume nomeado** antigo (`blog_api_data`) e queres passar
 
 Se quiseres que o `blog.db` fique noutra pasta do servidor (ex.: `/var/lib/blog-data`), em vez de `./data`:
 
-1. Cria a pasta e garante que é gravável (ex.: `sudo mkdir -p /var/lib/blog-data`). Os contentores correm como **root**; não é necessário `chown` para um UID específico — a pasta deve ser acessível ao processo (ex.: permissões ou dono adequados no host).
+1. Cria a pasta e garante que é gravável pelo utilizador do contentor (ex.: `sudo mkdir -p /var/lib/blog-data` e `sudo chown -R 10000:10000 /var/lib/blog-data`). Os contentores correm como **não-root** (UID 10000); a pasta de dados no host deve pertencer a 10000:10000. Ver [CONFIGURAR-SERVIDOR-NAO-ROOT.md](../deploy/CONFIGURAR-SERVIDOR-NAO-ROOT.md).
 2. No `docker-compose.yml`, altera o volume do serviço `api` para `./data:/data` → `/var/lib/blog-data:/data` (usando o caminho absoluto no host).
 3. Para scripts manuais, usa: `sqlite3 /var/lib/blog-data/blog.db < backend/api/Migrations/Scripts/nome.sql` (a partir de REPO_DIR, ou com o caminho completo ao script).
 

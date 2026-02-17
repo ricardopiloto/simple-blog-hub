@@ -31,12 +31,12 @@ export function Header() {
       <div className="container-wide">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-1.5">
+          <a href="https://1nodado.com.br" className="flex items-center gap-1.5">
             <DiceIcon className="h-8 w-8 shrink-0 text-foreground" />
             <span className="font-serif text-2xl font-bold text-foreground">
               noDado RPG
             </span>
-          </Link>
+          </a>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-8">

@@ -2,6 +2,12 @@
 
 Os releases são versionados por tag (ex.: `v1.9`, `v1.10`, `v2.0`). O resumo detalhado das changes OpenSpec aplicadas pode ser usado na mensagem do commit de release e está também na proposta da respetiva versão em `openspec/changes/`.
 
+## [2.4.1]
+
+- remove-personagens-menu-link: **Remoção do item "Personagens" do menu superior** (desktop e móvel). O **título/logo do site** (ícone + "noDado RPG") passou a redirecionar para **https://1nodado.com.br** na mesma aba, em vez da página inicial do blog.
+- adjust-scene-weather-effect-theme-visibility: **Efeito de chuva e neve** na página do artigo com **diferenciação por tema**: no modo claro, partículas com cor mais escura (ex.: slate-600) e opacidade maior para boa visibilidade; no modo escuro mantém-se o comportamento e aparência atuais.
+- Documentação e versão: CHANGELOG com secção [2.4.1]; versão no frontend (package.json) definida como 2.4.1; README secção 4 com tag v2.4.1.
+
 ## [2.4]
 
 - fix-schedule-publish-draft-post-500: **Correção do erro 500 ao agendar a publicação de um post em rascunho.** A API usava uma combinação inválida de `DateTimeStyles` em `ParseScheduledPublishAt` (RoundtripKind | AdjustToUniversal), o que lançava exceção; passou a usar apenas `AdjustToUniversal`, remediando o problema.

@@ -3,7 +3,7 @@
 ## 1. Atualizar versão do ImageSharp no BFF
 
 - [x] 1.1 Em `backend/bff/BlogBff.csproj`, alterar o `PackageReference` de `SixLabors.ImageSharp` para `Version="3.1.11"` (remedia GHSA-2cmq-823j-5qj8 e GHSA-rxmq-m78w-7wmc).
-- [ ] 1.2 Executar `dotnet restore` e `dotnet build` no diretório `backend/bff` e confirmar que os avisos **NU1903** e **NU1902** deixam de aparecer.
+- [x] 1.2 Executar `dotnet restore` e `dotnet build` no diretório `backend/bff` e confirmar que os avisos **NU1903** e **NU1902** deixam de aparecer.
 
 ## 2. Verificação funcional
 

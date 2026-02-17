@@ -95,12 +95,14 @@ public class CollaboratorDto
 
 public class AddCollaboratorRequest
 {
+    [Required]
     [JsonPropertyName("author_id")]
     public string AuthorId { get; set; } = string.Empty;
 }
 
 public class StoryOrderItemRequest
 {
+    [Required]
     [JsonPropertyName("id")]
     public string Id { get; set; } = string.Empty;
 

@@ -27,6 +27,7 @@ export function PostCard({ post, index = 0 }: PostCardProps) {
           <img
             src={post.cover_image || DEFAULT_POST_COVER_IMAGE}
             alt={post.title}
+            loading="lazy"
             className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
           />
         </div>

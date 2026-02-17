@@ -18,7 +18,10 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
+import DOMPurify from 'dompurify';
+import { marked } from 'marked';
 import {
   fetchPostByIdForEdit,
   fetchNextStoryOrder,
@@ -328,18 +331,43 @@ export default function PostEdit() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="post-content">Conteúdo (Markdown)</Label>
-              <Textarea
-                id="post-content"
-                value={content}
-                onChange={(e) => handleContentChange(e.target.value)}
-                placeholder="Escreva em **Markdown**..."
-                rows={14}
-                className="font-mono text-sm"
-                disabled={saving}
-              />
-              <p className="text-xs text-muted-foreground">
-                Suporta Markdown: **negrito**, *itálico*, # títulos, listas, links, etc.
-              </p>
+              <Tabs defaultValue="escrever" className="w-full">
+                <TabsList>
+                  <TabsTrigger value="escrever">Escrever</TabsTrigger>
+                  <TabsTrigger value="preview">Preview</TabsTrigger>
+                </TabsList>
+                <TabsContent value="escrever">
+                  <Textarea
+                    id="post-content"
+                    value={content}
+                    onChange={(e) => handleContentChange(e.target.value)}
+                    placeholder="Escreva em **Markdown**..."
+                    rows={14}
+                    className="font-mono text-sm"
+                    disabled={saving}
+                  />
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Suporta Markdown: **negrito**, *itálico*, # títulos, listas, links, etc.
+                  </p>
+                </TabsContent>
+                <TabsContent value="preview">
+                  <div
+                    className="min-h-[20.5rem] h-[20.5rem] w-full rounded-md border border-input bg-background px-3 py-2 overflow-y-auto overflow-x-hidden text-sm"
+                    aria-label="Preview do conteúdo"
+                  >
+                    {content.trim() ? (
+                      <div
+                        className="prose prose-neutral dark:prose-invert max-w-none text-sm"
+                        dangerouslySetInnerHTML={{
+                          __html: DOMPurify.sanitize(marked.parse(content.trim(), { async: false }) as string),
+                        }}
+                      />
+                    ) : (
+                      <p className="text-sm text-muted-foreground">Nada para previsualizar.</p>
+                    )}
+                  </div>
+                </TabsContent>
+              </Tabs>
             </div>
             <div className="space-y-2">
               <Label htmlFor="post-cover">URL da imagem de capa</Label>

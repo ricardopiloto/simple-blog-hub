@@ -309,6 +309,8 @@ public class PostsController : AuthorizedApiControllerBase
             return Unauthorized();
         if (request == null)
             return BadRequest();
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
         var items = request.ToList();
         foreach (var item in items)
         {
@@ -336,8 +338,10 @@ public class PostsController : AuthorizedApiControllerBase
     }
 
     [HttpPost("{id:guid}/collaborators")]
-    public async Task<IActionResult> AddCollaborator(Guid id, [FromBody] AddCollaboratorRequest request, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> AddCollaborator(Guid id, [FromBody] AddCollaboratorRequest? request, CancellationToken cancellationToken = default)
     {
+        if (request == null || !ModelState.IsValid)
+            return BadRequest(ModelState);
         var authorId = GetAuthorIdFromHeader();
         if (authorId == null)
             return Unauthorized();
@@ -414,11 +418,12 @@ public class PostsController : AuthorizedApiControllerBase
     /// <summary>
     /// Parses scheduled publish date/time from ISO 8601 string (e.g. with offset: 2025-02-14T10:00:00-03:00).
     /// Converts to UTC for storage so the background job (which compares with DateTime.UtcNow) publishes at the correct moment in the author's timezone.
+    /// Note: RoundtripKind cannot be combined with AdjustToUniversal in DateTime.TryParse; use only AdjustToUniversal for offset strings.
     /// </summary>
     private static DateTime? ParseScheduledPublishAt(string? value)
     {
         if (string.IsNullOrWhiteSpace(value)) return null;
-        var style = System.Globalization.DateTimeStyles.RoundtripKind | System.Globalization.DateTimeStyles.AdjustToUniversal;
+        const System.Globalization.DateTimeStyles style = System.Globalization.DateTimeStyles.AdjustToUniversal;
         if (DateTime.TryParse(value, System.Globalization.CultureInfo.InvariantCulture, style, out var dt))
             return dt.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(dt, DateTimeKind.Utc) : dt.ToUniversalTime();
         return null;

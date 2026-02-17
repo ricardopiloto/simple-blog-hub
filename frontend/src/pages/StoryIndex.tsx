@@ -94,6 +94,7 @@ function SortableCard({ post, displayOrder, workingListLength, isAuthenticated, 
               <img
                 src={post.cover_image || DEFAULT_POST_COVER_IMAGE}
                 alt=""
+                loading="lazy"
                 className="w-full h-full object-cover object-center"
               />
             </div>
@@ -345,6 +346,7 @@ export default function StoryIndex() {
                         <img
                           src={post.cover_image || DEFAULT_POST_COVER_IMAGE}
                           alt=""
+                          loading="lazy"
                           className="w-full h-full object-cover object-center"
                         />
                       </div>

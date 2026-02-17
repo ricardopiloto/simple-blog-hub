@@ -2,6 +2,19 @@
 
 Os releases são versionados por tag (ex.: `v1.9`, `v1.10`, `v2.0`). O resumo detalhado das changes OpenSpec aplicadas pode ser usado na mensagem do commit de release e está também na proposta da respetiva versão em `openspec/changes/`.
 
+## [2.4]
+
+- fix-schedule-publish-draft-post-500: **Correção do erro 500 ao agendar a publicação de um post em rascunho.** A API usava uma combinação inválida de `DateTimeStyles` em `ParseScheduledPublishAt` (RoundtripKind | AdjustToUniversal), o que lançava exceção; passou a usar apenas `AdjustToUniversal`, remediando o problema.
+- upgrade-bff-imagesharp-remediate-ghsa-2cmq: **Atualização do SixLabors.ImageSharp no BFF** de 3.1.5 para **3.1.11**, remediando as vulnerabilidades GHSA-2cmq-823j-5qj8 (alta) e GHSA-rxmq-m78w-7wmc (moderada). O build deixa de mostrar os avisos NU1903 e NU1902.
+- add-markdown-preview-tab-post-edit: **Aba Preview** no campo Conteúdo (Markdown) do formulário de Novo post e Editar post; conversão Markdown → HTML no cliente (marked + DOMPurify); área Preview com o mesmo tamanho da área de escrita e barra de rolagem quando o conteúdo é longo.
+- increase-upload-max-width-to-2200: **Limite máximo de largura das imagens de capa no upload** aumentado de 1200 px para **2200 px** (default em `Uploads:MaxWidth` no BFF); documentação de configuração e IMAGE-OPTIMIZATION atualizadas.
+- Documentação e versão: CHANGELOG com secção [2.4]; versão no frontend (package.json) definida como 2.4; README secção 4 com tag v2.4.
+
+## [2.3.1]
+
+- fix-dockerfile-group-app-conflict: **Correção nos Dockerfiles da API e do BFF**: a imagem base `mcr.microsoft.com/dotnet/aspnet:8.0` já inclui um grupo com o nome `app`, o que fazia falhar o `groupadd` durante o build ("group 'app' already exists"). O grupo e o utilizador não-root passaram de `app` para **`blogapp`** (UID/GID 10000 mantidos) em ambos os Dockerfiles; o docker-compose e a documentação continuam a usar `user: "10000:10000"` e `chown 10000:10000` no servidor, sem alterações.
+- Documentação e versão: CHANGELOG com secção [2.3.1]; versão no frontend (package.json) definida como 2.3.1.
+
 ## [2.3]
 
 - run-backend-containers-non-root: **Contentores do backend como não-root**: a API e o BFF passam a correr como utilizador **não-root** (UID 10000) em vez de root, reduzindo a superfície de ataque. Dockerfiles com `USER app` (UID 10000); docker-compose com `user: "10000:10000"`. Novo guia **CONFIGURAR-SERVIDOR-NAO-ROOT.md** com passo a passo no servidor (criar pastas, `chown -R 10000:10000` em `data/` e `frontend/public/images/posts`); DEPLOY, ATUALIZAR, SECURITY-HARDENING, PRODUCTION-CHECKLIST e EXPOR-DB-NO-HOST atualizados. Spec security-hardening exige execução não-root e documentação do servidor; project-docs exige referência ao guia de configuração.

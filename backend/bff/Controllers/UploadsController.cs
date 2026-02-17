@@ -5,6 +5,11 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.Formats.Jpeg;
+using SixLabors.ImageSharp.Formats.Png;
+using SixLabors.ImageSharp.Formats.Webp;
 
 namespace BlogBff.Controllers;
 
@@ -64,14 +69,40 @@ public class UploadsController : ControllerBase
         if (ext == null)
             return BadRequest(new { error = "Conteúdo do ficheiro não corresponde a JPEG, PNG ou WebP. Verifique o formato." });
 
+        var maxWidth = _config.GetValue("Uploads:MaxWidth", 2200);
+        var jpegQuality = _config.GetValue("Uploads:JpegQuality", 85);
+
         var uploadsPath = GetUploadsPath();
         Directory.CreateDirectory(uploadsPath);
         var fileName = $"{Guid.NewGuid():N}{ext}";
         var fullPath = Path.Combine(uploadsPath, fileName);
 
-        await using (var stream = new FileStream(fullPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true))
+        try
         {
-            await file.CopyToAsync(stream, cancellationToken);
+            await using (var inputStream = file.OpenReadStream())
+            using (var image = await Image.LoadAsync(inputStream, cancellationToken))
+            {
+                if (image.Width > maxWidth)
+                    image.Mutate(x => x.Resize(maxWidth, 0));
+
+                await using (var outputStream = new FileStream(fullPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true))
+                {
+                    if (string.Equals(ext, ".jpg", StringComparison.OrdinalIgnoreCase))
+                        await image.SaveAsJpegAsync(outputStream, new JpegEncoder { Quality = Math.Clamp(jpegQuality, 1, 100) }, cancellationToken);
+                    else if (string.Equals(ext, ".png", StringComparison.OrdinalIgnoreCase))
+                        await image.SaveAsPngAsync(outputStream, new PngEncoder { CompressionLevel = PngCompressionLevel.DefaultCompression }, cancellationToken);
+                    else if (string.Equals(ext, ".webp", StringComparison.OrdinalIgnoreCase))
+                        await image.SaveAsWebpAsync(outputStream, new WebpEncoder { Quality = Math.Clamp(jpegQuality, 1, 100) }, cancellationToken);
+                    else
+                        await image.SaveAsJpegAsync(outputStream, new JpegEncoder { Quality = Math.Clamp(jpegQuality, 1, 100) }, cancellationToken);
+                }
+            }
+        }
+        catch (Exception)
+        {
+            if (System.IO.File.Exists(fullPath))
+                try { System.IO.File.Delete(fullPath); } catch { /* ignore */ }
+            return BadRequest(new { error = "Não foi possível processar a imagem. Verifique o formato e tente novamente." });
         }
 
         var publicUrl = "/images/posts/" + fileName;

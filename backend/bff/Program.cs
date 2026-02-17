@@ -100,6 +100,19 @@ app.Use(async (context, next) =>
     await next(context);
 });
 
+// Content-Security-Policy (optional): set Security:CspHeader in config; use Security:CspReportOnly=true for report-only
+var cspHeader = app.Configuration["Security:CspHeader"]?.Trim();
+if (!string.IsNullOrEmpty(cspHeader))
+{
+    var reportOnly = string.Equals(app.Configuration["Security:CspReportOnly"]?.Trim(), "true", StringComparison.OrdinalIgnoreCase);
+    var headerName = reportOnly ? "Content-Security-Policy-Report-Only" : "Content-Security-Policy";
+    app.Use(async (context, next) =>
+    {
+        context.Response.Headers[headerName] = cspHeader;
+        await next(context);
+    });
+}
+
 app.UseRateLimiter();
 app.UseCors();
 app.UseAuthentication();

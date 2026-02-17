@@ -28,6 +28,7 @@ export default function PostPage() {
     return (
       <Layout>
         <article className="py-16">
+          {/* Estado de loading: skeleton enquanto o post é carregado */}
           <div className="container-blog">
             <Skeleton className="h-6 w-32 mb-8" />
             <Skeleton className="h-12 w-full mb-4" />
@@ -47,6 +48,7 @@ export default function PostPage() {
   if (error || !post) {
     return (
       <Layout>
+        {/* Estado de erro: artigo não encontrado */}
         <div className="py-20 text-center">
           <h1 className="font-serif text-3xl font-bold mb-4">
             Artigo não encontrado
@@ -80,12 +82,13 @@ export default function PostPage() {
 
   return (
     <Layout>
+      {/* Página do artigo: capa, conteúdo, autor, navegação por história */}
       <article className="py-16">
         <div className="container-blog relative">
           {showWeatherEffect && sceneWeather && (
             <SceneWeatherEffect type={sceneWeather} />
           )}
-          {/* Back Link */}
+          {/* Link "Voltar para artigos" */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -100,7 +103,7 @@ export default function PostPage() {
             </Link>
           </motion.div>
 
-          {/* Header */}
+          {/* Cabeçalho do artigo: título, autor, data, visualizações */}
           <motion.header
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -150,14 +153,14 @@ export default function PostPage() {
             </div>
           </motion.header>
 
-          {/* Cover Image */}
+          {/* Imagem de capa (16:9, object-contain; faixas transparentes) */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
             className="mb-12"
           >
-            <div className="w-full aspect-[16/9] rounded-xl overflow-hidden bg-muted">
+            <div className="w-full aspect-[16/9] rounded-xl overflow-hidden bg-transparent">
               <img
                 src={post.cover_image || DEFAULT_POST_COVER_IMAGE}
                 alt={post.title}
@@ -166,7 +169,7 @@ export default function PostPage() {
             </div>
           </motion.div>
 
-          {/* Content */}
+          {/* Conteúdo HTML do post (Markdown convertido, sanitizado) */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -175,7 +178,7 @@ export default function PostPage() {
             dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }}
           />
 
-          {/* Author Bio */}
+          {/* Bio do autor (quando preenchida em Contas) */}
           {post.author?.bio && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -207,7 +210,7 @@ export default function PostPage() {
             </motion.div>
           )}
 
-          {/* Prev/Next navigation (story order) */}
+          {/* Navegação anterior/próximo por ordem da história */}
           {showPrevNextNav && (
             <motion.nav
               initial={{ opacity: 0, y: 20 }}

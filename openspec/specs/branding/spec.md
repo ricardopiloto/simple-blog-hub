@@ -150,15 +150,14 @@ A **versão da aplicação** exibida no rodapé (conforme o requisito "Rodapé e
 - **E** existe um separador legível entre o link e a versão (ex.: " · ")
 - **E** o link continua a abrir numa nova aba e a versão reflete o valor de build (`__APP_VERSION__`)
 
-### Requirement: Header inclui link "Personagens" para site externo (SHALL)
+### Requirement: Logo/título do header redireciona para https://1nodado.com.br (SHALL)
 
-The **header** navigation SHALL include an item **"Personagens"** immediately **after** "Índice da História", in both the **desktop** nav bar and the **mobile** (hamburger) menu. The item SHALL be an **external link** to **https://1nodado.com.br** that opens in a **new tab** (`target="_blank"`) with `rel="noopener noreferrer"` for security. The link SHALL use the same visual style as the other header nav items (e.g. text size, muted foreground, hover to foreground).
+The **logo/title** in the header (dice icon + "noDado RPG" text) SHALL be a link to **https://1nodado.com.br** (external site). The link SHALL open in the **same tab** (no `target="_blank"`), so that clicking the title navigates the user away from the blog to the main site. The visual appearance of the logo (icon, text, spacing) SHALL remain unchanged; only the destination of the link changes from the blog home (`/`) to https://1nodado.com.br.
 
-#### Scenario: Utilizador clica em Personagens e abre o site externo numa nova aba
+#### Scenario: Utilizador clica no título e é redirecionado para 1nodado.com.br
 
 - **GIVEN** the user is viewing any page of the blog with the header visible
-- **WHEN** they click the "Personagens" item in the header (desktop or mobile menu)
-- **THEN** https://1nodado.com.br opens in a **new browser tab**
-- **AND** the current blog tab remains open
-- **AND** the external link is opened with rel="noopener noreferrer" (no referrer leakage, no window.opener access)
+- **WHEN** they click the logo/title (icon + "noDado RPG" text) in the header
+- **THEN** the browser navigates to **https://1nodado.com.br** in the same tab
+- **AND** the current blog page is replaced by the 1nodado.com.br page
 

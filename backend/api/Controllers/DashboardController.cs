@@ -32,7 +32,7 @@ public class DashboardController : AuthorizedApiControllerBase
         var publishedCount = await _db.Posts.CountAsync(p => p.Published, cancellationToken);
         var scheduledCount = await _db.Posts.CountAsync(p => p.ScheduledPublishAt != null, cancellationToken);
         var draftCount = await _db.Posts.CountAsync(p => !p.Published, cancellationToken);
-        var totalViews = await _db.Posts.SumAsync(p => p.ViewCount, cancellationToken);
+        var totalViews = await _db.Posts.Where(p => p.Published).SumAsync(p => p.ViewCount, cancellationToken);
         var authorsCount = await _db.Authors.CountAsync(cancellationToken);
 
         return Ok(new DashboardStatsDto

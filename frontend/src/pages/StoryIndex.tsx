@@ -90,7 +90,7 @@ function SortableCard({ post, displayOrder, workingListLength, isAuthenticated, 
         </div>
         <div className="flex-1 min-w-0">
           <Link to={`/post/${post.slug}`} className="block">
-            <div className="aspect-video w-full relative">
+            <div className="aspect-video w-full relative rounded-lg overflow-hidden">
               <img
                 src={post.cover_image || DEFAULT_POST_COVER_IMAGE}
                 alt=""
@@ -342,7 +342,7 @@ export default function StoryIndex() {
                     className="bg-card border rounded-lg overflow-hidden hover:border-accent/50 transition-colors"
                   >
                     <Link to={`/post/${post.slug}`} className="block">
-                      <div className="aspect-video w-full relative">
+                      <div className="aspect-video w-full relative rounded-lg overflow-hidden">
                         <img
                           src={post.cover_image || DEFAULT_POST_COVER_IMAGE}
                           alt=""

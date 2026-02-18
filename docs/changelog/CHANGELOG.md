@@ -2,6 +2,12 @@
 
 Os releases são versionados por tag (ex.: `v1.9`, `v1.10`, `v2.0`). O resumo detalhado das changes OpenSpec aplicadas pode ser usado na mensagem do commit de release e está também na proposta da respetiva versão em `openspec/changes/`.
 
+## [2.5]
+
+- add-rounded-corners-post-cover-images: Imagens de capa dos posts exibidas com **bordas arredondadas** (ex.: rounded-lg ou rounded-xl) em todos os contextos: destaque na página inicial, cards na lista de artigos, índice da história (grelha e vista de lista/reordenação) e página do artigo; contentor com overflow-hidden quando necessário.
+- count-views-only-for-published-posts: **Contagem de visualizações** apenas para posts **publicados**: o contador só é incrementado quando o post está publicado; abertura de rascunho ou agendado por slug não incrementa. O dashboard "Total de visualizações" soma apenas os ViewCount dos posts publicados.
+- Documentação e versão: CHANGELOG com secção [2.5]; versão no frontend (package.json) definida como 2.5; README secção 4 com tag v2.5.
+
 ## [2.4.1]
 
 - remove-personagens-menu-link: **Remoção do item "Personagens" do menu superior** (desktop e móvel). O **título/logo do site** (ícone + "noDado RPG") passou a redirecionar para **https://1nodado.com.br** na mesma aba, em vez da página inicial do blog.

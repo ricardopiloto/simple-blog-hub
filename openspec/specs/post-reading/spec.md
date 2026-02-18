@@ -83,7 +83,7 @@ Na secção de navegação **Post anterior** e **Próximo post** no final da pá
 
 ### Requirement: Efeito visual de clima (chuva ou neve) quando o texto do artigo descreve a cena (SHALL)
 
-Na página de leitura de um artigo (`/post/:slug`), **após** o conteúdo estar carregado e exibido, o sistema **deve** (SHALL) analisar o **texto do artigo** (conteúdo HTML convertido para texto plano) em busca de palavras que indiquem o **clima da cena** — limitado a **chuva** ou **neve**. A lista de palavras **deve** incluir **sinónimos** e **conjugações verbais** (ex.: chuva, choveu, chovendo, chove, neve, nevou, nevando, neva, nevava), de forma a identificar **qualquer variação** de chuva ou neve no texto; termos em português e equivalentes em inglês (ex.: rain, snow, raining, snowing). O efeito **só deve** ser exibido **se o utilizador tiver os efeitos de clima ativados** (ver requisito "Controlo no header para ativar ou desativar efeitos de clima"). Se for detectada **neve** e os efeitos estiverem ativados, o sistema **deve** exibir um **efeito visual discreto de neve** durante a leitura; se for detectada apenas **chuva** (e não neve) e os efeitos estiverem ativados, **deve** exibir um **efeito visual discreto de chuva**. Se o texto contiver palavras de ambos os tipos, **deve** ser exibido apenas um efeito (prioridade: **neve** sobre chuva). Se não for detectada nenhuma dessas palavras, ou se o utilizador tiver desativado os efeitos, **não** deve ser exibido efeito. O efeito **deve** ser **discreto** (baixa opacidade, não obstruir a leitura) e **não** deve bloquear a interação do utilizador (ex.: pointer-events: none no overlay). O efeito aplica-se apenas na página do artigo e apenas enquanto o leitor permanece nessa página.
+Na página de leitura de um artigo (`/post/:slug`), **após** o conteúdo estar carregado e exibido, o sistema **deve** (SHALL) analisar o **texto do artigo** (conteúdo HTML convertido para texto plano) em busca de palavras que indiquem o **clima da cena** — limitado a **chuva** ou **neve**. A lista de palavras **deve** incluir **sinónimos** e **conjugações verbais** (ex.: chuva, choveu, chovendo, chove, neve, nevou, nevando, neva, nevava), de forma a identificar **qualquer variação** de chuva ou neve no texto; termos em português e equivalentes em inglês (ex.: rain, snow, raining, snowing). O efeito **só deve** ser exibido **se o utilizador tiver os efeitos de clima ativados** (ver requisito "Controlo no header para ativar ou desativar efeitos de clima"). Se for detectada **neve** e os efeitos estiverem ativados, o sistema **deve** exibir um **efeito visual discreto de neve** durante a leitura; se for detectada apenas **chuva** (e não neve) e os efeitos estiverem ativados, **deve** exibir um **efeito visual discreto de chuva**. Se o texto contiver palavras de ambos os tipos, **deve** ser exibido apenas um efeito (prioridade: **neve** sobre chuva). Se não for detectada nenhuma dessas palavras, ou se o utilizador tiver desativado os efeitos, **não** deve ser exibido efeito. O efeito **deve** ser **discreto** (baixa opacidade, não obstruir a leitura) e **não** deve bloquear a interação do utilizador (ex.: pointer-events: none no overlay). O efeito **deve** ter **diferenciação por tema** (claro vs. escuro): no **tema escuro** mantém-se a aparência atual (cor e opacidade); no **tema claro** as partículas (chuva e neve) **devem** usar cor e/ou opacidade que as tornem **claramente visíveis** sobre o fundo claro (ex.: tom mais escuro, opacidade ligeiramente superior), permanecendo discretas. O efeito aplica-se apenas na página do artigo e apenas enquanto o leitor permanece nessa página.
 
 #### Scenario: Leitor abre artigo que menciona chuva e vê efeito discreto de chuva
 
@@ -119,6 +119,20 @@ Na página de leitura de um artigo (`/post/:slug`), **após** o conteúdo estar 
 - **Quando** o utilizador abre qualquer página de artigo, incluindo uma cujo texto contém palavras de chuva ou neve
 - **Então** não é exibido qualquer efeito de clima
 - **E** a preferência mantém-se após recarregar a página ou navegar para outro artigo
+
+#### Scenario: Tema claro — efeito de chuva/neve bem visível
+
+- **Dado** que o utilizador tem o **tema claro** ativo e está a ler um artigo cujo conteúdo desencadeia o efeito de chuva ou neve
+- **Quando** o efeito é exibido
+- **Então** as partículas de chuva ou neve são **claramente visíveis** (ex.: cor mais escura e/ou opacidade suficiente sobre o fundo claro)
+- **E** o efeito mantém-se discreto e não obstrui a leitura
+
+#### Scenario: Tema escuro — efeito mantém aparência atual
+
+- **Dado** que o utilizador tem o **tema escuro** ativo e está a ler um artigo cujo conteúdo desencadeia o efeito de chuva ou neve
+- **Quando** o efeito é exibido
+- **Então** a aparência e o comportamento do efeito são **inalterados** em relação à implementação atual (ex.: cor de primeiro plano, opacidade predefinida)
+- **E** o efeito mantém-se visível e discreto como antes
 
 ### Requirement: Controlo no header para ativar ou desativar efeitos de clima (SHALL)
 

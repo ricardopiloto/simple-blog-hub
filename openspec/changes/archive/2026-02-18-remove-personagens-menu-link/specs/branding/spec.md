@@ -2,7 +2,7 @@
 
 ## REMOVED Requirements
 
-### Requirement: Header inclui link "Personagens" para site externo (removido)
+### Requirement: Header inclui link "Personagens" para site externo (SHALL)
 
 The requirement added by change **add-personagens-menu-link** — that the header SHALL include a "Personagens" item after "Índice da História" linking to https://1nodado.com.br in a new tab — is **removed**. The header SHALL NOT include a "Personagens" link to 1nodado.com.br in the desktop nav or in the mobile menu.
 

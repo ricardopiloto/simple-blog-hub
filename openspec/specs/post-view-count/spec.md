@@ -5,14 +5,14 @@ TBD - created by archiving change add-post-view-count-for-logged-in-users. Updat
 ## Requirements
 ### Requirement: View count stored per post and visible only to logged-in users
 
-The system SHALL store a **view count** per post (e.g. integer column on the Post entity) and SHALL increment it when the post is viewed via the public read path (e.g. GET post by slug). The **view count SHALL be exposed only to authenticated users**: the BFF SHALL include `view_count` in post responses only when the client request carries a valid JWT; for unauthenticated requests the BFF SHALL omit `view_count` so that anonymous readers never see it. The frontend SHALL display the view count only when it is present in the response (i.e. when the user is logged in).
+The system SHALL store a **view count** per post (e.g. integer column on the Post entity). The view count SHALL be **incremented only when** the post is **published** (`Published == true`) and is viewed via the public read path (e.g. GET post by slug); when the post is a **draft** or **scheduled** (not yet published), loading the post by slug SHALL **not** increment the view count. The **view count SHALL be exposed only to authenticated users**: the BFF SHALL include `view_count` in post responses only when the client request carries a valid JWT; for unauthenticated requests the BFF SHALL omit `view_count` so that anonymous readers never see it. The frontend SHALL display the view count only when it is present in the response (i.e. when the user is logged in).
 
 #### Scenario: Logged-in user sees view count in author area
 
 - **GIVEN** the user is logged in
 - **WHEN** they open the Área do autor (author area) and the list of posts is loaded
 - **THEN** each post card SHALL show the view count **next to** the "Publicado" or "Rascunho" indicator (e.g. "· Publicado · 42 visualizações" or with an icon)
-- **AND** the count SHALL reflect the number of times that post has been viewed (incremented on each public read of the post by slug)
+- **AND** the count SHALL reflect the number of times that post has been viewed (incremented on each public read when the post is published)
 
 #### Scenario: Logged-in user sees view count on article page
 
@@ -29,10 +29,17 @@ The system SHALL store a **view count** per post (e.g. integer column on the Pos
 - **THEN** the response SHALL NOT include `view_count` (BFF omits it for unauthenticated requests)
 - **AND** the UI SHALL NOT display any view count (no placeholder or zero)
 
-#### Scenario: View count increments on public read
+#### Scenario: View count increments when published post is viewed
 
-- **GIVEN** a post exists with a current view count N
-- **WHEN** a client (authenticated or not) loads the post by slug via the public read path (e.g. GET /bff/posts/:slug or equivalent that triggers API GET by slug)
-- **THEN** the stored view count for that post SHALL be incremented to N+1 (or the system SHALL apply a defined increment policy; in this change, one increment per public read)
+- **GIVEN** a post exists with `Published == true` and current view count N
+- **WHEN** a client loads the post by slug via the public read path (e.g. GET /api/posts/:slug or GET /bff/posts/:slug that triggers the API)
+- **THEN** the stored view count for that post SHALL be incremented to N+1
 - **AND** subsequent responses that include `view_count` (for logged-in users) SHALL reflect the updated value
+
+#### Scenario: View count does not increment when draft post is viewed
+
+- **GIVEN** a post exists with `Published == false` (draft or scheduled not yet published) and current view count N
+- **WHEN** a client loads the post by slug via the public read path
+- **THEN** the stored view count for that post SHALL **not** change (remains N)
+- **AND** the post content SHALL be returned as usual; only the increment is skipped
 

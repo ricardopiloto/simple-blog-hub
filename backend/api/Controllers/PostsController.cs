@@ -176,8 +176,11 @@ public class PostsController : AuthorizedApiControllerBase
             .FirstOrDefaultAsync(p => p.Slug == slug, cancellationToken);
         if (post == null)
             return NotFound();
-        post.ViewCount++;
-        await _db.SaveChangesAsync(cancellationToken);
+        if (post.Published)
+        {
+            post.ViewCount++;
+            await _db.SaveChangesAsync(cancellationToken);
+        }
         return Ok(ToDto(post, contentAsHtml: true, includeAuthorId: false, includeCollaborators: false));
     }
 

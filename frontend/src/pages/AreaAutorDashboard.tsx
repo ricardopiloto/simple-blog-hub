@@ -483,7 +483,7 @@ export default function AreaAutorDashboard() {
                                 })}
                               </>
                             )}
-                            {typeof post.view_count === 'number' && ` · ${post.view_count} visualizações`}
+                            {post.published && typeof post.view_count === 'number' && ` · ${post.view_count} visualizações`}
                           </span>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">

@@ -30,7 +30,7 @@ Blog de leitura para **contos e aventuras** de RPG. Interface em português. Os 
 
 ## 4. Links para CHANGELOG
 
-Os releases são versionados por tag (ex.: `v1.9`, `v1.10`, `v2.0`, `v2.1`, `v2.2`, `v2.3`, `v2.3.1`, `v2.3.2`, `v2.4`, `v2.4.1`, `v2.5`). O histórico de alterações está em **[CHANGELOG](docs/changelog/CHANGELOG.md)**.
+Os releases são versionados por tag (ex.: `v1.9`, `v1.10`, `v2.0`, `v2.1`, `v2.2`, `v2.3`, `v2.3.1`, `v2.3.2`, `v2.4`, `v2.4.1`, `v2.5`, `v2.5.1`). O histórico de alterações está em **[CHANGELOG](docs/changelog/CHANGELOG.md)**.
 
 A versão exibida no rodapé do site vem do campo `version` do `frontend/package.json` (ou de `VITE_APP_VERSION` à build). **Ao preparar uma release**, atualizar o campo `version` em `frontend/package.json` antes do build para que o rodapé exiba a versão correta.
 

@@ -2,6 +2,11 @@
 
 Os releases são versionados por tag (ex.: `v1.9`, `v1.10`, `v2.0`). O resumo detalhado das changes OpenSpec aplicadas pode ser usado na mensagem do commit de release e está também na proposta da respetiva versão em `openspec/changes/`.
 
+## [2.5.1]
+
+- show-view-count-only-for-published-in-ui: Na área do autor (listagem de postagens) e na página do artigo, o **contador de visualizações** só é exibido quando o post está **publicado**; para rascunhos e posts agendados (ainda não publicados) o contador não aparece.
+- Documentação e versão: CHANGELOG com secção [2.5.1]; versão no frontend (package.json) definida como 2.5.1; README secção 4 com tag v2.5.1.
+
 ## [2.5]
 
 - add-rounded-corners-post-cover-images: Imagens de capa dos posts exibidas com **bordas arredondadas** (ex.: rounded-lg ou rounded-xl) em todos os contextos: destaque na página inicial, cards na lista de artigos, índice da história (grelha e vista de lista/reordenação) e página do artigo; contentor com overflow-hidden quando necessário.

@@ -141,7 +141,7 @@ export default function PostPage() {
                   <span>{formattedDate}</span>
                 </>
               )}
-              {typeof post.view_count === 'number' && (
+              {post.published && typeof post.view_count === 'number' && (
                 <>
                   <span>•</span>
                   <span className="flex items-center gap-1.5" title="visualizações">

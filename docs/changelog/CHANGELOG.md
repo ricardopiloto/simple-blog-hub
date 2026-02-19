@@ -2,6 +2,12 @@
 
 Os releases são versionados por tag (ex.: `v1.9`, `v1.10`, `v2.0`). O resumo detalhado das changes OpenSpec aplicadas pode ser usado na mensagem do commit de release e está também na proposta da respetiva versão em `openspec/changes/`.
 
+## [2.5.2]
+
+- notify-session-expired-and-redirect-to-home: Ao receber **401 Unauthorized** (sessão expirada ou token inválido), o frontend exibe um **modal** informando que a sessão expirou e que deve autenticar-se novamente; quando o utilizador estava na **área do autor** (`/area-autor` ou subrotas), ao dispensar o modal é **redirecionado para a página inicial** (`/`).
+- move-story-type-error-below-form-buttons: No formulário **Novo post** e **Editar post**, o **alerta de História obrigatório** foi movido para **abaixo dos botões** "Criar post"/"Salvar" e "Cancelar"; a **borda vermelha** no toggle da História mantém-se para indicar o campo em erro.
+- Documentação e versão: CHANGELOG com secção [2.5.2]; versão no frontend (package.json) definida como 2.5.2; README secção 4 com tag v2.5.2.
+
 ## [2.5.1]
 
 - show-view-count-only-for-published-in-ui: Na área do autor (listagem de postagens) e na página do artigo, o **contador de visualizações** só é exibido quando o post está **publicado**; para rascunhos e posts agendados (ainda não publicados) o contador não aparece.

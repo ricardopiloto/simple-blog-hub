@@ -32,7 +32,7 @@ import {
 export default function AreaContas() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { logout, userId: currentUserId, isAdmin } = useAuth();
+  const { logout, userId: currentUserId, isAdmin, openSessionExpiredModal } = useAuth();
   const [createOpen, setCreateOpen] = useState(false);
   const [editUserId, setEditUserId] = useState<string | null>(null);
   const [editEmail, setEditEmail] = useState('');
@@ -77,7 +77,7 @@ export default function AreaContas() {
 
   if (error && error instanceof Error && error.message === 'Unauthorized') {
     logout();
-    navigate('/login', { replace: true });
+    openSessionExpiredModal();
     return null;
   }
 

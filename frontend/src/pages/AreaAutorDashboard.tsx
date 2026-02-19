@@ -59,7 +59,7 @@ function buildAuthorAreaSuggestions(
 export default function AreaAutorDashboard() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { author, logout, isAdmin } = useAuth();
+  const { author, logout, isAdmin, openSessionExpiredModal } = useAuth();
   const { data: stats, isLoading: statsLoading, error: statsError } = useQuery({
     queryKey: ['dashboard-stats'],
     queryFn: () => fetchDashboardStats(),
@@ -73,9 +73,9 @@ export default function AreaAutorDashboard() {
   useEffect(() => {
     if (error && error instanceof Error && error.message === 'Unauthorized') {
       logout();
-      navigate('/login', { replace: true });
+      openSessionExpiredModal();
     }
-  }, [error, logout, navigate]);
+  }, [error, logout, openSessionExpiredModal]);
 
   async function handleDelete(id: string) {
     try {
@@ -84,7 +84,7 @@ export default function AreaAutorDashboard() {
     } catch (e) {
       if (e instanceof Error && e.message === 'Unauthorized') {
         logout();
-        navigate('/login', { replace: true });
+        openSessionExpiredModal();
       }
     }
   }

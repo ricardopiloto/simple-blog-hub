@@ -80,7 +80,7 @@ export default function PostEdit() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { author } = useAuth();
+  const { author, logout, openSessionExpiredModal } = useAuth();
   const isNew = !id;
 
   const [storyType, setStoryType] = useState<'' | StoryType>('');
@@ -188,6 +188,12 @@ export default function PostEdit() {
       queryClient.invalidateQueries({ queryKey: ['posts', 'editable'] });
       navigate('/area-autor', { replace: true });
     },
+    onError: (err) => {
+      if (err instanceof Error && err.message === 'Unauthorized') {
+        logout();
+        openSessionExpiredModal();
+      }
+    },
   });
 
   const updateMutation = useMutation({
@@ -196,6 +202,12 @@ export default function PostEdit() {
       queryClient.invalidateQueries({ queryKey: ['posts', 'editable'] });
       queryClient.invalidateQueries({ queryKey: ['post', 'edit', id] });
       navigate('/area-autor', { replace: true });
+    },
+    onError: (err) => {
+      if (err instanceof Error && err.message === 'Unauthorized') {
+        logout();
+        openSessionExpiredModal();
+      }
     },
   });
 
@@ -293,9 +305,6 @@ export default function PostEdit() {
                   Idade das Trevas
                 </ToggleGroupItem>
               </ToggleGroup>
-              {storyTypeError && (
-                <p className="text-sm text-destructive">{storyTypeError}</p>
-              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="post-title">Título</Label>
@@ -407,8 +416,12 @@ export default function PostEdit() {
                     const { url } = await uploadCoverImage(f);
                     setCoverImage(url);
                   } catch (err) {
-                    console.error(err);
-                    // Could add toast; for now leave field unchanged
+                    if (err instanceof Error && err.message === 'Unauthorized') {
+                      logout();
+                      openSessionExpiredModal();
+                    } else {
+                      console.error(err);
+                    }
                   } finally {
                     setUploadingCover(false);
                     e.target.value = '';
@@ -616,6 +629,9 @@ export default function PostEdit() {
                 <Link to="/area-autor">Cancelar</Link>
               </Button>
             </div>
+            {storyTypeError && (
+              <p className="text-sm text-destructive">{storyTypeError}</p>
+            )}
           </form>
         </div>
       </section>

@@ -292,3 +292,27 @@ The **BFF** uses the **SixLabors.ImageSharp** package for image processing (e.g.
 - **THEN** the ImageSharp package version in use is **not** reported as affected by GHSA-2cmq-823j-5qj8 or GHSA-rxmq-m78w-7wmc (and neither NU1903 nor NU1902 appears)
 - **AND** the version is at least 3.1.11 (or equivalent fix version for the 3.x line)
 
+### Requirement: API Token Cloudflare armazenado criptografado at-rest
+
+Quando um autor regista ou actualiza o **Cloudflare API Token** na API, o valor em texto claro **DEVE** (SHALL) ser encriptado com **AES-256-GCM** antes de persistir em SQLite no campo `CloudflareApiTokenEncrypted` do modelo `Author`. A chave de encriptação **DEVE** ser lida da variável de ambiente **`Cloudflare__EncryptionKey`** (configuração do processo da API). O campo encriptado **NUNCA** deve ser incluído em respostas JSON (usar `[JsonIgnore]` ou equivalente). Apenas endpoints **internos** consumidos pelo BFF (com `X-Api-Key`) podem desencriptar o token para uso server-side na chamada à Cloudflare.
+
+#### Scenario: Token persistido apenas em ciphertext
+
+- **Dado** que um autor submete um API Token válido via PUT de utilizador
+- **Quando** o valor é guardado na base de dados
+- **Então** a coluna `CloudflareApiTokenEncrypted` contém ciphertext (não o token em texto claro)
+- **E** respostas públicas/autenticadas ao frontend expõem apenas `hasCloudflareApiToken: true`
+
+#### Scenario: Endpoint interno desencripta para o BFF
+
+- **Dado** que o BFF possui a chave interna `X-Api-Key` configurada
+- **Quando** o BFF chama `GET /api/image-generation/credentials/{authorId}` para um autor com credenciais completas
+- **Então** a API responde com `accountId` e `apiToken` em texto claro **apenas** nesse endpoint interno
+- **E** a resposta não é acessível sem o header `X-Api-Key` quando `API:InternalKey` está configurado
+
+#### Scenario: Chave de encriptação documentada para operadores
+
+- **Dado** que o operador prepara deploy com geração de imagem activa
+- **Quando** consulta a documentação de deploy e o PRODUCTION-CHECKLIST
+- **Então** encontra a variável `Cloudflare__EncryptionKey` com instrução para a definir na API antes de autores guardarem tokens
+

@@ -6,10 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
-import { fetchUsers, fetchCurrentUser, createUser, updateUser, deleteUser, resetUserPassword } from '@/api/client';
+import { fetchUsers, fetchCurrentUser, createUser, updateUser, deleteUser, resetUserPassword, verifyCloudflareCredentials } from '@/api/client';
 import { PASSWORD_CRITERIA_HELP, isValidPassword } from '@/lib/constants';
+import { DEFAULT_CLOUDFLARE_IMAGE_MODEL } from '@/lib/cloudflareWorkersAi';
 import type { CreateUserPayload, UpdateUserPayload } from '@/api/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,6 +41,14 @@ export default function AreaContas() {
   const [editPassword, setEditPassword] = useState('');
   const [editAuthorName, setEditAuthorName] = useState('');
   const [editAuthorBio, setEditAuthorBio] = useState('');
+  const [editCloudflareAccountId, setEditCloudflareAccountId] = useState('');
+  const [editCloudflareApiToken, setEditCloudflareApiToken] = useState('');
+  const [editCloudflareImageModel, setEditCloudflareImageModel] = useState(DEFAULT_CLOUDFLARE_IMAGE_MODEL);
+  const [editCloudflareTokenTouched, setEditCloudflareTokenTouched] = useState(false);
+  const [editHasCloudflareApiToken, setEditHasCloudflareApiToken] = useState(false);
+  const [cloudflareVerifyMessage, setCloudflareVerifyMessage] = useState<string | null>(null);
+  const [cloudflareVerifyOk, setCloudflareVerifyOk] = useState<boolean | null>(null);
+  const [cloudflareVerifyPending, setCloudflareVerifyPending] = useState(false);
 
   const { data: users, isLoading, error } = useQuery({
     queryKey: ['users', isAdmin],
@@ -62,6 +72,11 @@ export default function AreaContas() {
       setEditPassword('');
       setEditAuthorName('');
       setEditAuthorBio('');
+      setEditCloudflareAccountId('');
+      setEditCloudflareApiToken('');
+      setEditCloudflareImageModel(DEFAULT_CLOUDFLARE_IMAGE_MODEL);
+      setEditCloudflareTokenTouched(false);
+      setEditHasCloudflareApiToken(false);
     },
   });
 
@@ -98,15 +113,46 @@ export default function AreaContas() {
     };
     if (isAdmin && editEmail.trim()) payload.email = editEmail.trim();
     if (editPassword.trim()) payload.password = editPassword.trim();
+    payload.cloudflare_account_id = editCloudflareAccountId.trim() || null;
+    if (editCloudflareTokenTouched && editCloudflareApiToken.trim()) {
+      payload.cloudflare_api_token = editCloudflareApiToken.trim();
+    }
+    const trimmedModel = editCloudflareImageModel.trim();
+    payload.cloudflare_image_model =
+      !trimmedModel || trimmedModel === DEFAULT_CLOUDFLARE_IMAGE_MODEL ? null : trimmedModel;
     if (payload.password !== undefined && !isValidPassword(payload.password)) return;
     const hasChanges =
       payload.author_name !== undefined ||
       payload.author_bio !== undefined ||
       payload.email !== undefined ||
-      payload.password !== undefined;
+      payload.password !== undefined ||
+      payload.cloudflare_account_id !== undefined ||
+      payload.cloudflare_api_token !== undefined ||
+      payload.cloudflare_image_model !== undefined;
     if (hasChanges) updateMutation.mutate({ id: editUserId, payload });
     else setEditUserId(null);
   }
+
+  async function handleVerifyCloudflare() {
+    setCloudflareVerifyPending(true);
+    setCloudflareVerifyMessage(null);
+    setCloudflareVerifyOk(null);
+    try {
+      const result = await verifyCloudflareCredentials();
+      setCloudflareVerifyOk(result.ok);
+      setCloudflareVerifyMessage(result.message);
+    } catch (err) {
+      setCloudflareVerifyOk(false);
+      setCloudflareVerifyMessage(
+        err instanceof Error ? err.message : 'Não foi possível testar as credenciais.'
+      );
+    } finally {
+      setCloudflareVerifyPending(false);
+    }
+  }
+
+  const canVerifyOwnCloudflare =
+    editUserId != null && currentUserId != null && editUserId === currentUserId;
 
   return (
     <Layout>
@@ -154,6 +200,17 @@ export default function AreaContas() {
                     {u.author_bio && (
                       <p className="text-sm text-muted-foreground mt-1 italic">&ldquo;{u.author_bio}&rdquo;</p>
                     )}
+                    <Badge
+                      variant={
+                        u.cloudflare_account_id?.trim() && u.has_cloudflare_api_token ? 'default' : 'secondary'
+                      }
+                      className="mt-2"
+                    >
+                      Cloudflare:{' '}
+                      {u.cloudflare_account_id?.trim() && u.has_cloudflare_api_token
+                        ? 'Configurado'
+                        : 'Não configurado'}
+                    </Badge>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <Button
@@ -165,6 +222,13 @@ export default function AreaContas() {
                         setEditPassword('');
                         setEditAuthorName(u.author_name);
                         setEditAuthorBio(u.author_bio ?? '');
+                        setEditCloudflareAccountId(u.cloudflare_account_id ?? '');
+                        setEditCloudflareImageModel(u.cloudflare_image_model ?? DEFAULT_CLOUDFLARE_IMAGE_MODEL);
+                        setEditCloudflareApiToken('');
+                        setEditCloudflareTokenTouched(false);
+                        setEditHasCloudflareApiToken(u.has_cloudflare_api_token === true);
+                        setCloudflareVerifyMessage(null);
+                        setCloudflareVerifyOk(null);
                       }}
                     >
                       Editar
@@ -256,6 +320,13 @@ export default function AreaContas() {
             setEditPassword('');
             setEditAuthorName('');
             setEditAuthorBio('');
+            setEditCloudflareAccountId('');
+            setEditCloudflareApiToken('');
+            setEditCloudflareImageModel(DEFAULT_CLOUDFLARE_IMAGE_MODEL);
+            setEditCloudflareTokenTouched(false);
+            setEditHasCloudflareApiToken(false);
+            setCloudflareVerifyMessage(null);
+            setCloudflareVerifyOk(null);
           }
         }}
       >
@@ -309,6 +380,104 @@ export default function AreaContas() {
               />
               <p className="text-xs text-muted-foreground">{PASSWORD_CRITERIA_HELP}</p>
             </div>
+
+            <div className="space-y-4 rounded-lg border p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className="font-medium text-foreground">Cloudflare Workers AI</h3>
+                <Badge
+                  variant={
+                    editCloudflareAccountId.trim() && editHasCloudflareApiToken ? 'default' : 'secondary'
+                  }
+                >
+                  {editCloudflareAccountId.trim() && editHasCloudflareApiToken
+                    ? 'Configurado'
+                    : 'Não configurado'}
+                </Badge>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Necessário para gerar imagens na Área do Autor. Crie um API Token em{' '}
+                <a
+                  href="https://developers.cloudflare.com/workers-ai/get-started/rest-api/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline"
+                >
+                  Workers AI → Use REST API
+                </a>{' '}
+                com permissões Workers AI Read e Edit. Cole o token completo do dashboard (formato legado ~40 caracteres ou novo `cfut_`/`cfat_` ~53), sem &quot;Bearer &quot;.
+              </p>
+              <div className="space-y-2">
+                <Label htmlFor="edit-cloudflare-account-id">Account ID</Label>
+                <Input
+                  id="edit-cloudflare-account-id"
+                  value={editCloudflareAccountId}
+                  onChange={(e) => setEditCloudflareAccountId(e.target.value)}
+                  placeholder="ID da conta Cloudflare"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-cloudflare-api-token">API Token</Label>
+                <Input
+                  id="edit-cloudflare-api-token"
+                  type="password"
+                  value={editCloudflareApiToken}
+                  onChange={(e) => {
+                    setEditCloudflareApiToken(e.target.value);
+                    setEditCloudflareTokenTouched(true);
+                  }}
+                  placeholder={editHasCloudflareApiToken ? 'Token configurado (cole para substituir)' : 'Cole seu API Token'}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-cloudflare-image-model">Modelo de imagem</Label>
+                <Input
+                  id="edit-cloudflare-image-model"
+                  value={editCloudflareImageModel}
+                  onChange={(e) => setEditCloudflareImageModel(e.target.value)}
+                  placeholder={DEFAULT_CLOUDFLARE_IMAGE_MODEL}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Por defeito: {DEFAULT_CLOUDFLARE_IMAGE_MODEL}. Consulte o{' '}
+                  <a
+                    href="https://developers.cloudflare.com/workers-ai/models/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline"
+                  >
+                    catálogo Workers AI
+                  </a>{' '}
+                  para outros modelos text-to-image.
+                </p>
+              </div>
+              {canVerifyOwnCloudflare && (
+                <div className="space-y-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={
+                      cloudflareVerifyPending ||
+                      !editCloudflareAccountId.trim() ||
+                      !(editHasCloudflareApiToken || editCloudflareApiToken.trim())
+                    }
+                    onClick={handleVerifyCloudflare}
+                  >
+                    {cloudflareVerifyPending ? 'A testar…' : 'Testar credenciais guardadas'}
+                  </Button>
+                  {cloudflareVerifyMessage && (
+                    <p
+                      className={`text-sm ${cloudflareVerifyOk ? 'text-green-600 dark:text-green-400' : 'text-destructive'}`}
+                    >
+                      {cloudflareVerifyMessage}
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Salve primeiro se alterou Account ID ou token; o teste usa as credenciais já guardadas na sua conta.
+                  </p>
+                </div>
+              )}
+            </div>
+
             {updateMutation.error && (
               <p className="text-sm text-destructive">
                 {updateMutation.error instanceof Error ? updateMutation.error.message : 'Erro ao atualizar.'}

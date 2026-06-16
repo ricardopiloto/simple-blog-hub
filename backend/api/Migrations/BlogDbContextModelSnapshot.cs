@@ -29,6 +29,15 @@ namespace BlogApi.Migrations
                     b.Property<string>("Bio")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("CloudflareAccountId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CloudflareApiTokenEncrypted")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CloudflareImageModel")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 

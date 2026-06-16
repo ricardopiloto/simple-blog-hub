@@ -19,6 +19,15 @@ public class UserListDto
 
     [JsonPropertyName("author_bio")]
     public string? AuthorBio { get; set; }
+
+    [JsonPropertyName("cloudflare_account_id")]
+    public string? CloudflareAccountId { get; set; }
+
+    [JsonPropertyName("has_cloudflare_api_token")]
+    public bool HasCloudflareApiToken { get; set; }
+
+    [JsonPropertyName("cloudflare_image_model")]
+    public string? CloudflareImageModel { get; set; }
 }
 
 public class CreateUserRequest
@@ -56,4 +65,14 @@ public class UpdateUserRequest
     [MaxLength(500)]
     [JsonPropertyName("author_bio")]
     public string? Bio { get; set; }
+
+    [MaxLength(64)]
+    [JsonPropertyName("cloudflare_account_id")]
+    public string? CloudflareAccountId { get; set; }
+
+    [JsonPropertyName("cloudflare_api_token")]
+    public string? CloudflareApiToken { get; set; }
+
+    [JsonPropertyName("cloudflare_image_model")]
+    public string? CloudflareImageModel { get; set; }
 }

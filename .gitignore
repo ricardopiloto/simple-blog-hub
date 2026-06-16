@@ -48,3 +48,12 @@ DEPLOY-UBUNTU-CADDY.md
 
 # Documentação local (guias de atualização específicos do servidor — não versionar)
 docs/local/
+docs/temp/
+
+# Openspec
+openspec/changes/*
+AGENTS.md
+project.md
+.cursor/*
+CLAUDE.md
+.claude/*

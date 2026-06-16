@@ -178,4 +178,9 @@ public class ApiClient
         WithAuthorId(req, authorId);
         return await _http.SendAsync(req, cancellationToken);
     }
+
+    public async Task<HttpResponseMessage> GetCloudflareCredentialsAsync(Guid authorId, CancellationToken cancellationToken = default)
+    {
+        return await _http.GetAsync($"api/image-generation/credentials/{authorId}", cancellationToken);
+    }
 }

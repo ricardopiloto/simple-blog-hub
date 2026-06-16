@@ -15,6 +15,7 @@ import StoryIndex from "./pages/StoryIndex";
 import Login from "./pages/Login";
 import AreaAutorDashboard from "./pages/AreaAutorDashboard";
 import AreaContas from "./pages/AreaContas";
+import ImageGenerationPage from "./pages/ImageGenerationPage";
 import PostEdit from "./pages/PostEdit";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
@@ -41,6 +42,7 @@ const App = () => (
             <Route path="/area-autor" element={<ProtectedRoute><AreaAutorDashboard /></ProtectedRoute>} />
             <Route path="/area-autor/publicacoes" element={<Navigate to="/area-autor" replace />} />
             <Route path="/area-autor/contas" element={<ProtectedRoute><AreaContas /></ProtectedRoute>} />
+            <Route path="/area-autor/geracao-imagem" element={<ProtectedRoute><ImageGenerationPage /></ProtectedRoute>} />
             <Route path="/area-autor/posts/novo" element={<ProtectedRoute><PostEdit /></ProtectedRoute>} />
             <Route path="/area-autor/posts/:id/editar" element={<ProtectedRoute><PostEdit /></ProtectedRoute>} />
             <Route path="/area-autor/posts" element={<Navigate to="/area-autor" replace />} />

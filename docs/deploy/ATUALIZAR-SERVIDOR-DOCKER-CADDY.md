@@ -96,6 +96,9 @@ Quando a API falha com "no such column" (ex.: ViewCount, IncludeInStoryOrder), p
 | `add_view_count_to_posts.sql` | ViewCount (contagem de visualizações) | Erro "no such column: p.ViewCount" |
 | `add_include_in_story_order_to_posts.sql` | IncludeInStoryOrder ("faz parte da ordem da história") | Erro "no such column: p.IncludeInStoryOrder" |
 | `add_scheduled_publish_at_to_posts.sql` | ScheduledPublishAt (agendamento de publicação) | Erro "no such column: p.ScheduledPublishAt" |
+| `add_story_type_to_posts.sql` | StoryType (Velho Mundo / Idade das Trevas) | Erro "no such column: p.StoryType" |
+| `add_cloudflare_credentials_to_author.sql` | CloudflareAccountId, CloudflareApiTokenEncrypted (Geração de Imagem) | Erro "no such column: a.CloudflareAccountId" — ver [ATUALIZAR-2-5-3-PARA-2-6-1.md](ATUALIZAR-2-5-3-PARA-2-6-1.md) |
+| `add_cloudflare_image_model_to_author.sql` | CloudflareImageModel (modelo Workers AI por autor) | Erro "no such column: a.CloudflareImageModel" — ver [ATUALIZAR-2-5-3-PARA-2-6-1.md](ATUALIZAR-2-5-3-PARA-2-6-1.md) |
 
 ### Local
 

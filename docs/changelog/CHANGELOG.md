@@ -2,6 +2,24 @@
 
 Os releases são versionados por tag (ex.: `v1.9`, `v1.10`, `v2.0`). O resumo detalhado das changes OpenSpec aplicadas pode ser usado na mensagem do commit de release e está também na proposta da respetiva versão em `openspec/changes/`.
 
+## [2.6.1]
+
+- **add-cloudflare-image-model-setting:** Campo **Modelo de imagem** em **Contas** (secção Cloudflare Workers AI); valor por defeito `@cf/black-forest-labs/flux-1-schnell`; BFF usa o modelo guardado no perfil na chamada `.../ai/run/{imageModel}`; validação de formato na API; migração `AddCloudflareImageModelToAuthor` + script `add_cloudflare_image_model_to_author.sql`.
+- **Geração de Imagem (melhorias):** Chamada **directa** à REST API Cloudflare (sem proxy externo); imagem devolvida em base64 ao browser e **não persistida** no servidor.
+- **Credenciais Cloudflare:** Validação de API Token ao guardar (formatos legado ~40 caracteres e novo `cfut_` / `cfat_`; comprimento até **120** caracteres; rejeição de Global API Key); normalização ao gravar (trim, remoção de `Bearer ` e caracteres de controlo).
+- **Erros e diagnóstico:** Mensagens amigáveis para token inválido, Account ID incorreto, quota, rate limit, token expirado, Workers AI recusado e falha de desencriptação (`token_decrypt_failed`); botão **Testar credenciais guardadas** em Contas; BFF repassa corpo de erro da API no `PUT /bff/users/{id}` (400 legível no frontend).
+- **Documentação e versão:** Guia [ATUALIZAR-2-5-3-PARA-2-6-1.md](docs/deploy/ATUALIZAR-2-5-3-PARA-2-6-1.md); script na tabela de `ATUALIZAR-SERVIDOR-DOCKER-CADDY.md`; troubleshooting em `backend/api/README.md`; versão no frontend (`package.json`) **2.6.1**; README com tag v2.6.1.
+
+## [2.6.0]
+
+- **add-image-generation:** **Geração de Imagem** na Área do Autor (`/area-autor/geracao-imagem`): autores autenticados geram imagens por prompt via **Cloudflare Workers AI** (Flux Schnell por defeito); credenciais **Account ID** e **API Token** em **Contas**; token encriptado at-rest na API (`Cloudflare__EncryptionKey`, AES-256-GCM); BFF intermediando chamadas REST sem expor o token ao browser; imagem em base64 no frontend (não persistida no servidor).
+- **Documentação e versão:** CHANGELOG com secção [2.6.0]; variável `Cloudflare__EncryptionKey` em DEPLOY-DOCKER-CADDY.md, `.env.docker.example` e PRODUCTION-CHECKLIST.md; migração `AddCloudflareCredentialsToAuthor` + script `add_cloudflare_credentials_to_author.sql`; guia [ATUALIZAR-2-5-2-PARA-2-6-0.md](docs/deploy/ATUALIZAR-2-5-2-PARA-2-6-0.md); versão no frontend (`package.json`) **2.6.0**.
+
+## [2.5.3]
+
+- add-story-index-pagination-page-input: No **Índice da História** (`/indice`), o contador **"Página X de Y"** passou a incluir um **campo editável** para o número da página: o leitor pode **digitar a página** e confirmar com **Enter** ou ao **sair do foco**; valores fora de **1..Y** são **ajustados** ao limite; entrada vazia ou inválida **repõe** o número atual; `aria-label` **"Ir para página"** para acessibilidade.
+- Documentação e versão: CHANGELOG com secção [2.5.3]; versão no frontend (`package.json`) definida como 2.5.3; README secção 4 com tag v2.5.3.
+
 ## [2.5.2]
 
 - notify-session-expired-and-redirect-to-home: Ao receber **401 Unauthorized** (sessão expirada ou token inválido), o frontend exibe um **modal** informando que a sessão expirou e que deve autenticar-se novamente; quando o utilizador estava na **área do autor** (`/area-autor` ou subrotas), ao dispensar o modal é **redirecionado para a página inicial** (`/`).

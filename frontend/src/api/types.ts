@@ -83,6 +83,9 @@ export interface UserListItem {
   author_name: string;
   /** Breve descrição do autor (ex.: "Sonhador e amante de contos e RPG"). */
   author_bio?: string | null;
+  cloudflare_account_id?: string | null;
+  has_cloudflare_api_token?: boolean;
+  cloudflare_image_model?: string | null;
 }
 
 export interface CreateUserPayload {
@@ -98,4 +101,11 @@ export interface UpdateUserPayload {
   author_name?: string;
   /** Breve descrição do autor. */
   author_bio?: string | null;
+  cloudflare_account_id?: string | null;
+  cloudflare_api_token?: string;
+  cloudflare_image_model?: string | null;
+}
+
+export interface GenerateImageResponse {
+  image: string;
 }

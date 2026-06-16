@@ -12,14 +12,32 @@ public class UsersController : AuthorizedApiControllerBase
 {
     private readonly BlogDbContext _db;
     private readonly IAdminService _adminService;
+    private readonly ICloudflareTokenEncryptionService _cloudflareEncryption;
     private readonly ILogger<UsersController> _logger;
 
-    public UsersController(BlogDbContext db, IAdminService adminService, ILogger<UsersController> logger)
+    public UsersController(
+        BlogDbContext db,
+        IAdminService adminService,
+        ICloudflareTokenEncryptionService cloudflareEncryption,
+        ILogger<UsersController> logger)
     {
         _db = db;
         _adminService = adminService;
+        _cloudflareEncryption = cloudflareEncryption;
         _logger = logger;
     }
+
+    private static UserListDto MapToUserListDto(User user) => new()
+    {
+        Id = user.Id.ToString(),
+        Email = user.Email,
+        AuthorId = user.AuthorId.ToString(),
+        AuthorName = user.Author?.Name ?? string.Empty,
+        AuthorBio = user.Author?.Bio,
+        CloudflareAccountId = user.Author?.CloudflareAccountId,
+        HasCloudflareApiToken = !string.IsNullOrEmpty(user.Author?.CloudflareApiTokenEncrypted),
+        CloudflareImageModel = user.Author?.CloudflareImageModel
+    };
 
     /// <summary>GET /api/users — list users (Admin only).</summary>
     [HttpGet]
@@ -34,16 +52,8 @@ public class UsersController : AuthorizedApiControllerBase
         var users = await _db.Users
             .Include(u => u.Author)
             .OrderBy(u => u.Email)
-            .Select(u => new UserListDto
-            {
-                Id = u.Id.ToString(),
-                Email = u.Email,
-                AuthorId = u.AuthorId.ToString(),
-                AuthorName = u.Author.Name,
-                AuthorBio = u.Author.Bio
-            })
             .ToListAsync(cancellationToken);
-        return Ok(users);
+        return Ok(users.Select(MapToUserListDto));
     }
 
     /// <summary>GET /api/users/me — current user (any authenticated user).</summary>
@@ -60,14 +70,7 @@ public class UsersController : AuthorizedApiControllerBase
         if (user == null)
             return Unauthorized();
 
-        return Ok(new UserListDto
-        {
-            Id = user.Id.ToString(),
-            Email = user.Email,
-            AuthorId = user.AuthorId.ToString(),
-            AuthorName = user.Author.Name,
-            AuthorBio = user.Author.Bio
-        });
+        return Ok(MapToUserListDto(user));
     }
 
     /// <summary>POST /api/users — create user (Admin only).</summary>
@@ -118,13 +121,7 @@ public class UsersController : AuthorizedApiControllerBase
         await _db.SaveChangesAsync(cancellationToken);
         _logger.LogInformation("Audit: UserCreated By={AuthorId} TargetUserId={UserId} TargetEmail={Email}", authorId.Value, user.Id, email);
 
-        return CreatedAtAction(nameof(GetUsers), (object?)null, new UserListDto
-        {
-            Id = user.Id.ToString(),
-            Email = user.Email,
-            AuthorId = user.AuthorId.ToString(),
-            AuthorName = author.Name
-        });
+        return CreatedAtAction(nameof(GetUsers), (object?)null, MapToUserListDto(user));
     }
 
     /// <summary>PUT /api/users/{id} — Admin: email and/or password; self: password only.</summary>
@@ -188,6 +185,42 @@ public class UsersController : AuthorizedApiControllerBase
                 return BadRequest("Bio must be at most 70 characters.");
             if (user.Author != null)
                 user.Author.Bio = string.IsNullOrWhiteSpace(request.Bio) ? null : bioTrimmed;
+        }
+
+        if ((isAdmin || isSelf) && user.Author != null)
+        {
+            if (request.CloudflareAccountId != null)
+            {
+                var accountId = CloudflareCredentialsNormalizer.NormalizeAccountId(request.CloudflareAccountId);
+                user.Author.CloudflareAccountId = accountId;
+            }
+
+            if (request.CloudflareApiToken != null && request.CloudflareApiToken.Trim().Length > 0)
+            {
+                try
+                {
+                    var token = CloudflareCredentialsNormalizer.NormalizeApiToken(request.CloudflareApiToken);
+                    if (!CloudflareApiTokenValidator.TryValidate(token, out var tokenError))
+                        return BadRequest(tokenError);
+                    user.Author.CloudflareApiTokenEncrypted = _cloudflareEncryption.Encrypt(token);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return BadRequest(ex.Message);
+                }
+            }
+
+            if (request.CloudflareImageModel != null)
+            {
+                if (!CloudflareImageModelValidator.TryNormalize(request.CloudflareImageModel, out var imageModel, out var modelError))
+                    return BadRequest(modelError);
+                user.Author.CloudflareImageModel = imageModel;
+            }
+
+            if (request.CloudflareAccountId != null
+                || (request.CloudflareApiToken != null && request.CloudflareApiToken.Trim().Length > 0)
+                || request.CloudflareImageModel != null)
+                user.Author.UpdatedAt = DateTime.UtcNow;
         }
 
         await _db.SaveChangesAsync(cancellationToken);

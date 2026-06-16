@@ -54,6 +54,8 @@ Criar `api.env` e `bff.env` na **raiz do repositório** (onde está o `docker-co
 ConnectionStrings__DefaultConnection=Data Source=/data/blog.db
 API__InternalKey=seu-valor-secreto-forte-aqui
 Admin__Email=admin@exemplo.com
+# Obrigatório se autores usarem Geração de Imagem (encriptação AES-256 dos API Tokens Cloudflare)
+Cloudflare__EncryptionKey=chave-32-bytes-base64-ou-64-hex
 ```
 
 **bff.env** (o `API__BaseUrl` é definido no `docker-compose.yml` como `http://api:5001`; não é preciso repetir):

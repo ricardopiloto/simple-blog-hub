@@ -198,13 +198,13 @@ When **Admin:Email** (appsettings or environment `Admin__Email`) is **not** set 
 
 ### Requirement: Non-admin users see only own profile in Contas and can edit own bio
 
-Any **authenticated author** (Admin or not) SHALL be able to access the **Contas** screen (e.g. `/area-autor/contas`). **Non-admin** users SHALL see **only their own user** (a single profile) on that screen, not the list of all accounts. The API SHALL provide a "current user" endpoint (e.g. GET /api/users/me or equivalent via BFF) that returns the authenticated user's profile (id, email, author name, author bio) so the frontend can display a single-profile view for non-admin. On the Contas screen, non-admin users SHALL be able to **edit their own author name**, **author bio** (descrição do autor, breve frase exibida na página do artigo), and **password**. The API SHALL allow PUT (or equivalent) on the user resource for the **own** user id (when the authenticated author's user id matches the target id) to update author name, author bio, and password; only the Admin SHALL be allowed to update other users or to update email. The Admin SHALL continue to see the list of all users and to create, edit, reset-password, and delete other accounts.
+Any **authenticated author** (Admin or not) SHALL be able to access the **Contas** screen (e.g. `/area-autor/contas`). **Non-admin** users SHALL see **only their own user** (a single profile) on that screen, not the list of all accounts. The API SHALL provide a "current user" endpoint (e.g. GET /api/users/me or equivalent via BFF) that returns the authenticated user's profile (id, email, author name, author bio, **cloudflareAccountId**, **hasCloudflareApiToken**) so the frontend can display a single-profile view for non-admin. On the Contas screen, non-admin users SHALL be able to **edit their own author name**, **author bio** (descrição do autor, breve frase exibida na página do artigo), **password**, and **Cloudflare Workers AI credentials** (Account ID and API Token). The API SHALL allow PUT (or equivalent) on the user resource for the **own** user id (when the authenticated author's user id matches the target id) to update author name, author bio, password, and Cloudflare credentials; only the Admin SHALL be allowed to update other users or to update email. The Admin SHALL continue to see the list of all users and to create, edit, reset-password, and delete other accounts. When editing Cloudflare credentials, the **API Token field SHALL always load empty** in the UI; the API SHALL expose only `hasCloudflareApiToken` (boolean), never the token value. Submitting an **empty** API Token field SHALL **preserve** the previously stored token; submitting a **non-empty** value SHALL replace the stored token (encrypted at rest per security-hardening).
 
 #### Scenario: Non-admin opens Contas and sees only own profile
 
 - **GIVEN** the user is logged in and is **not** the Admin (their email does not match the configured Admin email)
 - **WHEN** they navigate to the Contas screen (e.g. `/area-autor/contas`)
-- **THEN** the screen SHALL display only **one** profile (their own: their email, author name, author bio if set)
+- **THEN** the screen SHALL display only **one** profile (their own: their email, author name, author bio if set, Cloudflare credential status)
 - **AND** the screen SHALL NOT display the list of other users or the "Nova conta" (create user) action
 - **AND** they SHALL see an "Editar" (or equivalent) action to edit that single profile
 
@@ -214,14 +214,35 @@ Any **authenticated author** (Admin or not) SHALL be able to access the **Contas
 - **WHEN** they open Contas, click Editar on their profile, change the **author bio** (descrição do autor) field, and save
 - **THEN** the API SHALL accept the update (PUT or equivalent for their own user id with the bio field)
 - **AND** the new bio SHALL be persisted and SHALL appear in the author's profile and in the post page (author description) when that author has published posts
-- **AND** the user SHALL be able to edit their own author name and password in the same way (own profile only)
+- **AND** the user SHALL be able to edit their own author name, password, and Cloudflare credentials in the same way (own profile only)
 
 #### Scenario: Admin sees list of all users in Contas
 
 - **GIVEN** the user is logged in as the Admin (email matches configured Admin email)
 - **WHEN** they navigate to the Contas screen
 - **THEN** the screen SHALL display the **list of all users** (all accounts)
-- **AND** the Admin SHALL see actions to create new users, edit any user (including email, author name, author bio, password), reset password, and delete users (subject to existing policy, e.g. not delete self if applicable)
+- **AND** the Admin SHALL see actions to create new users, edit any user (including email, author name, author bio, password, Cloudflare credentials), reset password, and delete users (subject to existing policy, e.g. not delete self if applicable)
+
+#### Scenario: Author saves Cloudflare credentials for the first time
+
+- **GIVEN** the user is logged in and has no Cloudflare credentials configured
+- **WHEN** they open Contas, edit their profile, fill **Account ID** and **API Token**, and save
+- **THEN** the API persists the Account ID and encrypts and stores the API Token
+- **AND** the UI shows a success indication and the credential status badge changes to **Configurado**
+- **AND** the API Token field is empty again after save
+
+#### Scenario: Author updates only Account ID and keeps existing token
+
+- **GIVEN** the user already has a Cloudflare API Token stored (`hasCloudflareApiToken === true`)
+- **WHEN** they edit Contas, change only the Account ID, leave the API Token field blank, and save
+- **THEN** the Account ID is updated
+- **AND** the previously stored API Token remains unchanged
+
+#### Scenario: Non-admin cannot edit another user's Cloudflare credentials
+
+- **GIVEN** the user is logged in as a non-admin author
+- **WHEN** they attempt to update another user's profile via API (PUT /api/users/{other-id} with Cloudflare fields)
+- **THEN** the API returns **403 Forbidden**
 
 ### Requirement: Área do Autor dashboard does not duplicate Contas or password change
 
@@ -280,4 +301,85 @@ The **author bio** (descrição do autor) field in the **Contas** screen SHALL b
 - **THEN** the frontend SHALL prevent input beyond 70 characters (e.g. input maxLength or truncation)
 - **AND** if a longer value is somehow submitted (e.g. from another client), the API SHALL reject it with 400 and the bio SHALL NOT be updated
 - **AND** a saved bio of at most 70 characters SHALL be displayed correctly in the profile and on the post page
+
+### Requirement: Session expired (401) notification and redirect to home (SHALL)
+
+When the frontend receives a **401 Unauthorized** response from the BFF (e.g. because the JWT has expired or is invalid), the system SHALL make it **clear to the user** that the session has expired and that they must authenticate again. The frontend SHALL: (1) **Clear the session** (logout: remove token and authenticated state) so the UI reflects that the user is no longer logged in; (2) **Display a modal/dialog** with an explicit message such as "A sua sessão expirou. Por favor, autentique-se novamente." (or equivalent) and a button to dismiss (e.g. "Entendido"); (3) **When the user dismisses the modal**, if the current route is the **author area** (`/area-autor` or any subpath, e.g. `/area-autor/contas`, `/area-autor/posts/novo`), the frontend SHALL **redirect the user to the home page** (`/`). If the 401 occurred outside the author area, the frontend MAY redirect to `/` on dismiss for consistency or leave the user on the current page; the modal SHALL always be shown so the user understands why they were logged out.
+
+#### Scenario: User in author area receives 401 — sees modal and is redirected to home
+
+- **GIVEN** the user is logged in and is on a page under the author area (e.g. /area-autor or /area-autor/contas)
+- **WHEN** a request to a protected BFF endpoint returns 401 (e.g. token expired)
+- **THEN** the frontend clears the session (logout)
+- **AND** a modal is displayed with a clear message that the session has expired and the user must authenticate again
+- **AND** when the user dismisses the modal (e.g. clicks "Entendido"), the frontend redirects to the **home page** (`/`)
+- **AND** the user can then use the "Login" link in the header to authenticate again if desired
+
+#### Scenario: User receives 401 — always sees session-expired message
+
+- **GIVEN** the user had a valid token and any request (e.g. list posts, save post, delete post) returns 401
+- **WHEN** the frontend handles the 401
+- **THEN** the session is cleared and a **modal is always shown** with the session-expired message
+- **AND** the user is not redirected to the login page without first seeing this explanation; when in the author area, they are redirected to home after dismissing the modal
+
+### Requirement: Secção Cloudflare Workers AI na tela Contas
+
+A tela **Contas** **DEVE** (SHALL) incluir uma secção **"Cloudflare Workers AI"** no formulário de edição de perfil (próprio perfil para não-Admin; qualquer conta para Admin) com:
+
+- Campo **Account ID** (`type="text"`) ligado a `cloudflareAccountId`.
+- Campo **API Token** (`type="password"`), sempre vazio ao abrir o formulário; placeholder **"configurado"** quando `hasCloudflareApiToken === true`, caso contrário orientando a colar o token.
+- **Badge** ou indicador visual **Configurado** quando Account ID está preenchido **e** `hasCloudflareApiToken === true`; **Não configurado** caso contrário.
+- O frontend **DEVE** incluir `cloudflareApiToken` no payload de update **somente** quando o utilizador alterou esse campo (não enviar quando permaneceu vazio/intocado).
+
+#### Scenario: Badge reflecte estado das credenciais
+
+- **Dado** que o autor tem Account ID e token guardados
+- **Quando** abre o formulário de edição em Contas
+- **Então** vê o badge **Configurado**
+- **E** o campo API Token está vazio com placeholder indicando que já existe token guardado
+
+#### Scenario: API Token nunca aparece nas respostas
+
+- **Dado** que o autor tem API Token configurado
+- **Quando** inspecciono respostas de GET /bff/users/me ou GET /api/users/me
+- **Então** o corpo JSON não contém o valor do API Token
+- **E** pode conter `hasCloudflareApiToken: true`
+
+### Requirement: Campo Modelo de imagem na secção Cloudflare Workers AI (Contas)
+
+A secção **Cloudflare Workers AI** em **Contas** **DEVE** (SHALL) incluir um campo **Modelo de imagem** (`type="text"`) junto a **Account ID** e **API Token**, permitindo ao autor indicar o **model path** Workers AI usado na Geração de Imagem.
+
+- O campo **DEVE** vir **pré-preenchido** com o valor guardado em `cloudflare_image_model` ou, quando ausente/null, com o default **`@cf/black-forest-labs/flux-1-schnell`** (modelo actual do blog).
+- O autor **DEVE** poder alterar e guardar outro modelo válido.
+- A API **DEVE** persistir o valor em `Author.CloudflareImageModel` (texto plano, nullable).
+- Se o autor gravar valor vazio ou apenas espaços, a API **DEVE** persistir `null` (runtime usa o default).
+- A API **DEVE** rejeitar valores com formato inválido (400) — ver validação em `image-generation`.
+- O indicador **Configurado** / **Não configurado** das credenciais Cloudflare **NÃO** depende do modelo (continua baseado em Account ID + token).
+
+#### Scenario: Autor abre Contas e vê modelo default pré-preenchido
+
+- **Dado** que sou um autor autenticado sem `cloudflare_image_model` guardado
+- **Quando** abro Editar perfil em Contas
+- **Então** o campo **Modelo de imagem** mostra `@cf/black-forest-labs/flux-1-schnell`
+- **E** posso alterar o valor antes de salvar
+
+#### Scenario: Autor guarda modelo personalizado
+
+- **Dado** que sou um autor autenticado com credenciais Cloudflare configuradas
+- **Quando** altero **Modelo de imagem** para `@cf/outro-vendor/outro-modelo` (formato válido) e salvo
+- **Então** a API persiste o novo valor
+- **E** em edições futuras o campo mostra o valor guardado
+
+#### Scenario: Modelo inválido é rejeitado
+
+- **Dado** que sou um autor autenticado a editar Contas
+- **Quando** submeto **Modelo de imagem** com valor que não cumpre o formato `@cf/.../...` (ex.: texto livre sem `@cf/` ou com caracteres inválidos)
+- **Então** a API responde **400 Bad Request**
+- **E** o valor anterior (ou null) permanece inalterado
+
+#### Scenario: Admin edita modelo de qualquer conta
+
+- **Dado** que sou o Admin
+- **Quando** edito outra conta e altero **Modelo de imagem**
+- **Então** a API aceita a alteração conforme as mesmas regras de validação
 

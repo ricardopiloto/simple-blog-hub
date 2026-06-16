@@ -10,6 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSingleton<JwtService>();
+builder.Services.AddSingleton<CloudflareWorkersAiClient>();
 
 var apiBaseUrl = builder.Configuration["API:BaseUrl"] ?? "http://localhost:5001";
 var apiInternalKey = builder.Configuration["API:InternalKey"]?.Trim();
@@ -19,6 +20,10 @@ builder.Services.AddHttpClient<ApiClient>(client =>
     client.DefaultRequestHeaders.Add("Accept", "application/json");
     if (!string.IsNullOrEmpty(apiInternalKey))
         client.DefaultRequestHeaders.Add("X-Api-Key", apiInternalKey);
+});
+builder.Services.AddHttpClient("CloudflareAI", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(60);
 });
 
 var jwtSecret = builder.Configuration["Jwt:Secret"] ?? "dev-secret-change-in-production-min-32-chars";

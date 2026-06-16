@@ -60,6 +60,10 @@ Para a coluna **ScheduledPublishAt** (agendamento de publicação de posts), use
 
 Para a coluna **StoryType** (tipo de história do post: Velho Mundo / Idade das Trevas), use o script `Migrations/Scripts/add_story_type_to_posts.sql` da mesma forma (executar uma vez; se a coluna já existir, ignorar o erro).
 
+Para as colunas **CloudflareAccountId** e **CloudflareApiTokenEncrypted** (credenciais Cloudflare Workers AI por autor, Geração de Imagem), use o script `Migrations/Scripts/add_cloudflare_credentials_to_author.sql` da mesma forma (executar uma vez; se as colunas já existirem, ignorar o erro). Em desenvolvimento local, reiniciar a API após `dotnet build` também aplica a migração EF `AddCloudflareCredentialsToAuthor` quando registada.
+
+Para a coluna **CloudflareImageModel** (modelo Workers AI configurável por autor), use o script `Migrations/Scripts/add_cloudflare_image_model_to_author.sql` da mesma forma (executar uma vez; se a coluna já existir, ignorar o erro). Migração EF: `AddCloudflareImageModelToAuthor`.
+
 ### Regra para alterações de esquema
 
 **Qualquer change** que introduza **alteração de esquema de base de dados** (nova tabela, nova coluna, ou migração EF Core que altere o esquema) **deve** incluir um script SQL em `backend/api/Migrations/Scripts/` para execução manual quando aplicável, e a change **deve** referenciar esse script neste README (na lista acima ou na secção Troubleshooting) e nas suas tarefas. Isto permite upgrades em ambientes onde as migrações não são aplicadas automaticamente ao arranque e garante rastreabilidade.
@@ -137,6 +141,33 @@ Para a coluna **StoryType** (tipo de história do post: Velho Mundo / Idade das 
    sqlite3 blog.db < Migrations/Scripts/add_story_type_to_posts.sql
    ```
    (Substitua `blog.db` pelo caminho do seu ficheiro SQLite.) Depois reinicie a API. Se a coluna já existir, o SQLite devolverá erro; pode ignorar.
+
+**Se aparecer "no such column: a.CloudflareImageModel":** execute `Migrations/Scripts/add_cloudflare_image_model_to_author.sql` ou reinicie a API com código actual para aplicar a migração EF `AddCloudflareImageModelToAuthor`.
+
+**Se aparecer "no such column: a.CloudflareAccountId" (ou "CloudflareApiTokenEncrypted"):** a base de dados ainda não tem as colunas da migração **AddCloudflareCredentialsToAuthor** (credenciais Cloudflare por autor). Duas formas de resolver:
+
+1. **Recomendado:** Pare a API, faça `dotnet build` em `backend/api` e volte a executar `dotnet run` — o `MigrateAsync()` aplica a migração EF ao arranque.
+2. **Migração manual (local):** Execute o script SQL uma vez:
+   ```bash
+   cd backend/api
+   sqlite3 blog.db < Migrations/Scripts/add_cloudflare_credentials_to_author.sql
+   ```
+   Depois reinicie a API. Se as colunas já existirem, o SQLite devolverá erro; pode ignorar.
+
+**Se a geração de imagem falhar com erro de token encriptado (`AuthenticationTagMismatchException` ou `token_decrypt_failed`):** o API Token foi guardado com uma **`Cloudflare__EncryptionKey` diferente** da que a API usa agora. Isto acontece em desenvolvimento se arrancar a API com `Cloudflare__EncryptionKey="$(openssl rand -base64 32)"` a cada sessão (cada arranque gera uma chave nova). Soluções:
+
+1. **Desenvolvimento:** use a chave fixa em `appsettings.Development.json` (secção `Cloudflare:EncryptionKey`) e arranque com `dotnet run` **sem** sobrescrever a variável de ambiente; ou exporte a mesma chave uma vez: `export Cloudflare__EncryptionKey='...'` e reutilize-a.
+2. **Recuperação:** abra **Contas**, cole o **API Token** Cloudflare de novo e salve (re-encripta com a chave actual).
+3. **Produção:** nunca altere `Cloudflare__EncryptionKey` depois de autores guardarem tokens, a menos que todos voltem a registar o token.
+
+**Se a Cloudflare devolver 401 (`Authentication error`):**
+
+1. Crie o token em **Workers AI → Use REST API** no [dashboard Cloudflare](https://developers.cloudflare.com/workers-ai/get-started/rest-api/) com permissões **Workers AI Read** e **Edit** (não use a Global API Key).
+2. Copie o **Account ID** da mesma página **Use REST API** (não de outra secção do dashboard).
+3. Em **Contas**, cole o API Token de novo e salve (re-encripta com a chave actual do servidor).
+4. Use **Testar credenciais guardadas** em Contas para ver se o token ou o Account ID estão incorrectos.
+
+A imagem gerada é devolvida ao browser em base64 e **não é guardada no servidor**.
 
 **Se o build falhar:**
 

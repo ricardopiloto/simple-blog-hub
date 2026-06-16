@@ -30,7 +30,7 @@ Blog de leitura para **contos e aventuras** de RPG. Interface em português. Os 
 
 ## 4. Links para CHANGELOG
 
-Os releases são versionados por tag (ex.: `v1.9`, `v1.10`, `v2.0`, `v2.1`, `v2.2`, `v2.3`, `v2.3.1`, `v2.3.2`, `v2.4`, `v2.4.1`, `v2.5`, `v2.5.1`, `v2.5.2`). O histórico de alterações está em **[CHANGELOG](docs/changelog/CHANGELOG.md)**.
+Os releases são versionados por tag (ex.: `v1.9`, `v1.10`, `v2.0`, `v2.1`, `v2.2`, `v2.3`, `v2.3.1`, `v2.3.2`, `v2.4`, `v2.4.1`, `v2.5`, `v2.5.1`, `v2.5.2`, `v2.5.3`, `v2.6.0`, `v2.6.1`). O histórico de alterações está em **[CHANGELOG](docs/changelog/CHANGELOG.md)**.
 
 A versão exibida no rodapé do site vem do campo `version` do `frontend/package.json` (ou de `VITE_APP_VERSION` à build). **Ao preparar uma release**, atualizar o campo `version` em `frontend/package.json` antes do build para que o rodapé exiba a versão correta.
 
@@ -41,12 +41,13 @@ A versão exibida no rodapé do site vem do campo `version` do `frontend/package
 - **Página inicial:** post em destaque com etiqueta **"Novo"** (último post criado entre publicados) e artigos recentes por data de criação; apenas posts publicados; rascunhos só na Área do autor.
 - **Lista de posts:** artigos em ordem de criação (somente publicados), com paginação, pesquisa e **filtro por data** (calendário: data única ou intervalo); **auto-complete** no campo de pesquisa (sugestões por autor e título).
 - **Post individual:** leitura por slug; conteúdo em HTML (Markdown no backend); descrição do autor (Contas) quando existir; navegação anterior/próximo na ordem da história.
-- **Índice da história** (`/indice`): ordem narrativa (`story_order`), paginação (6 por página), filtro em tempo real; toggle por universo (Velho Mundo / Idade das Trevas) quando existem posts dos dois tipos; utilizadores autenticados podem editar a ordem (número ou arrastar) e salvar.
+- **Índice da história** (`/indice`): ordem narrativa (`story_order`), paginação (6 por página) com **salto direto para página** no contador (campo editável, Enter ou blur); filtro em tempo real; toggle por universo (Velho Mundo / Idade das Trevas) quando existem posts dos dois tipos; utilizadores autenticados podem editar a ordem (número ou arrastar) e salvar.
 - **Tema:** modo claro/escuro (persistido em `localStorage`).
 - **Login** (`/login`): e-mail e senha; BFF valida na API e retorna JWT. Admin por defeito: e-mail padrão do Admin quando não configurado e senha padrão inicial (em produção o operador **deve** configurar `Admin__Email` e **deve** alterar a senha no primeiro acesso).
 - **Troca obrigatória de senha:** no primeiro acesso com senha padrão, modal bloqueante até alterar a senha.
 - **Área do autor** (`/area-autor`): página única com secção "Visão geral do blog" (dashboard com seis indicadores: total de posts, publicados, planejados, rascunho, visualizações, autores). Os cards Total, Publicados, Planejados e Rascunho são clicáveis (filtram a lista; borda amarela indica o filtro ativo; ao alterar pesquisa, linha da história ou ordenação a seleção é desmarcada). O card Autores leva a Contas. Abaixo, a secção "Publicações" com lista de posts, **pesquisa com auto-complete** (sugestões por autor e título), **filtro por data** (calendário: data única ou intervalo), filtro por linha da história (Todos / Velho Mundo / Idade das Trevas), ordenação (data ou ordem da história, asc/desc), botão Novo post e ações editar/excluir conforme permissões (Admin, dono, colaborador).
-- **Contas** (`/area-autor/contas`): qualquer autor edita o próprio perfil (nome, descrição, senha); Admin gere todas as contas (criar, editar, resetar senha, excluir). Critério mínimo de senha: 8 caracteres, uma maiúscula, uma minúscula e um número.
+- **Contas** (`/area-autor/contas`): qualquer autor edita o próprio perfil (nome, descrição, senha); Admin gere todas as contas (criar, editar, resetar senha, excluir). Critério mínimo de senha: 8 caracteres, uma maiúscula, uma minúscula e um número. Secção **Cloudflare Workers AI** (Account ID, API Token, modelo de imagem) para autores que usam Geração de Imagem.
+- **Geração de Imagem** (`/area-autor/geracao-imagem`): autores autenticados geram imagens por prompt via Cloudflare Workers AI; credenciais por autor em Contas; imagem exibida no browser (não guardada no servidor).
 - **Edição de posts:** título, slug, resumo, Markdown, capa (recomendado 16:9; em **Editar post** é exibido preview da imagem de capa quando há URL), Publicado, ordem; tipo de história (Velho Mundo / Idade das Trevas) obrigatório.
 - **Recuperação da senha do Admin:** ficheiro de trigger no servidor, reiniciar API, login com senha padrão e trocar (detalhe em [DEPLOY-DOCKER-CADDY](docs/deploy/DEPLOY-DOCKER-CADDY.md) e [ATUALIZAR-SERVIDOR-DOCKER-CADDY](docs/deploy/ATUALIZAR-SERVIDOR-DOCKER-CADDY.md)).
 - **SEO:** sitemap dinâmico e robots.txt servidos pelo BFF (`/sitemap.xml`, `/robots.txt`); em deploy com Caddy, encaminhar para o BFF (ver [docs/deploy](docs/deploy/)).
@@ -56,7 +57,7 @@ A versão exibida no rodapé do site vem do campo `version` do `frontend/package
 ## 6. Procedimentos de instalação e atualização (com os links)
 
 - **Instalação inicial em servidor (Docker + Caddy):** [**DEPLOY-DOCKER-CADDY**](docs/deploy/DEPLOY-DOCKER-CADDY.md) — pré-requisitos, api.env/bff.env, docker-compose, Caddyfile (estáticos, `/bff`, `/sitemap.xml`, `/robots.txt`, `/images/posts/`), primeiro acesso.
-- **Atualizar o código (local e Docker):** [**ATUALIZAR-SERVIDOR-DOCKER-CADDY**](docs/deploy/ATUALIZAR-SERVIDOR-DOCKER-CADDY.md) — pull, build e execução em desenvolvimento (API, BFF, frontend) e em produção (rebuild contentores, frontend, cópia para document root); scripts de banco de dados manuais quando aplicável. Quem está na **v1.9** e atualiza para **v1.10**: [**ATUALIZAR-1-9-PARA-1-10**](docs/deploy/ATUALIZAR-1-9-PARA-1-10.md) — variáveis obrigatórias em produção e avisos.
+- **Atualizar o código (local e Docker):** [**ATUALIZAR-SERVIDOR-DOCKER-CADDY**](docs/deploy/ATUALIZAR-SERVIDOR-DOCKER-CADDY.md) — pull, build e execução em desenvolvimento (API, BFF, frontend) e em produção (rebuild contentores, frontend, cópia para document root); scripts de banco de dados manuais quando aplicável. Quem está na **v1.9** e atualiza para **v1.10**: [**ATUALIZAR-1-9-PARA-1-10**](docs/deploy/ATUALIZAR-1-9-PARA-1-10.md). Quem está na **v2.5.3** (ou **v2.6.0**) e atualiza para **v2.6.1**: [**ATUALIZAR-2-5-3-PARA-2-6-1**](docs/deploy/ATUALIZAR-2-5-3-PARA-2-6-1.md) — Geração de Imagem, `Cloudflare__EncryptionKey`, scripts SQL e modelo de imagem. Referência intermédia **v2.5.2 → v2.6.0**: [**ATUALIZAR-2-5-2-PARA-2-6-0**](docs/deploy/ATUALIZAR-2-5-2-PARA-2-6-0.md).
 - **Base de dados no host e scripts manuais:** [**EXPOR-DB-NO-HOST**](docs/database/EXPOR-DB-NO-HOST.md) — bind mount da pasta `data/`, execução de scripts SQL no host (ex.: `sqlite3 data/blog.db < backend/api/Migrations/Scripts/nome.sql`).
 - **Avaliação de segurança e plano de hardening:** [**SECURITY-HARDENING**](docs/security/SECURITY-HARDENING.md) — avaliação de segurança e plano de melhorias priorizado; o plano foi **aplicado** (change apply-security-hardening). Variáveis obrigatórias em produção (CORS, JWT, chave BFF–API) e checklist: [**PRODUCTION-CHECKLIST**](docs/security/PRODUCTION-CHECKLIST.md). Armazenamento de token no frontend: [**TOKEN-STORAGE**](docs/security/TOKEN-STORAGE.md).
 - **Avaliação de melhorias de código:** [**CODE-IMPROVEMENTS**](docs/improvements/CODE-IMPROVEMENTS.md) — simplificação, reaproveitamento e referências ao plano de segurança.
@@ -98,7 +99,7 @@ simple-blog-hub/
 ├── data/                         # Em deploy Docker: bind mount para SQLite (blog.db)
 ├── docs/                         # Documentação
 │   ├── changelog/CHANGELOG.md
-│   ├── deploy/                   # DEPLOY-DOCKER-CADDY, ATUALIZAR-SERVIDOR-DOCKER-CADDY, Caddyfile.example, ATUALIZAR-1-9-PARA-1-10
+│   ├── deploy/                   # DEPLOY-DOCKER-CADDY, ATUALIZAR-SERVIDOR-DOCKER-CADDY, Caddyfile.example, ATUALIZAR-1-9-PARA-1-10, ATUALIZAR-2-5-2-PARA-2-6-0
 │   ├── database/                 # EXPOR-DB-NO-HOST
 │   ├── security/                 # SECURITY-HARDENING, PRODUCTION-CHECKLIST, TOKEN-STORAGE
 │   ├── improvements/             # CODE-IMPROVEMENTS

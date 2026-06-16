@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Menu, X, Sun, Moon, BookOpen, LogIn, LogOut, User, CloudRain, CloudOff } from 'lucide-react';
+import { Menu, X, Sun, Moon, BookOpen, LogIn, LogOut, User, CloudRain, CloudOff, ImageIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useSceneEffects } from '@/contexts/SceneEffectsContext';
@@ -73,6 +73,13 @@ export function Header() {
                   className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Contas
+                </Link>
+                <Link
+                  to="/area-autor/geracao-imagem"
+                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                >
+                  <ImageIcon className="h-4 w-4" />
+                  Geração de Imagem
                 </Link>
                 <button
                   type="button"
@@ -211,6 +218,14 @@ export function Header() {
                     className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                   >
                     Contas
+                  </Link>
+                  <Link
+                    to="/area-autor/geracao-imagem"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                  >
+                    <ImageIcon className="h-4 w-4" />
+                    Geração de Imagem
                   </Link>
                   <button
                     type="button"

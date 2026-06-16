@@ -1,5 +1,5 @@
 import { authStorage } from '@/auth/storage';
-import type { Post, OrderBy, CreateOrUpdatePostPayload, AuthorListItem, UserListItem, CreateUserPayload, UpdateUserPayload, NextStoryOrderResponse, PagedPostsResponse, DashboardStats } from './types';
+import type { Post, OrderBy, CreateOrUpdatePostPayload, AuthorListItem, UserListItem, CreateUserPayload, UpdateUserPayload, NextStoryOrderResponse, PagedPostsResponse, DashboardStats, GenerateImageResponse } from './types';
 
 const defaultBffUrl = 'http://localhost:5000';
 
@@ -9,13 +9,42 @@ function getBffBaseUrl(): string {
   return defaultBffUrl;
 }
 
+function parseBffErrorMessage(status: number, text: string): string {
+  if (status === 404) return 'Not found';
+  const trimmed = text.trim();
+  if (!trimmed) return `Erro do servidor (${status})`;
+  try {
+    const json = JSON.parse(trimmed) as {
+      title?: string;
+      detail?: string;
+      message?: string;
+      error?: string;
+    };
+    if (typeof json === 'string') return json;
+    if (json.detail) return json.detail;
+    if (json.message) return json.message;
+    if (json.error) return json.error;
+    if (json.title && json.title !== 'Bad Request') return json.title;
+  } catch {
+    // plain text body from API
+  }
+  if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+    try {
+      return JSON.parse(trimmed) as string;
+    } catch {
+      // fall through
+    }
+  }
+  return trimmed.length > 200 ? `${trimmed.slice(0, 200)}…` : trimmed;
+}
+
 /** Public request (no auth). Path is relative to BFF base (e.g. "bff/posts?order=date"). */
 async function requestPublic<T>(path: string, options?: RequestInit): Promise<T | undefined> {
   const url = `${getBffBaseUrl()}/${path}`;
   const res = await fetch(url, { ...options, headers: { Accept: 'application/json', ...options?.headers } });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(res.status === 404 ? 'Not found' : `BFF error: ${res.status} ${text || res.statusText}`);
+    throw new Error(parseBffErrorMessage(res.status, text));
   }
   if (res.status === 204 || res.headers.get('content-length') === '0') return undefined as T;
   return res.json() as Promise<T>;
@@ -39,7 +68,7 @@ async function requestWithAuth<T>(path: string, options?: RequestInit): Promise<
   }
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(res.status === 404 ? 'Not found' : `BFF error: ${res.status} ${text || res.statusText}`);
+    throw new Error(parseBffErrorMessage(res.status, text));
   }
   if (res.status === 204 || res.headers.get('content-length') === '0') return undefined as T;
   return res.json() as Promise<T>;
@@ -278,6 +307,9 @@ export async function updateUser(userId: string, payload: UpdateUserPayload): Pr
   if (payload.password !== undefined) body.password = payload.password;
   if (payload.author_name !== undefined) body.author_name = payload.author_name;
   if (payload.author_bio !== undefined) body.author_bio = payload.author_bio ?? null;
+  if (payload.cloudflare_account_id !== undefined) body.cloudflare_account_id = payload.cloudflare_account_id ?? null;
+  if (payload.cloudflare_api_token !== undefined) body.cloudflare_api_token = payload.cloudflare_api_token;
+  if (payload.cloudflare_image_model !== undefined) body.cloudflare_image_model = payload.cloudflare_image_model;
   await requestWithAuth<void>(`bff/users/${encodeURIComponent(userId)}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -297,4 +329,132 @@ export async function deleteUser(userId: string): Promise<void> {
  */
 export async function resetUserPassword(userId: string): Promise<void> {
   await requestWithAuth<void>(`bff/users/${encodeURIComponent(userId)}/reset-password`, { method: 'POST' });
+}
+
+export class ImageGenerationError extends Error {
+  constructor(
+    message: string,
+    public readonly code?: string,
+    public readonly status?: number
+  ) {
+    super(message);
+    this.name = 'ImageGenerationError';
+  }
+}
+
+const IMAGE_ERROR_MESSAGES: Record<string, string> = {
+  no_credentials: 'Configure o Account ID e o API Token Cloudflare em Contas antes de gerar imagens.',
+  invalid_credentials:
+    'Credenciais Cloudflare rejeitadas. Verifique Account ID e API Token em Contas.',
+  invalid_token:
+    'API Token inválido ou sem permissão. Crie um token em Workers AI → Use REST API com permissões Workers AI Read e Edit (não use a Global API Key).',
+  token_expired:
+    'O API Token Cloudflare expirou. Crie um novo token em Workers AI → Use REST API e actualize em Contas.',
+  account_mismatch:
+    'O Account ID não corresponde a esta conta Cloudflare. Copie o Account ID em Workers AI → Use REST API.',
+  workers_ai_denied:
+    'A Cloudflare recusou o acesso ao Workers AI. Confirme permissões Workers AI Read e Edit e que o token não tem filtro de IP.',
+  quota_exceeded:
+    'A quota ou os créditos de Workers AI da sua conta Cloudflare esgotaram-se. Verifique o plano e o consumo no dashboard Cloudflare.',
+  rate_limit: 'Limite de pedidos da Cloudflare atingido. Aguarde alguns minutos e tente novamente.',
+  model_unavailable:
+    'O modelo de imagem não está disponível nesta conta Cloudflare. Verifique o catálogo Workers AI.',
+  service_unavailable:
+    'O serviço Workers AI da Cloudflare está temporariamente indisponível. Tente novamente mais tarde.',
+  token_decrypt_failed:
+    'Não foi possível ler o API Token guardado. Abra Contas e cole o API Token novamente.',
+  encryption_not_configured:
+    'O servidor não está configurado para guardar tokens Cloudflare. Contacte o operador.',
+  timeout: 'A geração demorou demais. Tente novamente em instantes.',
+  provider_error: 'Não foi possível gerar a imagem. Tente novamente mais tarde.',
+  empty_prompt: 'O prompt não pode estar vazio.',
+};
+
+export type CloudflareVerifyResult = {
+  ok: boolean;
+  message: string;
+  error?: string;
+};
+
+/**
+ * Test saved Cloudflare credentials for the logged-in author.
+ */
+export async function verifyCloudflareCredentials(): Promise<CloudflareVerifyResult> {
+  const token = authStorage.getToken();
+  if (!token) {
+    authStorage.clear();
+    throw new ImageGenerationError('Unauthorized', undefined, 401);
+  }
+
+  const url = `${getBffBaseUrl()}/bff/image-generation/verify`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (res.status === 401) {
+    authStorage.clear();
+    throw new ImageGenerationError('Unauthorized', undefined, 401);
+  }
+
+  const body = (await res.json()) as { ok?: boolean; message?: string; error?: string };
+  const message =
+    body.message ||
+    (body.error && IMAGE_ERROR_MESSAGES[body.error]) ||
+    IMAGE_ERROR_MESSAGES.provider_error;
+
+  return {
+    ok: body.ok === true,
+    message,
+    error: body.error,
+  };
+}
+
+/**
+ * Generate an image from a text prompt (protected; requires Cloudflare credentials in Contas).
+ */
+export async function generateImage(prompt: string): Promise<string> {
+  const token = authStorage.getToken();
+  if (!token) {
+    authStorage.clear();
+    throw new ImageGenerationError('Unauthorized', undefined, 401);
+  }
+
+  const url = `${getBffBaseUrl()}/bff/image-generation/generate`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ prompt }),
+  });
+
+  if (res.status === 401) {
+    authStorage.clear();
+    throw new ImageGenerationError('Unauthorized', undefined, 401);
+  }
+
+  if (!res.ok) {
+    let code: string | undefined;
+    let serverMessage: string | undefined;
+    try {
+      const body = (await res.json()) as { error?: string; message?: string };
+      code = body.error;
+      serverMessage = body.message;
+    } catch {
+      // ignore parse errors
+    }
+    const message =
+      serverMessage || (code && IMAGE_ERROR_MESSAGES[code]) || IMAGE_ERROR_MESSAGES.provider_error;
+    throw new ImageGenerationError(message, code, res.status);
+  }
+
+  const data = (await res.json()) as GenerateImageResponse;
+  if (!data.image) throw new ImageGenerationError(IMAGE_ERROR_MESSAGES.provider_error, 'provider_error', res.status);
+  return data.image;
 }

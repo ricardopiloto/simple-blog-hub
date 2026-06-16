@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { BookOpen, ArrowRight, ChevronLeft, ChevronRight, GripVertical } from 'lucide-react';
@@ -53,6 +53,55 @@ function arrayMove<T>(arr: T[], from: number, to: number): T[] {
   const [removed] = copy.splice(from, 1);
   copy.splice(to, 0, removed);
   return copy;
+}
+
+export interface StoryIndexPageJumpProps {
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+}
+
+/** Contador "Página [n] de Y" com campo editável para saltar de página. Exportado para testes. */
+export function StoryIndexPageJump({ currentPage, totalPages, onPageChange }: StoryIndexPageJumpProps) {
+  const [pageInput, setPageInput] = useState(String(currentPage));
+
+  useEffect(() => {
+    setPageInput(String(currentPage));
+  }, [currentPage]);
+
+  const commitPageInput = () => {
+    const trimmed = pageInput.trim();
+    const n = parseInt(trimmed, 10);
+    if (trimmed === '' || Number.isNaN(n)) {
+      setPageInput(String(currentPage));
+      return;
+    }
+    const clamped = Math.min(totalPages, Math.max(1, n));
+    onPageChange(clamped);
+  };
+
+  return (
+    <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+      <span>Página</span>
+      <Input
+        type="text"
+        inputMode="numeric"
+        autoComplete="off"
+        value={pageInput}
+        onChange={(e) => setPageInput(e.target.value)}
+        onBlur={commitPageInput}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            commitPageInput();
+          }
+        }}
+        aria-label="Ir para página"
+        className="h-8 w-12 min-w-12 max-w-[4rem] text-center px-1 text-sm tabular-nums"
+      />
+      <span>de {totalPages}</span>
+    </span>
+  );
 }
 
 interface SortableCardProps {
@@ -386,9 +435,7 @@ export default function StoryIndex() {
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <span className="text-sm text-muted-foreground">
-                Página {currentPage} de {totalPages}
-              </span>
+              <StoryIndexPageJump currentPage={currentPage} totalPages={totalPages} onPageChange={setPage} />
               <Button
                 variant="outline"
                 size="icon"

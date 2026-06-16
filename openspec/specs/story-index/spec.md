@@ -142,3 +142,35 @@ Na página **Índice da História** (`/indice`), o sistema **deve** (SHALL) perm
 - **Então** a opção selecionada no toggle é "Velho Mundo"
 - **E** a lista exibida contém apenas os posts com `story_type` "velho_mundo"
 
+### Requirement: Salto direto para página no contador da paginação do Índice da História
+
+Quando a **paginação** do **Índice da História** (`/indice`) está visível (mais de uma página de resultados sobre a lista atual — já filtrada por universo e por texto, 6 itens por página), o **número da página atual** no indicador textual (ex.: "Página X de Y") **deve** (SHALL) ser **editável** através de um **campo inline** (input numérico ou equivalente acessível) no lugar do **X**, de modo que o leitor **possa digitar** o número da página a que deseja ir. O sistema **deve** (SHALL) **aplicar** a navegação quando o leitor **confirma** a entrada (no mínimo: tecla **Enter** e quando o campo **perde o foco** — blur). O texto **"de Y"** (total de páginas) permanece **somente leitura**. Valores numéricos **fora** do intervalo **1..Y** **devem** (SHALL), ao confirmar, ser **ajustados** para o limite mais próximo (1 ou Y). Entrada **vazia** ou **não numérica** ao confirmar **deve** (SHALL) **restaurar** a exibição para a **página atualmente ativa** sem alterar a navegação de forma inconsistente. O campo **deve** (SHALL) ter **rótulo acessível** em português (ex.: `aria-label` "Ir para página" ou "Página atual"). Os botões **anterior** e **próxima** **devem** (SHALL) manter-se e continuar a atualizar a página; o valor no campo **deve** (SHALL) **refletir** a página ativa quando esta muda por qualquer meio (setas, filtro, universo ou confirmação do input).
+
+#### Scenario: Leitor salta para uma página válida
+
+- **Dado** que o Índice exibe paginação com mais de uma página (ex.: 7 páginas) sobre a lista filtrada atual
+- **Quando** o leitor substitui o número da página no contador por **3** e confirma (Enter ou blur)
+- **Então** o sistema exibe a **terceira** página de resultados (6 itens correspondentes a essa página)
+- **E** o contador mostra **3** como página atual
+
+#### Scenario: Leitor confirma valor fora do intervalo
+
+- **Dado** que existem **Y** páginas (Y ≥ 2)
+- **Quando** o leitor digita um número **menor que 1** ou **maior que Y** e confirma
+- **Então** o sistema navega para a página **1** ou **Y**, respetivamente (clamp)
+- **E** o contador reflete essa página
+
+#### Scenario: Leitor confirma entrada vazia ou inválida
+
+- **Dado** que o leitor está na página **2**
+- **Quando** o leitor apaga o número, deixa o campo vazio (ou texto não numérico) e confirma
+- **Então** o campo repõe o valor para **2** (página atual)
+- **E** a lista permanece na segunda página
+
+#### Scenario: Mudança de filtro ou universo mantém o contador coerente
+
+- **Dado** que o leitor estava na página **5** com um conjunto filtrado
+- **Quando** o leitor altera o filtro de texto ou o universo de modo que o novo total de páginas seja menor (ex.: 2 páginas)
+- **Então** o sistema posiciona-se numa página válida (ex.: última disponível, conforme lógica já existente de `currentPage`)
+- **E** o número editável no contador **mostra** essa página válida
+

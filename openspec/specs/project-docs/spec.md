@@ -698,3 +698,20 @@ Para a **release versionada v2.5.2**, o ficheiro **docs/changelog/CHANGELOG.md**
 - **AND** it lists notify-session-expired-and-redirect-to-home and move-story-type-error-below-form-buttons with brief descriptions
 - **AND** it includes the documentation and version item (package.json 2.5.2, README with tag v2.5.2)
 
+### Requirement: Documentação de deploy inclui Cloudflare__EncryptionKey (SHALL)
+
+A documentação de deploy e segurança **DEVE** (SHALL) documentar a variável de ambiente **`Cloudflare__EncryptionKey`** exigida pela API para encriptar API Tokens Cloudflare dos autores. O guia **DEVE** indicar: (a) que a chave é necessária quando autores utilizam **Geração de Imagem**; (b) que deve ser gerada com entropia adequada (ex.: 32 bytes) e mantida em segredo; (c) referência cruzada entre `docs/deploy/` (ex.: DEPLOY-DOCKER-CADDY.md ou ficheiro `.env` de exemplo) e `docs/security/PRODUCTION-CHECKLIST.md`. O changelog **DEVE** registar a nova funcionalidade e variável na versão correspondente.
+
+#### Scenario: Operador encontra Cloudflare__EncryptionKey no checklist de produção
+
+- **Dado** que o operador consulta `docs/security/PRODUCTION-CHECKLIST.md`
+- **Quando** prepara deploy com geração de imagem
+- **Então** encontra entrada para configurar `Cloudflare__EncryptionKey` na API
+- **E** encontra referência ao guia de deploy Docker/Caddy ou equivalente
+
+#### Scenario: Exemplo de ambiente inclui a variável
+
+- **Dado** que o operador consulta o ficheiro de exemplo de variáveis de ambiente do deploy
+- **Quando** procura configuração da API
+- **Então** vê `Cloudflare__EncryptionKey` documentada com comentário explicativo
+

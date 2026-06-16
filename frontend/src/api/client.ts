@@ -9,31 +9,38 @@ function getBffBaseUrl(): string {
   return defaultBffUrl;
 }
 
-function parseBffErrorMessage(status: number, text: string): string {
+export function parseBffErrorMessage(status: number, text: string): string {
   if (status === 404) return 'Not found';
   const trimmed = text.trim();
   if (!trimmed) return `Erro do servidor (${status})`;
+  if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+    try {
+      const parsed = JSON.parse(trimmed) as string;
+      if (typeof parsed === 'string' && parsed.length > 0) return parsed;
+    } catch {
+      // fall through
+    }
+  }
   try {
     const json = JSON.parse(trimmed) as {
       title?: string;
       detail?: string;
       message?: string;
       error?: string;
+      errors?: Record<string, string[]>;
     };
     if (typeof json === 'string') return json;
     if (json.detail) return json.detail;
     if (json.message) return json.message;
     if (json.error) return json.error;
+    if (json.errors) {
+      const firstKey = Object.keys(json.errors)[0];
+      const firstMsg = firstKey ? json.errors[firstKey]?.[0] : undefined;
+      if (firstMsg) return firstMsg;
+    }
     if (json.title && json.title !== 'Bad Request') return json.title;
   } catch {
     // plain text body from API
-  }
-  if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
-    try {
-      return JSON.parse(trimmed) as string;
-    } catch {
-      // fall through
-    }
   }
   return trimmed.length > 200 ? `${trimmed.slice(0, 200)}…` : trimmed;
 }

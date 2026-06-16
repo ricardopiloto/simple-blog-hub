@@ -38,7 +38,7 @@ public class CreateUserRequest
     [JsonPropertyName("email")]
     public string Email { get; set; } = string.Empty;
 
-    [Required]
+    /// <summary>Optional; when omitted or empty, API uses SeedData.InitialAdminDefaultPassword.</summary>
     [JsonPropertyName("password")]
     public string? Password { get; set; }
 

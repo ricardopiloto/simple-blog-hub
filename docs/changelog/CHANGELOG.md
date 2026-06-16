@@ -2,6 +2,11 @@
 
 Os releases são versionados por tag (ex.: `v1.9`, `v1.10`, `v2.0`). O resumo detalhado das changes OpenSpec aplicadas pode ser usado na mensagem do commit de release e está também na proposta da respetiva versão em `openspec/changes/`.
 
+## [2.6.2]
+
+- **fix-create-user-flow:** Corrigido **400 Bad Request** ao criar conta em **Contas** (Admin com e-mail e nome apenas): removido `[Required]` de `password` no DTO (a API aplica `SeedData.InitialAdminDefaultPassword` e `MustChangePassword = true`); BFF repassa corpo de erro no `POST /bff/users`; API regista `LogWarning` em validação falhada; mensagens legíveis no diálogo **Nova conta** (`parseBffErrorMessage`).
+- **Documentação e versão:** CHANGELOG [2.6.2]; secção incremental em [ATUALIZAR-2-5-3-PARA-2-6-1.md](docs/deploy/ATUALIZAR-2-5-3-PARA-2-6-1.md); troubleshooting em `backend/api/README.md`; versão no frontend (`package.json`) **2.6.2**; README com tag v2.6.2.
+
 ## [2.6.1]
 
 - **add-cloudflare-image-model-setting:** Campo **Modelo de imagem** em **Contas** (secção Cloudflare Workers AI); valor por defeito `@cf/black-forest-labs/flux-1-schnell`; BFF usa o modelo guardado no perfil na chamada `.../ai/run/{imageModel}`; validação de formato na API; migração `AddCloudflareImageModelToAuthor` + script `add_cloudflare_image_model_to_author.sql`.

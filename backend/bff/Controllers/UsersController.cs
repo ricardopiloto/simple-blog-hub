@@ -64,7 +64,17 @@ public class UsersController : ControllerBase
         if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
             return Conflict();
         if (!response.IsSuccessStatusCode)
-            return StatusCode((int)response.StatusCode);
+        {
+            var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
+            if (string.IsNullOrWhiteSpace(errorContent))
+                return StatusCode((int)response.StatusCode);
+            return new ContentResult
+            {
+                StatusCode = (int)response.StatusCode,
+                Content = errorContent,
+                ContentType = response.Content.Headers.ContentType?.MediaType ?? "application/json"
+            };
+        }
         var content = await response.Content.ReadAsStringAsync(cancellationToken);
         return StatusCode((int)response.StatusCode, Content(content, "application/json"));
     }

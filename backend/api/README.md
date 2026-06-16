@@ -167,6 +167,12 @@ Para a coluna **CloudflareImageModel** (modelo Workers AI configurável por auto
 3. Em **Contas**, cole o API Token de novo e salve (re-encripta com a chave actual do servidor).
 4. Use **Testar credenciais guardadas** em Contas para ver se o token ou o Account ID estão incorrectos.
 
+**Se criar conta em Contas falhar com 400 (Admin, e-mail + nome):**
+
+1. **Versão 2.6.1 ou anterior:** o DTO exigia `password` no pedido; actualize para **2.6.2** ou superior (`git pull`, rebuild API + BFF + frontend).
+2. **Após actualizar:** o Admin envia só `email` e `author_name`; a API aplica a senha padrão (`SeedData.InitialAdminDefaultPassword`) e `MustChangePassword = true`. O novo utilizador troca a senha no primeiro login (modal bloqueante).
+3. **Diagnóstico:** nos logs da API (`docker compose logs api` ou consola local), procure `CreateUser validation failed` para erros de validação (ex.: e-mail inválido). O BFF deve repassar a mensagem ao frontend no diálogo **Nova conta**.
+
 A imagem gerada é devolvida ao browser em base64 e **não é guardada no servidor**.
 
 **Se o build falhar:**

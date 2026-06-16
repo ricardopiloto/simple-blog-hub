@@ -78,7 +78,10 @@ public class UsersController : AuthorizedApiControllerBase
     public async Task<ActionResult<UserListDto>> CreateUser([FromBody] CreateUserRequest request, CancellationToken cancellationToken = default)
     {
         if (!ModelState.IsValid)
-            return BadRequest(ModelState);
+        {
+            _logger.LogWarning("CreateUser validation failed: {ValidationErrors}", FormatValidationErrorsForLog());
+            return BadRequest(GetFirstValidationErrorMessage());
+        }
 
         var authorId = GetAuthorIdFromHeader();
         if (authorId == null)
@@ -266,5 +269,23 @@ public class UsersController : AuthorizedApiControllerBase
         await _db.SaveChangesAsync(cancellationToken);
         _logger.LogInformation("Audit: UserDeleted By={AuthorId} TargetUserId={UserId}", authorId.Value, id);
         return NoContent();
+    }
+
+    private string GetFirstValidationErrorMessage()
+    {
+        foreach (var state in ModelState.Values)
+        {
+            var error = state.Errors.FirstOrDefault(e => !string.IsNullOrWhiteSpace(e.ErrorMessage));
+            if (error != null)
+                return error.ErrorMessage;
+        }
+        return "Dados inválidos.";
+    }
+
+    private string FormatValidationErrorsForLog()
+    {
+        return string.Join("; ", ModelState
+            .Where(kv => kv.Value?.Errors.Count > 0)
+            .Select(kv => $"{kv.Key}: {string.Join(", ", kv.Value!.Errors.Select(e => e.ErrorMessage))}"));
     }
 }

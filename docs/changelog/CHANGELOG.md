@@ -2,6 +2,11 @@
 
 Os releases são versionados por tag (ex.: `v1.9`, `v1.10`, `v2.0`). O resumo detalhado das changes OpenSpec aplicadas pode ser usado na mensagem do commit de release e está também na proposta da respetiva versão em `openspec/changes/`.
 
+## [2.6.3]
+
+- **add-bff-forwarded-headers:** BFF com **`UseForwardedHeaders`** (`X-Forwarded-Proto`, `X-Forwarded-For`) para que **sitemap.xml** e **robots.txt** gerem URLs **https://** atrás de Caddy; `Caddyfile.example` e DEPLOY-DOCKER-CADDY.md com `header_up X-Forwarded-Proto`; troubleshooting sitemap com `http://`.
+- **Documentação e versão:** CHANGELOG [2.6.3]; secção incremental no guia de atualização; versão no frontend (`package.json`) **2.6.3**.
+
 ## [2.6.2]
 
 - **fix-create-user-flow:** Corrigido **400 Bad Request** ao criar conta em **Contas** (Admin com e-mail e nome apenas): removido `[Required]` de `password` no DTO (a API aplica `SeedData.InitialAdminDefaultPassword` e `MustChangePassword = true`); BFF repassa corpo de erro no `POST /bff/users`; API regista `LogWarning` em validação falhada; mensagens legíveis no diálogo **Nova conta** (`parseBffErrorMessage`).

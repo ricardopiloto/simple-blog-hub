@@ -1,12 +1,12 @@
-# Atualizar da versão 2.5.3 para a 2.6.2
+# Atualizar da versão 2.5.3 para a 2.6.3
 
-Este guia destina-se a **operadores** que já têm o blog em produção na **v2.5.3** (ou numa tag anterior até **v2.6.1**) e pretendem atualizar para a **v2.6.2**.
+Este guia destina-se a **operadores** que já têm o blog em produção na **v2.5.3** (ou numa tag anterior até **v2.6.2**) e pretendem atualizar para a **v2.6.3**.
 
 **Repositório:** [https://github.com/ricardopiloto/simple-blog-hub](https://github.com/ricardopiloto/simple-blog-hub)
 
 Na secção **Docker**, usa **REPO_DIR** para o diretório do repositório no servidor e **DOCUMENT_ROOT** para a pasta onde o Caddy serve os estáticos do frontend.
 
-Se estiveres na **v2.5.2** ou anterior (sem a 2.5.3), podes seguir este guia na mesma — a 2.5.3 só alterou o Índice da História (sem base de dados nem variáveis novas). Quem já está na **v2.6.0** ou **v2.6.1**: ver secções [Só da 2.6.0 para a 2.6.1](#só-da-260-para-a-261) e [Só da 2.6.1 para a 2.6.2](#só-da-261-para-a-262).
+Se estiveres na **v2.5.2** ou anterior (sem a 2.5.3), podes seguir este guia na mesma — a 2.5.3 só alterou o Índice da História (sem base de dados nem variáveis novas). Quem já está numa versão intermédia: ver secções [2.6.0 → 2.6.1](#só-da-260-para-a-261), [2.6.1 → 2.6.2](#só-da-261-para-a-262) e [2.6.2 → 2.6.3](#só-da-262-para-a-263).
 
 ---
 
@@ -34,9 +34,14 @@ Se estiveres na **v2.5.2** ou anterior (sem a 2.5.3), podes seguir este guia na 
 - Corrigido **400** ao criar conta em **Contas** (Admin envia só e-mail e nome; senha padrão no servidor).
 - BFF repassa mensagens de erro da API; logs de validação na API.
 
+### Release 2.6.3 — Sitemap/robots com HTTPS
+
+- BFF com **`UseForwardedHeaders`** para URLs absolutas corretas em **sitemap.xml** e **robots.txt** atrás de Caddy.
+- Caddyfile de exemplo com `header_up X-Forwarded-Proto`.
+
 ---
 
-## Resumo rápido (produção Docker — 2.5.3 → 2.6.2)
+## Resumo rápido (produção Docker — 2.5.3 → 2.6.3)
 
 | Ordem | Ação |
 |-------|------|
@@ -151,7 +156,7 @@ dotnet build && dotnet run
 ```bash
 cd REPO_DIR
 git pull
-git checkout v2.6.2    # ou branch/tag que contém a 2.6.2
+git checkout v2.6.3    # ou branch/tag que contém a 2.6.3
 docker compose build --no-cache
 docker compose up -d
 ```
@@ -169,13 +174,13 @@ VITE_BFF_URL=https://seu-dominio.com npm run build
 cp -r dist DOCUMENT_ROOT
 ```
 
-O rodapé deve mostrar **2.6.2**.
+O rodapé deve mostrar **2.6.3**.
 
 ---
 
 ## 4. Passos de atualização (desenvolvimento local)
 
-1. `git pull` (ou checkout `v2.6.2`).
+1. `git pull` (ou checkout `v2.6.3`).
 2. Aplicar scripts SQL se necessário (secção 2).
 3. API: `cd backend/api && dotnet run` (**sem** sobrescrever `Cloudflare:EncryptionKey` do `appsettings.Development.json`).
 4. BFF: `cd backend/bff && dotnet run`
@@ -196,6 +201,7 @@ O rodapé deve mostrar **2.6.2**.
 - [ ] `GET /bff/users/me` **não** expõe o API Token (apenas `has_cloudflare_api_token`).
 - [ ] Admin consegue criar conta em **Contas** (e-mail + nome) sem 400.
 - [ ] Novo utilizador faz login com senha padrão e vê modal de troca obrigatória.
+- [ ] `curl https://dominio/sitemap.xml` — `<loc>` usam **https://** (não http://).
 
 ### Autores (Geração de Imagem)
 
@@ -233,6 +239,20 @@ Se já tens a **2.6.1** em produção:
 
 ---
 
+## Só da 2.6.2 para a 2.6.3
+
+Se já tens a **2.6.2** em produção:
+
+1. `git pull` + `git checkout v2.6.3`
+2. Actualizar **Caddyfile** — adicionar `header_up X-Forwarded-Proto {http.request.scheme}` nos `reverse_proxy` de `/sitemap.xml`, `/robots.txt` e `/bff/*` (ver [Caddyfile.example](Caddyfile.example) ou [DEPLOY-DOCKER-CADDY.md](DEPLOY-DOCKER-CADDY.md)); `sudo systemctl reload caddy`
+3. `docker compose build bff --no-cache && docker compose up -d bff`
+4. Rebuild e deploy do frontend (`package.json` → **2.6.3**) — opcional se só alteraste backend/Caddy; o rodapé actualiza com o build.
+5. Verificar: `curl -s https://seu-dominio/sitemap.xml | head -5` → `<loc>https://...`
+
+**Sem** scripts SQL nem variáveis novas na API.
+
+---
+
 ## 6. Avisos importantes
 
 - **`Cloudflare__EncryptionKey` estável:** não alterar depois de autores guardarem tokens sem que todos voltem a registar o token em Contas.
@@ -244,7 +264,7 @@ Se já tens a **2.6.1** em produção:
 
 ## 7. Referências
 
-- [CHANGELOG.md](../changelog/CHANGELOG.md) — secções **[2.6.0]**, **[2.6.1]** e **[2.6.2]**
+- [CHANGELOG.md](../changelog/CHANGELOG.md) — secções **[2.6.0]** a **[2.6.3]**
 - [ATUALIZAR-2-5-2-PARA-2-6-0.md](ATUALIZAR-2-5-2-PARA-2-6-0.md) — detalhe adicional da 2.6.0
 - [DEPLOY-DOCKER-CADDY.md](DEPLOY-DOCKER-CADDY.md)
 - [ATUALIZAR-SERVIDOR-DOCKER-CADDY.md](ATUALIZAR-SERVIDOR-DOCKER-CADDY.md)

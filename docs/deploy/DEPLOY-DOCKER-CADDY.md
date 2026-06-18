@@ -129,13 +129,19 @@ O Caddy já está no host. Configurar o **teu domínio** no Caddyfile (ex.: `/et
 ```caddyfile
 seu-dominio.com {
     handle /sitemap.xml {
-        reverse_proxy 127.0.0.1:5000
+        reverse_proxy 127.0.0.1:5000 {
+            header_up X-Forwarded-Proto {http.request.scheme}
+        }
     }
     handle /robots.txt {
-        reverse_proxy 127.0.0.1:5000
+        reverse_proxy 127.0.0.1:5000 {
+            header_up X-Forwarded-Proto {http.request.scheme}
+        }
     }
     handle /bff/* {
-        reverse_proxy 127.0.0.1:5000
+        reverse_proxy 127.0.0.1:5000 {
+            header_up X-Forwarded-Proto {http.request.scheme}
+        }
     }
     handle /images/posts/* {
         root * /caminho/para/repo/frontend/public
@@ -151,10 +157,14 @@ seu-dominio.com {
 
 Substituir `/caminho/para/repo` por REPO_DIR no servidor (ex.: `/var/www/blog/repo`). O `root` deve ser a pasta **frontend/public** (e não public/images): o Caddy junta o path do pedido ao root, logo `/images/posts/xxx.jpg` é servido a partir de REPO_DIR/frontend/public/images/posts/xxx.jpg.
 
+- **X-Forwarded-Proto:** O BFF usa `UseForwardedHeaders` para que `/sitemap.xml` e `/robots.txt` gerem URLs com **https://** quando o site é servido por HTTPS. O Caddy **deve** enviar `header_up X-Forwarded-Proto {http.request.scheme}` nos `reverse_proxy` acima (como no exemplo). Sem este header, o sitemap pode conter `<loc>http://...` mesmo com TLS no Caddy.
+
 - **Ordem importante**: os `handle` de `/sitemap.xml`, `/robots.txt`, `/bff/*` e `/images/posts/*` têm de vir **antes** do `handle` dos estáticos. Assim, `/sitemap.xml` e `/robots.txt` são servidos pelo BFF na raiz do domínio (sitemap dinâmico e robots.txt com a linha Sitemap); pedidos a `/bff/*` (incl. POST de login e upload de capa) são reencaminhados para o BFF em `127.0.0.1:5000`; pedidos a `/images/posts/*` são servidos a partir da pasta de uploads no host. Caso contrário, pedidos POST para `/bff/auth/login` podem ser tratados pelo `file_server` e devolver **405 Method Not Allowed**.
 - **handle** (resto): estáticos e fallback do SPA.
 
 **Se `/sitemap.xml` abrir como HTML** (página do blog em vez de XML): o pedido está a ser servido pelo fallback do SPA (`try_files ... /index.html`) em vez de ir ao BFF. Confirma que no Caddyfile o bloco `handle /sitemap.xml { ... }` (e `handle /robots.txt { ... }`) está **acima** do último `handle` que contém `file_server` e `try_files`. Depois de alterar: `sudo systemctl reload caddy`.
+
+**Se `/sitemap.xml` ou `/robots.txt` tiverem URLs `http://` em produção com HTTPS:** o BFF vê o pedido em HTTP local (Caddy → `127.0.0.1:5000`) e, sem forwarded headers, gera `<loc>http://...`. Confirma que: (1) o Caddyfile inclui `header_up X-Forwarded-Proto {http.request.scheme}` nos `reverse_proxy` de `/sitemap.xml`, `/robots.txt` e `/bff/*`; (2) a versão do BFF inclui `UseForwardedHeaders` (≥ **v2.6.3**); (3) rebuild e restart do BFF: `docker compose build bff && docker compose up -d bff`. Verificação: `curl -s https://seu-dominio.com/sitemap.xml | head -5` deve mostrar `https://`.
 
 **Imagens de capa (upload local):** O `docker-compose.yml` inclui o volume `./frontend/public/images/posts:/frontend/public/images/posts` no serviço BFF. Os ficheiros enviados pelos autores ficam em **REPO_DIR/frontend/public/images/posts** no servidor (ex.: `/var/www/blog/repo/frontend/public/images/posts`). Não é necessário definir `Uploads__ImagesPath` no bff.env. Para as imagens aparecerem no post, o Caddy deve servir esse diretório em `/images/posts/` (bloco `handle /images/posts/*` no exemplo acima).
 

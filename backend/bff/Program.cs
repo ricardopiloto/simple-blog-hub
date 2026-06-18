@@ -1,5 +1,6 @@
 using System.Threading.RateLimiting;
 using System.Text;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -91,6 +92,15 @@ if (app.Environment.IsProduction())
     if (secret.Length < 32)
         throw new InvalidOperationException("In production, Jwt:Secret must be at least 32 characters.");
 }
+
+var forwardedHeadersOptions = new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+};
+// Docker: Caddy on host connects via bridge gateway, not loopback — safe while BFF binds 127.0.0.1:5000 only.
+forwardedHeadersOptions.KnownNetworks.Clear();
+forwardedHeadersOptions.KnownProxies.Clear();
+app.UseForwardedHeaders(forwardedHeadersOptions);
 
 app.UseHttpsRedirection();
 

@@ -265,6 +265,7 @@ Se já tens a **2.6.2** em produção:
 ## 7. Referências
 
 - [CHANGELOG.md](../changelog/CHANGELOG.md) — secções **[2.6.0]** a **[2.6.3]**
+- [ATUALIZAR-2-6-3-PARA-2-6-6.md](ATUALIZAR-2-6-3-PARA-2-6-6.md) — actualização **2.6.3 → 2.6.6** (versão seguinte em PROD)
 - [ATUALIZAR-2-5-2-PARA-2-6-0.md](ATUALIZAR-2-5-2-PARA-2-6-0.md) — detalhe adicional da 2.6.0
 - [DEPLOY-DOCKER-CADDY.md](DEPLOY-DOCKER-CADDY.md)
 - [ATUALIZAR-SERVIDOR-DOCKER-CADDY.md](ATUALIZAR-SERVIDOR-DOCKER-CADDY.md)

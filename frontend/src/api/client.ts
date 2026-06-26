@@ -375,6 +375,14 @@ const IMAGE_ERROR_MESSAGES: Record<string, string> = {
   timeout: 'A geração demorou demais. Tente novamente em instantes.',
   provider_error: 'Não foi possível gerar a imagem. Tente novamente mais tarde.',
   empty_prompt: 'O prompt não pode estar vazio.',
+  openrouter_not_configured: 'Geração de capa indisponível. Contacte o operador do blog.',
+  deepseek_not_configured: 'Geração de prompt indisponível. Contacte o operador do blog.',
+};
+
+const COVER_ART_ERROR_MESSAGES: Record<string, string> = {
+  ...IMAGE_ERROR_MESSAGES,
+  openrouter_not_configured: 'Geração de capa indisponível. Contacte o operador do blog.',
+  deepseek_not_configured: 'Geração de prompt indisponível. Contacte o operador do blog.',
 };
 
 export type CloudflareVerifyResult = {
@@ -463,5 +471,105 @@ export async function generateImage(prompt: string): Promise<string> {
 
   const data = (await res.json()) as GenerateImageResponse;
   if (!data.image) throw new ImageGenerationError(IMAGE_ERROR_MESSAGES.provider_error, 'provider_error', res.status);
+  return data.image;
+}
+
+/**
+ * Generate a cover art prompt from post Markdown via DeepSeek (protected; server-side DEEPSEEK__APIKEY).
+ */
+export async function generateCoverArtPrompt(content: string): Promise<string> {
+  const token = authStorage.getToken();
+  if (!token) {
+    authStorage.clear();
+    throw new ImageGenerationError('Unauthorized', undefined, 401);
+  }
+
+  const url = `${getBffBaseUrl()}/bff/image-generation/generate-cover-art-prompt`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ content }),
+  });
+
+  if (res.status === 401) {
+    authStorage.clear();
+    throw new ImageGenerationError('Unauthorized', undefined, 401);
+  }
+
+  if (!res.ok) {
+    let code: string | undefined;
+    let serverMessage: string | undefined;
+    try {
+      const body = (await res.json()) as { error?: string; message?: string };
+      code = body.error;
+      serverMessage = body.message;
+    } catch {
+      // ignore parse errors
+    }
+    const message =
+      serverMessage ||
+      (code && COVER_ART_ERROR_MESSAGES[code]) ||
+      COVER_ART_ERROR_MESSAGES.provider_error;
+    throw new ImageGenerationError(message, code, res.status);
+  }
+
+  const data = (await res.json()) as { prompt?: string };
+  if (!data.prompt?.trim()) {
+    throw new ImageGenerationError(COVER_ART_ERROR_MESSAGES.provider_error, 'provider_error', res.status);
+  }
+  return data.prompt.trim();
+}
+
+/**
+ * Generate a cover image via OpenRouter (protected; server-side INTEGRATIONS__OPENROUTER__APIKEY).
+ */
+export async function generateOpenRouterImage(prompt: string): Promise<string> {
+  const token = authStorage.getToken();
+  if (!token) {
+    authStorage.clear();
+    throw new ImageGenerationError('Unauthorized', undefined, 401);
+  }
+
+  const url = `${getBffBaseUrl()}/bff/image-generation/generate-openrouter`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ prompt }),
+  });
+
+  if (res.status === 401) {
+    authStorage.clear();
+    throw new ImageGenerationError('Unauthorized', undefined, 401);
+  }
+
+  if (!res.ok) {
+    let code: string | undefined;
+    let serverMessage: string | undefined;
+    try {
+      const body = (await res.json()) as { error?: string; message?: string };
+      code = body.error;
+      serverMessage = body.message;
+    } catch {
+      // ignore parse errors
+    }
+    const message =
+      serverMessage ||
+      (code && COVER_ART_ERROR_MESSAGES[code]) ||
+      COVER_ART_ERROR_MESSAGES.provider_error;
+    throw new ImageGenerationError(message, code, res.status);
+  }
+
+  const data = (await res.json()) as GenerateImageResponse;
+  if (!data.image) {
+    throw new ImageGenerationError(COVER_ART_ERROR_MESSAGES.provider_error, 'provider_error', res.status);
+  }
   return data.image;
 }

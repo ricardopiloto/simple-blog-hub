@@ -12,6 +12,10 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSingleton<JwtService>();
 builder.Services.AddSingleton<CloudflareWorkersAiClient>();
+builder.Services.AddSingleton<OpenRouterImagesClient>();
+builder.Services.AddSingleton<DeepSeekChatClient>();
+builder.Services.AddSingleton<AdminAuthorResolver>();
+builder.Services.AddSingleton<PostCoverUploadService>();
 
 var apiBaseUrl = builder.Configuration["API:BaseUrl"] ?? "http://localhost:5001";
 var apiInternalKey = builder.Configuration["API:InternalKey"]?.Trim();
@@ -25,6 +29,14 @@ builder.Services.AddHttpClient<ApiClient>(client =>
 builder.Services.AddHttpClient("CloudflareAI", client =>
 {
     client.Timeout = TimeSpan.FromSeconds(60);
+});
+builder.Services.AddHttpClient("OpenRouter", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(120);
+});
+builder.Services.AddHttpClient("DeepSeek", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(120);
 });
 
 var jwtSecret = builder.Configuration["Jwt:Secret"] ?? "dev-secret-change-in-production-min-32-chars";
@@ -60,6 +72,10 @@ builder.Services.AddRateLimiter(options =>
         RateLimitPartition.GetFixedWindowLimiter(
             context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
             _ => new FixedWindowRateLimiterOptions { Window = TimeSpan.FromMinutes(1), PermitLimit = 60 }));
+    options.AddPolicy("Integrations", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions { Window = TimeSpan.FromMinutes(1), PermitLimit = 30 }));
 });
 
 var corsAllowedOrigins = builder.Configuration["Cors:AllowedOrigins"]?.Trim();

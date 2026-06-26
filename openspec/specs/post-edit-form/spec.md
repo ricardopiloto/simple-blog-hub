@@ -218,9 +218,101 @@ No formulário de **Novo post** e de **Editar post**, o campo **"História"** (t
 - **Então** o label ou a área do campo "História" mostra uma indicação clara de que o campo é obrigatório (ex.: "História *" ou "História (obrigatório)")
 - **E** o autor identifica sem ambiguidade que deve escolher "Velho Mundo" ou "Idade das Trevas" antes de poder guardar o post
 
-### Requirement: Preview da imagem de capa apenas em Editar post (SHALL)
+### Requirement: Generate cover art prompt from post content in edit form (SHALL)
 
-No formulário de **Editar post** (rota de edição de um post existente, ex.: `/area-autor/posts/:id/editar`), quando existir uma **URL de imagem de capa** — seja a carregada do post (`cover_image`) ou a definida pelo utilizador após colar URL ou fazer upload de ficheiro — o sistema **DEVE** (SHALL) exibir um **preview visual** dessa imagem na secção "URL da imagem de capa", de forma que o autor possa ver como a capa ficará antes de guardar. O preview **DEVE** ser uma imagem renderizada (ex.: elemento `<img>`) com a URL atual da capa, com dimensões e proporção adequadas (ex.: aspect ratio 16:9, tamanho limitado). No formulário **Novo post** o preview da imagem de capa **NÃO** deve ser exibido; apenas o campo URL e o upload permanecem, sem bloco de preview.
+The **new post** and **edit post** forms **SHALL** include a button **"Gerar prompt para arte"** in the **Prompt para arte** panel (right column on desktop). The button **SHALL** be **disabled** when **`#post-content`** is empty (after trim). When clicked, the frontend **SHALL** send the current **content** to **`POST /bff/image-generation/generate-cover-art-prompt`** with a valid **JWT**. The BFF **SHALL** call the **DeepSeek API directly** (`https://api.deepseek.com/chat/completions`) — **not** OpenRouter — with the fixed user message template:
+
+```text
+Com base na cena descrita abaixo, me ajude a montar um prompt que resuma a cena utilizando o estilo: Photographic, detailed, grimdark.
+{content}
+```
+
+where `{content}` is the Markdown from **`#post-content`**. The BFF **SHALL** return **`{ "prompt": "..." }`** and the frontend **SHALL** display it in **`#post-art-prompt`**. The prompt **SHALL NOT** be persisted to the database.
+
+The author **MAY** edit **`#post-art-prompt`** before **"Gerar capa"**. The frontend **SHALL** show loading on **"Gerar prompt para arte"** during the BFF call.
+
+The content editor and art-prompt side panel **SHALL** use a **cohesive two-column layout** on large viewports: labels on one row, content **Escrever/Preview** tabs and art action buttons on the next row (same height), equal editor height (**`20.5rem`**) on the row below, and helper text below each editor.
+
+#### Scenario: Labels align on desktop
+
+- **GIVEN** the author is on the new or edit post form on a large viewport
+- **WHEN** the content and art-prompt columns are visible side by side
+- **THEN** **Conteúdo (Markdown)** and **Prompt para arte** labels share the same grid row and align horizontally
+
+#### Scenario: Tabs and action buttons align on desktop
+
+- **GIVEN** the author is on the new or edit post form on a large viewport
+- **WHEN** the content and art-prompt columns are visible side by side
+- **THEN** the **Escrever/Preview** tab list and **Gerar prompt para arte** / **Gerar capa** buttons share the same grid row
+- **AND** both control rows use height **`h-10`**
+
+#### Scenario: Action buttons directly below Prompt para arte label
+
+- **GIVEN** the author is on the new or edit post form on a large viewport
+- **WHEN** the art-prompt column is visible
+- **THEN** **"Gerar prompt para arte"** and **"Gerar capa"** appear on the row **directly below** the **Prompt para arte** label
+- **AND** they appear **above** the `#post-art-prompt` textarea
+- **AND** neither button appears below the content column
+
+#### Scenario: Editor areas align and match height on desktop
+
+- **GIVEN** the author is on a large viewport on the new or edit post form
+- **WHEN** the content and art-prompt columns are visible side by side
+- **THEN** `#post-content`, preview pane, and `#post-art-prompt` have the **same fixed height**
+- **AND** the top edges of `#post-content` and `#post-art-prompt` align horizontally on the same grid row
+- **AND** helper text appears **below** each editor area
+
+#### Scenario: Author generates prompt from post content via DeepSeek
+
+- **GIVEN** non-empty Markdown in `#post-content`
+- **AND** `DEEPSEEK__APIKEY` is configured on the BFF
+- **WHEN** the author clicks **"Gerar prompt para arte"**
+- **THEN** the BFF calls DeepSeek (not OpenRouter) and fills **`#post-art-prompt`**
+- **AND** saving the post does not persist the prompt
+
+#### Scenario: Button disabled without content
+
+- **GIVEN** `#post-content` is empty or whitespace only
+- **WHEN** the form is displayed
+- **THEN** **"Gerar prompt para arte"** is disabled
+
+### Requirement: Generate cover image from prompt via OpenRouter in post edit form (SHALL)
+
+When **`#post-art-prompt`** is non-empty, **"Gerar capa"** **SHALL** call **`POST /bff/image-generation/generate-openrouter`** with that prompt and JWT. The BFF **SHALL** use **OpenRouter Images** only (not DeepSeek). On success, upload via **`POST /bff/uploads/cover`**, set **`cover_image`**, and show preview.
+
+#### Scenario: Author generates cover via OpenRouter and applies it to the post form
+
+- **GIVEN** a non-empty cover art prompt in the side panel
+- **AND** `INTEGRATIONS__OPENROUTER__APIKEY` is configured on the BFF
+- **WHEN** the authenticated author clicks **"Gerar capa"**
+- **THEN** the BFF calls OpenRouter and returns `{ "image": "<base64>" }`
+- **AND** the frontend uploads the image and sets `cover_image` with a preview in the cover section
+- **AND** saving the post persists `cover_image`
+
+#### Scenario: OpenRouter not configured on server
+
+- **GIVEN** `INTEGRATIONS__OPENROUTER__APIKEY` is missing on the BFF
+- **WHEN** the author attempts **"Gerar capa"**
+- **THEN** the BFF responds with **503**
+- **AND** the UI shows a message that cover generation is unavailable (operator must configure OpenRouter)
+- **AND** no cover URL is set
+
+### Requirement: Preview da imagem de capa no formulário de post (SHALL)
+
+The **new post** and **edit post** forms **SHALL** display a **visual preview** of the cover image in the **"URL da imagem de capa"** section whenever **`cover_image`** is non-empty — whether loaded from the saved post, entered as URL, uploaded as file, or set after **"Gerar capa"** from the art prompt flow. The preview **SHALL** use a 16:9 container and handle load errors gracefully. When `cover_image` is empty, no preview block is shown.
+
+#### Scenario: Novo post shows preview after AI or upload cover
+
+- **GIVEN** the author is on **Novo post**
+- **WHEN** they generate a cover via **"Gerar capa"** (OpenRouter) or upload a file successfully
+- **THEN** a preview image is shown in the cover section before saving
+- **AND** the same preview behavior applies on **Editar post**
+
+#### Scenario: No preview without cover URL
+
+- **GIVEN** the cover URL field is empty
+- **WHEN** the form is displayed
+- **THEN** no cover preview block is shown
 
 #### Scenario: Autor vê preview da capa ao editar post
 
@@ -228,13 +320,6 @@ No formulário de **Editar post** (rota de edição de um post existente, ex.: `
 - **Quando** existe uma URL de imagem de capa no formulário (carregada do post ou definida após upload/colagem)
 - **Então** é exibido um preview visual da imagem (miniatura ou imagem com proporção adequada) na secção da imagem de capa
 - **E** o autor pode confirmar visualmente a capa antes de guardar
-
-#### Scenario: Novo post não exibe preview da capa
-
-- **Dado** que o utilizador está na página **Novo post**
-- **Quando** o utilizador preenche o campo URL da imagem de capa ou faz upload
-- **Então** o formulário **não** exibe um bloco de preview da imagem de capa (apenas o campo e o upload, como hoje)
-- **E** o comportamento em Novo post permanece inalterado em relação ao preview
 
 ### Requirement: Campo Conteúdo (Markdown) com abas Escrever e Preview (SHALL)
 

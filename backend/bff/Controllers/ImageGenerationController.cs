@@ -14,15 +14,21 @@ public class ImageGenerationController : ControllerBase
 {
     private readonly ApiClient _api;
     private readonly CloudflareWorkersAiClient _cloudflare;
+    private readonly OpenRouterImagesClient _openRouter;
+    private readonly DeepSeekChatClient _deepSeek;
     private readonly ILogger<ImageGenerationController> _logger;
 
     public ImageGenerationController(
         ApiClient api,
         CloudflareWorkersAiClient cloudflare,
+        OpenRouterImagesClient openRouter,
+        DeepSeekChatClient deepSeek,
         ILogger<ImageGenerationController> logger)
     {
         _api = api;
         _cloudflare = cloudflare;
+        _openRouter = openRouter;
+        _deepSeek = deepSeek;
         _logger = logger;
     }
 
@@ -125,6 +131,88 @@ public class ImageGenerationController : ControllerBase
             };
 
             return StatusCode(status, new { error = ex.ErrorCode, message = ex.UserMessage });
+        }
+    }
+
+    /// <summary>
+    /// POST /bff/image-generation/generate-openrouter — generate cover image via OpenRouter (authenticated).
+    /// Uses server-side INTEGRATIONS__OPENROUTER__APIKEY; image is not persisted on the server.
+    /// </summary>
+    [HttpPost("generate-openrouter")]
+    [Authorize]
+    public async Task<IActionResult> GenerateOpenRouter(
+        [FromBody] GenerateImageRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (User.GetAuthorId() == null)
+            return Unauthorized();
+
+        var prompt = request.Prompt?.Trim();
+        if (string.IsNullOrEmpty(prompt))
+            return BadRequest(new { error = "empty_prompt", message = "O prompt não pode estar vazio." });
+
+        if (string.IsNullOrEmpty(_openRouter.GetConfiguredApiKey()))
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new
+            {
+                error = "openrouter_not_configured",
+                message = "Geração de capa indisponível. Contacte o operador do blog."
+            });
+        }
+
+        try
+        {
+            var imageBase64 = await _openRouter.GenerateImageBase64Async(prompt, model: null, cancellationToken);
+            return Ok(new { image = imageBase64 });
+        }
+        catch (OpenRouterImagesException ex)
+        {
+            _logger.LogWarning("OpenRouter cover generation failed: {Message}", ex.Message);
+            var status = ex.StatusCode.HasValue ? (int)ex.StatusCode.Value : StatusCodes.Status502BadGateway;
+            if (status is < 400 or > 599)
+                status = StatusCodes.Status502BadGateway;
+            return StatusCode(status, new { error = "provider_error", message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// POST /bff/image-generation/generate-cover-art-prompt — generate cover art prompt via DeepSeek (authenticated).
+    /// Uses server-side DEEPSEEK__APIKEY; prompt is not persisted on the server.
+    /// </summary>
+    [HttpPost("generate-cover-art-prompt")]
+    [Authorize]
+    public async Task<IActionResult> GenerateCoverArtPrompt(
+        [FromBody] GenerateCoverArtPromptRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (User.GetAuthorId() == null)
+            return Unauthorized();
+
+        var content = request.Content?.Trim();
+        if (string.IsNullOrEmpty(content))
+            return BadRequest(new { error = "empty_content", message = "O conteúdo não pode estar vazio." });
+
+        if (string.IsNullOrEmpty(_deepSeek.GetConfiguredApiKey()))
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new
+            {
+                error = "deepseek_not_configured",
+                message = "Geração de prompt indisponível. Contacte o operador do blog."
+            });
+        }
+
+        try
+        {
+            var prompt = await _deepSeek.GenerateCoverArtPromptAsync(content, cancellationToken);
+            return Ok(new { prompt });
+        }
+        catch (DeepSeekChatException ex)
+        {
+            _logger.LogWarning("DeepSeek cover art prompt failed: {Message}", ex.Message);
+            var status = ex.StatusCode.HasValue ? (int)ex.StatusCode.Value : StatusCodes.Status502BadGateway;
+            if (status is < 400 or > 599)
+                status = StatusCodes.Status502BadGateway;
+            return StatusCode(status, new { error = "provider_error", message = ex.Message });
         }
     }
 
@@ -262,6 +350,12 @@ public class GenerateImageRequest
 {
     [JsonPropertyName("prompt")]
     public string? Prompt { get; set; }
+}
+
+public class GenerateCoverArtPromptRequest
+{
+    [JsonPropertyName("content")]
+    public string? Content { get; set; }
 }
 
 public class CloudflareCredentialsResponse

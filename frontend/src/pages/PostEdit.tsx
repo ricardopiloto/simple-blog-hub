@@ -31,9 +31,13 @@ import {
   addCollaborator,
   removeCollaborator,
   uploadCoverImage,
+  generateCoverArtPrompt,
+  generateOpenRouterImage,
+  ImageGenerationError,
 } from '@/api/client';
 import type { CreateOrUpdatePostPayload, StoryType } from '@/api/types';
 import { useAuth } from '@/contexts/AuthContext';
+import { base64ToFile } from '@/lib/coverImageFromBase64';
 
 /**
  * Gera slug a partir do título: minúsculo, sem acentos (á→a, é→e),
@@ -97,6 +101,10 @@ export default function PostEdit() {
   const [scheduledTime, setScheduledTime] = useState<string>('');
   const [selectedAuthorId, setSelectedAuthorId] = useState('');
   const [uploadingCover, setUploadingCover] = useState(false);
+  const [generatingCover, setGeneratingCover] = useState(false);
+  const [generatingArtPrompt, setGeneratingArtPrompt] = useState(false);
+  const [artPrompt, setArtPrompt] = useState('');
+  const [coverArtError, setCoverArtError] = useState('');
   const [storyTypeError, setStoryTypeError] = useState('');
   const [coverPreviewError, setCoverPreviewError] = useState(false);
 
@@ -338,28 +346,36 @@ export default function PostEdit() {
                 disabled={saving}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="post-content">Conteúdo (Markdown)</Label>
-              <Tabs defaultValue="escrever" className="w-full">
-                <TabsList>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-6 gap-y-2">
+              <Label
+                htmlFor="post-content"
+                className="max-lg:order-1 lg:col-start-1 lg:row-start-1"
+              >
+                Conteúdo (Markdown)
+              </Label>
+              <Label
+                htmlFor="post-art-prompt"
+                className="max-lg:order-4 lg:col-start-2 lg:row-start-1"
+              >
+                Prompt para arte
+              </Label>
+
+              <Tabs defaultValue="escrever" className="max-lg:order-2 w-full lg:contents">
+                <TabsList className="w-fit lg:col-start-1 lg:row-start-2 lg:justify-self-start">
                   <TabsTrigger value="escrever">Escrever</TabsTrigger>
                   <TabsTrigger value="preview">Preview</TabsTrigger>
                 </TabsList>
-                <TabsContent value="escrever">
+                <TabsContent value="escrever" className="mt-2 lg:mt-0 lg:col-start-1 lg:row-start-3">
                   <Textarea
                     id="post-content"
                     value={content}
                     onChange={(e) => handleContentChange(e.target.value)}
                     placeholder="Escreva em **Markdown**..."
-                    rows={14}
-                    className="font-mono text-sm"
+                    className="min-h-[20.5rem] h-[20.5rem] resize-none font-mono text-sm"
                     disabled={saving}
                   />
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Suporta Markdown: **negrito**, *itálico*, # títulos, listas, links, etc.
-                  </p>
                 </TabsContent>
-                <TabsContent value="preview">
+                <TabsContent value="preview" className="mt-2 lg:mt-0 lg:col-start-1 lg:row-start-3">
                   <div
                     className="min-h-[20.5rem] h-[20.5rem] w-full rounded-md border border-input bg-background px-3 py-2 overflow-y-auto overflow-x-hidden text-sm"
                     aria-label="Preview do conteúdo"
@@ -377,11 +393,101 @@ export default function PostEdit() {
                   </div>
                 </TabsContent>
               </Tabs>
+              <p className="text-xs text-muted-foreground max-lg:order-3 lg:col-start-1 lg:row-start-4">
+                Suporta Markdown: **negrito**, *itálico*, # títulos, listas, links, etc.
+              </p>
+
+              <div className="flex flex-wrap gap-2 max-lg:order-5 lg:col-start-2 lg:row-start-2 lg:h-10 lg:items-center">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={saving || generatingArtPrompt || !content.trim()}
+                  onClick={async () => {
+                    setCoverArtError('');
+                    setGeneratingArtPrompt(true);
+                    try {
+                      const prompt = await generateCoverArtPrompt(content.trim());
+                      setArtPrompt(prompt);
+                    } catch (err) {
+                      if (err instanceof ImageGenerationError && err.status === 401) {
+                        logout();
+                        openSessionExpiredModal();
+                      } else if (err instanceof ImageGenerationError) {
+                        setCoverArtError(err.message);
+                      } else if (err instanceof Error) {
+                        setCoverArtError(err.message);
+                      } else {
+                        setCoverArtError('Não foi possível gerar o prompt. Tente novamente.');
+                      }
+                    } finally {
+                      setGeneratingArtPrompt(false);
+                    }
+                  }}
+                >
+                  {generatingArtPrompt ? 'A gerar prompt…' : 'Gerar prompt para arte'}
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  disabled={saving || generatingCover || uploadingCover || generatingArtPrompt || !artPrompt.trim()}
+                  onClick={async () => {
+                    setCoverArtError('');
+                    setGeneratingCover(true);
+                    try {
+                      const b64 = await generateOpenRouterImage(artPrompt.trim());
+                      const file = base64ToFile(b64, 'cover.png', 'image/png');
+                      setUploadingCover(true);
+                      const { url } = await uploadCoverImage(file);
+                      setCoverImage(url);
+                    } catch (err) {
+                      if (err instanceof ImageGenerationError && err.status === 401) {
+                        logout();
+                        openSessionExpiredModal();
+                      } else if (err instanceof ImageGenerationError) {
+                        setCoverArtError(err.message);
+                      } else if (err instanceof Error) {
+                        setCoverArtError(err.message);
+                      } else {
+                        setCoverArtError('Não foi possível gerar a capa. Tente novamente.');
+                      }
+                    } finally {
+                      setGeneratingCover(false);
+                      setUploadingCover(false);
+                    }
+                  }}
+                >
+                  {generatingCover || uploadingCover ? 'A gerar capa…' : 'Gerar capa'}
+                </Button>
+              </div>
+
+              <div className="space-y-2 max-lg:order-6 lg:col-start-2 lg:row-start-3">
+                <Textarea
+                  id="post-art-prompt"
+                  value={artPrompt}
+                  onChange={(e) => {
+                    setArtPrompt(e.target.value);
+                    setCoverArtError('');
+                  }}
+                  placeholder="Gere um prompt a partir do conteúdo ou escreva o seu…"
+                  className="min-h-[20.5rem] h-[20.5rem] resize-none font-mono text-sm"
+                  disabled={saving}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Gerado a partir do conteúdo; pode editar antes de gerar a capa. Não é guardado com o post.
+                </p>
+                {coverArtError && (
+                  <p className="text-sm text-destructive" role="alert">
+                    {coverArtError}
+                  </p>
+                )}
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="post-cover">URL da imagem de capa</Label>
               <p className="text-xs text-muted-foreground">Proporção recomendada 16:9 (ex.: 1200×675 px) para não cortar a imagem na visualização.</p>
-              {!isNew && coverImage.trim() && (
+              {coverImage.trim() && (
                 <div className="rounded-lg border bg-muted/30 overflow-hidden max-w-lg aspect-video">
                   {!coverPreviewError ? (
                     <img

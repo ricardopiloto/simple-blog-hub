@@ -37,6 +37,10 @@ backend/**/.vs/
 backend/api/*.db
 backend/api/*.db-*
 
+# Backend (bff) — secrets locais; copiar de appsettings.Development.example.json
+backend/bff/appsettings.Development.json
+backend/api/appsettings.Development.json
+
 # Dados da API em Docker (bind mount data/)
 data/*.db
 data/*.db-*

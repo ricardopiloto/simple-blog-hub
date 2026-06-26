@@ -2,6 +2,21 @@
 
 Os releases são versionados por tag (ex.: `v1.9`, `v1.10`, `v2.0`). O resumo detalhado das changes OpenSpec aplicadas pode ser usado na mensagem do commit de release e está também na proposta da respetiva versão em `openspec/changes/`.
 
+## [2.6.6]
+
+- **add-post-cover-art-prompt (DeepSeek):** **«Gerar prompt para arte»** via **DeepSeek API directa** (`POST /bff/image-generation/generate-cover-art-prompt`, `DEEPSEEK__APIKEY`); **«Gerar capa»** via **OpenRouter Images** (`generate-openrouter`); removido `buildCoverArtPrompt` client-side; layout do formulário em duas colunas alinhadas (labels, tabs/botões, editores).
+- **Documentação e versão:** CHANGELOG [2.6.6]; guia [ATUALIZAR-2-6-3-PARA-2-6-6.md](../deploy/ATUALIZAR-2-6-3-PARA-2-6-6.md); `DEEPSEEK__*` em `.env.docker.example` e FUNCIONALIDADES; spec `cover-art-prompt`; versão **2.6.6**.
+
+## [2.6.5]
+
+- **add-post-cover-art-prompt:** Formulário **Novo/Editar post** com **«Gerar prompt para arte»** (painel lateral ao Markdown, estado local) e **«Gerar capa»** via **OpenRouter** (`POST /bff/image-generation/generate-openrouter`, JWT, `INTEGRATIONS__OPENROUTER__*`); upload automático para `cover_image`; preview 16:9 em novo e editar post; `buildCoverArtPrompt` no frontend.
+- **Documentação e versão:** CHANGELOG [2.6.5]; `docs/FUNCIONALIDADES.md` com endpoint `generate-openrouter`; versão no frontend (`package.json`) **2.6.5**; ver também [ATUALIZAR-2-6-3-PARA-2-6-6.md](../deploy/ATUALIZAR-2-6-3-PARA-2-6-6.md) (secção 2.6.5).
+
+## [2.6.4]
+
+- **add-n8n-post-integration-api:** API de integração no BFF (`/bff/integrations/*`) com autenticação **`X-Integration-Key`** para n8n no mesmo servidor: criar/agendar posts como **Admin** (`INTEGRATIONS__ADMINAUTHORID`), upload de capa em multipart, `PUT` por slug, geração de capa via **OpenRouter** (`INTEGRATIONS__OPENROUTER__APIKEY`); endpoints de suporte na API (`/api/integration/admin-author-id`, `authors/{id}/exists`); guia [N8N-POST-INGEST.md](docs/integrations/N8N-POST-INGEST.md).
+- **Documentação e versão:** CHANGELOG [2.6.4]; `INTEGRATIONS__*` em DEPLOY-DOCKER-CADDY.md, `.env.docker.example` e PRODUCTION-CHECKLIST.md; versão no frontend (`package.json`) **2.6.4**; README simplificado; [docs/FUNCIONALIDADES.md](../FUNCIONALIDADES.md) com contratos API e diagramas; [CHANGELOG.md](../../CHANGELOG.md) na raiz; licença MIT ([LICENSE](../../LICENSE)); ver [ATUALIZAR-2-6-3-PARA-2-6-6.md](../deploy/ATUALIZAR-2-6-3-PARA-2-6-6.md) (secção 2.6.4).
+
 ## [2.6.3]
 
 - **add-bff-forwarded-headers:** BFF com **`UseForwardedHeaders`** (`X-Forwarded-Proto`, `X-Forwarded-For`) para que **sitemap.xml** e **robots.txt** gerem URLs **https://** atrás de Caddy; `Caddyfile.example` e DEPLOY-DOCKER-CADDY.md com `header_up X-Forwarded-Proto`; troubleshooting sitemap com `http://`.

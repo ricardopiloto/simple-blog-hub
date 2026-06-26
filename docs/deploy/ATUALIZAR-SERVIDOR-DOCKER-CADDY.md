@@ -146,3 +146,5 @@ Depois: `docker compose up -d api`.
 | **Docker** | Frontend | `cd frontend && npm install && VITE_BFF_URL=https://seu-dominio.com npm run build && cp -r dist DOCUMENT_ROOT` |
 
 Para instalação inicial em servidor, recuperação de senha do Admin ou problemas de arranque, ver **[DEPLOY-DOCKER-CADDY.md](DEPLOY-DOCKER-CADDY.md)**.
+
+Para actualizar desde a **v2.6.3** (última versão em PROD) para a **v2.6.6**, ver **[ATUALIZAR-2-6-3-PARA-2-6-6.md](ATUALIZAR-2-6-3-PARA-2-6-6.md)**.

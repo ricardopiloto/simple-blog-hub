@@ -63,6 +63,14 @@ Cloudflare__EncryptionKey=chave-32-bytes-base64-ou-64-hex
 ```bash
 API__InternalKey=seu-valor-secreto-forte-aqui
 Jwt__Secret=outra-chave-secreta-min-32-caracteres-produção
+# API de integração n8n (opcional; ver docs/integrations/N8N-POST-INGEST.md)
+INTEGRATIONS__APIKEY=chave-forte-para-n8n
+INTEGRATIONS__ADMINAUTHORID=guid-do-autor-admin
+INTEGRATIONS__OPENROUTER__APIKEY=
+INTEGRATIONS__OPENROUTER__IMAGEMODEL=black-forest-labs/flux.2-klein-4b
+# Prompt de arte no formulário de post (DeepSeek API directa)
+DEEPSEEK__APIKEY=
+DEEPSEEK__MODEL=deepseek-chat
 ```
 
 O `API__InternalKey` deve ser **igual** nos dois ficheiros.
@@ -286,6 +294,8 @@ docker compose restart api
 ## 11. Atualizar a aplicação (deploy posterior)
 
 As atualizações subsequentes seguem o guia **[ATUALIZAR-SERVIDOR-DOCKER-CADDY.md](ATUALIZAR-SERVIDOR-DOCKER-CADDY.md)**. Esse documento descreve os passos de atualização **Docker** (e também **local**, para desenvolvimento) e lista os **scripts de banco de dados** que podem ser aplicados manualmente (ViewCount, IncludeInStoryOrder), com instruções para cada ambiente.
+
+Se a produção estiver na **v2.6.3** e fores publicar a **v2.6.6**, segue o guia dedicado **[ATUALIZAR-2-6-3-PARA-2-6-6.md](ATUALIZAR-2-6-3-PARA-2-6-6.md)** (variáveis `INTEGRATIONS__*` e `DEEPSEEK__*` no BFF, sem migrações SQL).
 
 **Backend (API e BFF):**
 

@@ -183,4 +183,14 @@ public class ApiClient
     {
         return await _http.GetAsync($"api/image-generation/credentials/{authorId}", cancellationToken);
     }
+
+    public async Task<HttpResponseMessage> GetIntegrationAdminAuthorIdAsync(CancellationToken cancellationToken = default)
+    {
+        return await _http.GetAsync("api/integration/admin-author-id", cancellationToken);
+    }
+
+    public async Task<HttpResponseMessage> AuthorExistsAsync(Guid authorId, CancellationToken cancellationToken = default)
+    {
+        return await _http.GetAsync($"api/integration/authors/{authorId}/exists", cancellationToken);
+    }
 }

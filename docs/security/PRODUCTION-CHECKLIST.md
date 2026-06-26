@@ -12,6 +12,10 @@ Quando `ASPNETCORE_ENVIRONMENT=Production` (ou equivalente), a aplicação **fal
 |-------------------|-------------|-----------|
 | `Cors:AllowedOrigins` | Sim | Origens permitidas (ex.: `https://seu-dominio.com`), separadas por `;`. Não deixar vazio em produção. |
 | `Jwt:Secret` | Sim, ≥ 32 caracteres | Chave para assinar o JWT. Use um valor forte e único. |
+| `Integrations:ApiKey` (`INTEGRATIONS__APIKEY`) | Se n8n / automação | Chave para `X-Integration-Key` em `/bff/integrations/*`. Não expor ao frontend. |
+| `Integrations:AdminAuthorId` (`INTEGRATIONS__ADMINAUTHORID`) | Recomendado com integração | GUID do autor Admin; posts da integração usam sempre este `AuthorId`. |
+| `Integrations:OpenRouter:ApiKey` (`INTEGRATIONS__OPENROUTER__APIKEY`) | Se gerar capa via n8n ou formulário de post | Chave OpenRouter para `/api/v1/images`. |
+| `DeepSeek:ApiKey` (`DEEPSEEK__APIKEY`) | Se usar «Gerar prompt para arte» no formulário de post | Chave DeepSeek API directa (`api.deepseek.com`). |
 
 ### API
 
@@ -33,6 +37,8 @@ Quando `ASPNETCORE_ENVIRONMENT=Production` (ou equivalente), a aplicação **fal
 - [ ] **JWT:** `Jwt:Secret` com pelo menos 32 caracteres; não usar o valor de desenvolvimento.
 - [ ] **API key:** `API:InternalKey` definido e igual no BFF e na API; não expor ao frontend.
 - [ ] **Admin:** `Admin__Email` configurado; senha padrão alterada no primeiro acesso.
+- [ ] **Integração n8n (opcional):** `INTEGRATIONS__APIKEY`, `INTEGRATIONS__ADMINAUTHORID` e, se gerar capa, `INTEGRATIONS__OPENROUTER__APIKEY` no BFF.
+- [ ] **Formulário de post (opcional):** `DEEPSEEK__APIKEY` para «Gerar prompt para arte»; `INTEGRATIONS__OPENROUTER__APIKEY` para «Gerar capa» (ver [ATUALIZAR-2-6-3-PARA-2-6-6.md](../deploy/ATUALIZAR-2-6-3-PARA-2-6-6.md)).
 - [ ] **Geração de Imagem (opcional):** se autores usarem Cloudflare Workers AI, `Cloudflare__EncryptionKey` configurada na API (32 bytes; ver DEPLOY-DOCKER-CADDY.md).
 - [ ] **HTTPS:** Caddy (ou proxy) a terminar HTTPS e a enviar **`X-Forwarded-Proto`** ao BFF nos `reverse_proxy` de `/sitemap.xml`, `/robots.txt` e `/bff/*` (ex.: `header_up X-Forwarded-Proto {http.request.scheme}` — ver [Caddyfile.example](../deploy/Caddyfile.example)). Sem isto, o sitemap pode listar URLs `http://`.
 - [ ] **Dados:** Pastas `data/` e `frontend/public/images/posts` no host com dono 10000:10000 (contentores não-root). Ver [CONFIGURAR-SERVIDOR-NAO-ROOT.md](../deploy/CONFIGURAR-SERVIDOR-NAO-ROOT.md) e SECURITY-HARDENING.md.
@@ -42,4 +48,5 @@ Quando `ASPNETCORE_ENVIRONMENT=Production` (ou equivalente), a aplicação **fal
 
 - [SECURITY-HARDENING.md](SECURITY-HARDENING.md) — plano de melhorias e requisitos de logging/permissões.
 - [DEPLOY-DOCKER-CADDY.md](../deploy/DEPLOY-DOCKER-CADDY.md) — instalação com Docker e Caddy.
+- [ATUALIZAR-2-6-3-PARA-2-6-6.md](../deploy/ATUALIZAR-2-6-3-PARA-2-6-6.md) — upgrade 2.6.3 → 2.6.6.
 - [Caddyfile.example](../deploy/Caddyfile.example) — exemplo de Caddy com HTTPS e headers de segurança.

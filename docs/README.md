@@ -1,16 +1,23 @@
 # Documentação do projeto
 
-Estrutura da pasta **docs/**:
+| Documento | Descrição |
+|-----------|-----------|
+| **[FUNCIONALIDADES.md](FUNCIONALIDADES.md)** | Funcionalidades, contratos das APIs, mindmap e fluxograma |
+| **[CHANGELOG.md](../CHANGELOG.md)** | Versionamento (histórico completo em [changelog/CHANGELOG.md](changelog/CHANGELOG.md)) |
+| **[README](../README.md)** | Visão geral, stack, licença, desenvolvimento local |
+
+## Por tema
 
 | Pasta | Conteúdo |
 |-------|----------|
-| **changelog/** | [CHANGELOG.md](changelog/CHANGELOG.md) — histórico de releases versionadas (v1.x, v2.0, v2.1) |
-| **deploy/** | Guias de deploy e atualização: DEPLOY-DOCKER-CADDY.md, ATUALIZAR-SERVIDOR-DOCKER-CADDY.md, Caddyfile.example, ATUALIZAR-1-9-PARA-1-10.md |
-| **database/** | Base de dados no host: EXPOR-DB-NO-HOST.md |
-| **security/** | SECURITY-HARDENING.md, PRODUCTION-CHECKLIST.md, TOKEN-STORAGE.md |
-| **improvements/** | Avaliação de melhorias de código: CODE-IMPROVEMENTS.md |
-| **local/** | Guias locais (atualização por versão, etc.) — **não versionados** (`.gitignore`) |
+| **changelog/** | Histórico detalhado de releases (v1.x → v2.6.6) |
+| **deploy/** | Docker, Caddy, [actualização 2.6.3 → 2.6.6](deploy/ATUALIZAR-2-6-3-PARA-2-6-6.md) |
+| **integrations/** | API n8n ([N8N-POST-INGEST.md](integrations/N8N-POST-INGEST.md)) |
+| **database/** | SQLite no host, scripts manuais |
+| **security/** | Hardening, checklist produção, token storage |
+| **improvements/** | Recomendações de código e imagens |
+| **local/** | Guias locais (não versionados) |
 
-Os **ficheiros OpenSpec** (especificações, changes, `openspec/AGENTS.md`, etc.) permanecem nos **locais originais** (pasta `openspec/` na raiz) e não são movidos para `docs/`.
+## OpenSpec
 
-O **README** principal do repositório está na [raiz](../README.md).
+Especificações formais e propostas de mudança: pasta [`openspec/`](../openspec/) na raiz do repositório.

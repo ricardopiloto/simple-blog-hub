@@ -1,0 +1,8 @@
+export function base64ToFile(base64: string, filename: string, mimeType: string): File {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return new File([bytes], filename, { type: mimeType });
+}

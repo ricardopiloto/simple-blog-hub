@@ -147,12 +147,22 @@ A geração de imagem **DEVE** (SHALL) usar o **model path** Cloudflare Workers 
 
 The BFF **SHALL** expose **`POST /bff/image-generation/generate-openrouter`** for **authenticated authors** (JWT required). The endpoint **SHALL** accept JSON `{ "prompt": "..." }` with a non-empty `prompt`. The BFF **SHALL** call the OpenRouter Images API at **`https://openrouter.ai/api/v1/images`** using **`OpenRouterImagesClient`** and the server-side configuration **`Integrations:OpenRouter:ApiKey`** / **`INTEGRATIONS__OPENROUTER__APIKEY`** (same key and client as **`POST /bff/integrations/image-generation/generate`** for n8n). The upstream request **SHALL** be `POST` with `Authorization: Bearer <api_key>` and JSON body `{ "model": "<model>", "prompt": "<prompt>" }`. When `model` is omitted on the BFF, it **SHALL** use **`Integrations:OpenRouter:ImageModel`** (default **`black-forest-labs/flux.2-klein-4b`**). The BFF **SHALL** read the first non-empty **`data[].b64_json`** from the OpenRouter response and return **`{ "image": "<base64>" }`** to the frontend. The OpenRouter API key **SHALL NOT** be exposed to the browser. This endpoint **SHALL** be used by the post create/edit form **"Gerar capa"** flow and **SHALL NOT** replace the existing Cloudflare-based **`POST /bff/image-generation/generate`** used by the standalone **Geração de Imagem** page.
 
+When the provider rejects the prompt due to **content moderation** (e.g. OpenRouter / Black Forest Labs message containing **`Moderated`** or **`Request Moderated`**), the BFF **SHALL** respond with a user-visible **`message`** in Portuguese: **«O prompt foi bloqueado pelo filtro de conteúdo do gerador de imagens. Edite o prompt e tente novamente.»** and **`error`: `content_moderated`**. The BFF **SHALL** still log the full provider response for operators.
+
 #### Scenario: Authenticated author generates cover image via OpenRouter
 
 - **GIVEN** `INTEGRATIONS__OPENROUTER__APIKEY` is configured on the BFF
 - **WHEN** an authenticated author sends `POST /bff/image-generation/generate-openrouter` with `{ "prompt": "..." }`
 - **THEN** the BFF returns **200** with `{ "image": "<base64>" }` from OpenRouter `data[0].b64_json`
 - **AND** no Cloudflare credentials are required
+
+#### Scenario: Provider moderates the image prompt
+
+- **GIVEN** OpenRouter returns an error whose message includes **Request Moderated** (e.g. Black Forest Labs)
+- **WHEN** an authenticated author calls `POST /bff/image-generation/generate-openrouter`
+- **THEN** the BFF responds with **`error`: `content_moderated`**
+- **AND** **`message`** is **«O prompt foi bloqueado pelo filtro de conteúdo do gerador de imagens. Edite o prompt e tente novamente.»**
+- **AND** the raw provider message is logged server-side
 
 #### Scenario: Unauthenticated request is rejected
 

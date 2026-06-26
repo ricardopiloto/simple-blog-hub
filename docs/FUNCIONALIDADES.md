@@ -128,7 +128,7 @@ flowchart TB
 | Dashboard | Total, publicados, planejados, rascunhos, visualizações, autores |
 | Publicações | Lista com filtros, pesquisa, ordenação, criar/editar/excluir |
 | Editor de posts | Markdown, capa, slug, agendamento, `story_type`, colaboradores |
-| Prompt e capa no editor | **Gerar prompt para arte** (DeepSeek, `#post-art-prompt`, não persistido) e **Gerar capa** (OpenRouter → upload); layout em duas colunas no desktop |
+| Prompt e capa no editor | **Gerar prompt para arte** (DeepSeek, `#post-art-prompt`, não persistido; prompts em inglês com regras anti-moderação BFL) e **Gerar capa** (OpenRouter → upload); layout em duas colunas no desktop |
 | Upload de capa | JPEG/PNG/WebP, máx. 5 MB |
 | Geração de imagem (UI) | Cloudflare Workers AI; credenciais por autor em Contas |
 | Ordem narrativa | Edição no índice (autenticados) |
@@ -352,7 +352,7 @@ Credenciais Cloudflare do autor em Contas. Imagem **não** é persistida no serv
 
 Geração via **OpenRouter** (`INTEGRATIONS__OPENROUTER__APIKEY` no BFF — mesma config que a integração n8n). Usado pelo formulário **Novo/Editar post** («Gerar capa»). Imagem **não** é persistida no servidor; o frontend faz upload via `POST /bff/uploads/cover`.
 
-Erros: **503** se OpenRouter não estiver configurado (`openrouter_not_configured`).
+Erros: **503** se OpenRouter não estiver configurado (`openrouter_not_configured`). **400** com `content_moderated` quando o provider (ex. Black Forest Labs / Flux) bloqueia o prompt por moderação — mensagem: *O prompt foi bloqueado pelo filtro de conteúdo do gerador de imagens. Edite o prompt e tente novamente.*
 
 #### `POST /bff/image-generation/generate-cover-art-prompt`
 
@@ -367,10 +367,10 @@ Erros: **503** se OpenRouter não estiver configurado (`openrouter_not_configure
 **Resposta:**
 
 ```json
-{ "prompt": "Photographic, detailed, grimdark..." }
+{ "prompt": "Atmospheric grimdark tavern scene..." }
 ```
 
-Geração via **DeepSeek API directa** (`DEEPSEEK__APIKEY` no BFF). Usado pelo formulário **Novo/Editar post** («Gerar prompt para arte»). O prompt preenche `#post-art-prompt` e **não** é persistido.
+Geração via **DeepSeek API directa** (`DEEPSEEK__APIKEY` no BFF). O BFF envia mensagem **system** com regras de moderação para geradores de imagem e **user** com o Markdown da cena. O prompt gerado é **um parágrafo em inglês** (estilo photographic, detailed, grimdark atmosférico). Usado pelo formulário **Novo/Editar post** («Gerar prompt para arte»). O prompt preenche `#post-art-prompt` e **não** é persistido.
 
 Erros: **503** se DeepSeek não estiver configurado (`deepseek_not_configured`).
 

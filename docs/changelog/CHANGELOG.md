@@ -2,6 +2,11 @@
 
 Os releases são versionados por tag (ex.: `v1.9`, `v1.10`, `v2.0`). O resumo detalhado das changes OpenSpec aplicadas pode ser usado na mensagem do commit de release e está também na proposta da respetiva versão em `openspec/changes/`.
 
+## [2.6.8]
+
+- **add-moderation-safe-cover-art-prompt:** **«Gerar prompt para arte»** envia ao DeepSeek mensagem **system** + **user** com regras para prompts em inglês compatíveis com moderação de imagem (grimdark atmosférico, sem gore/nudez explícitos). **«Gerar capa»** mapeia **Request Moderated** do OpenRouter/BFL para `content_moderated` e mensagem PT: *O prompt foi bloqueado pelo filtro de conteúdo do gerador de imagens. Edite o prompt e tente novamente.*
+- **Documentação e versão:** CHANGELOG [2.6.8]; nota em FUNCIONALIDADES; versão **2.6.8**.
+
 ## [2.6.7]
 
 - **fix-deepseek-apikey-config-fallback:** Corrigido fallback de `DEEPSEEK__APIKEY` quando `Integrations:DeepSeek:ApiKey` está vazio em `appsettings.json` (`??` não tratava string vazia → **503** «Gerar prompt para arte» em produção).

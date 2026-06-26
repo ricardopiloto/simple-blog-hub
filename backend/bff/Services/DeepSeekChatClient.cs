@@ -52,8 +52,17 @@ public class DeepSeekChatClient
         return string.IsNullOrWhiteSpace(rootModel) ? DefaultModel : rootModel;
     }
 
+    public const string CoverArtSystemMessage =
+        "You generate only the final image prompt text for cover illustrations. "
+        + "Output a single paragraph in English, photographic, detailed, grimdark atmospheric style "
+        + "(light, fog, shadows, dark palette). Focus on setting, composition, and generic figures at a distance or in silhouette. "
+        + "Do not include in the output: graphic gore or blood, open wounds, torture, explicit corpses, nudity, sexual content, minors, "
+        + "hate symbols, drugs, weapons aimed at the viewer in a threatening pose, or real-person or celebrity names. "
+        + "If the source scene is graphic, translate mood and setting suggestively rather than literally.";
+
     public static string BuildCoverArtUserMessage(string content) =>
-        "Com base na cena descrita abaixo, me ajude a montar um prompt que resuma a cena utilizando o estilo: Photographic, detailed, grimdark.\n"
+        "Based on the scene below, write ONE image-generation prompt in English for a photographic, detailed, grimdark cover illustration.\n\n"
+        + "Scene (Markdown):\n"
         + content;
 
     public async Task<string> GenerateCoverArtPromptAsync(string content, CancellationToken cancellationToken = default)
@@ -66,7 +75,11 @@ public class DeepSeekChatClient
         var payload = JsonSerializer.Serialize(new
         {
             model = GetDefaultModel(),
-            messages = new[] { new { role = "user", content = userMessage } }
+            messages = new object[]
+            {
+                new { role = "system", content = CoverArtSystemMessage },
+                new { role = "user", content = userMessage }
+            }
         });
 
         using var request = new HttpRequestMessage(HttpMethod.Post, ChatCompletionsEndpoint)

@@ -220,14 +220,9 @@ No formulário de **Novo post** e de **Editar post**, o campo **"História"** (t
 
 ### Requirement: Generate cover art prompt from post content in edit form (SHALL)
 
-The **new post** and **edit post** forms **SHALL** include a button **"Gerar prompt para arte"** in the **Prompt para arte** panel (right column on desktop). The button **SHALL** be **disabled** when **`#post-content`** is empty (after trim). When clicked, the frontend **SHALL** send the current **content** to **`POST /bff/image-generation/generate-cover-art-prompt`** with a valid **JWT**. The BFF **SHALL** call the **DeepSeek API directly** (`https://api.deepseek.com/chat/completions`) — **not** OpenRouter — with the fixed user message template:
+The **new post** and **edit post** forms **SHALL** include a button **"Gerar prompt para arte"** in the **Prompt para arte** panel (right column on desktop). The button **SHALL** be **disabled** when **`#post-content`** is empty (after trim). When clicked, the frontend **SHALL** send the current **content** to **`POST /bff/image-generation/generate-cover-art-prompt`** with a valid **JWT**. The BFF **SHALL** call the **DeepSeek API directly** (`https://api.deepseek.com/chat/completions`) — **not** OpenRouter — with **moderation-safe** system and user messages (see **cover-art-prompt** spec): output **one English paragraph** suitable for image generators, photographic detailed grimdark **atmosphere**, avoiding explicit gore, nudity, and other provider-sensitive content.
 
-```text
-Com base na cena descrita abaixo, me ajude a montar um prompt que resuma a cena utilizando o estilo: Photographic, detailed, grimdark.
-{content}
-```
-
-where `{content}` is the Markdown from **`#post-content`**. The BFF **SHALL** return **`{ "prompt": "..." }`** and the frontend **SHALL** display it in **`#post-art-prompt`**. The prompt **SHALL NOT** be persisted to the database.
+The BFF **SHALL** return **`{ "prompt": "..." }`** and the frontend **SHALL** display it in **`#post-art-prompt`**. The prompt **SHALL NOT** be persisted to the database.
 
 The author **MAY** edit **`#post-art-prompt`** before **"Gerar capa"**. The frontend **SHALL** show loading on **"Gerar prompt para arte"** during the BFF call.
 
@@ -267,7 +262,7 @@ The content editor and art-prompt side panel **SHALL** use a **cohesive two-colu
 - **GIVEN** non-empty Markdown in `#post-content`
 - **AND** `DEEPSEEK__APIKEY` is configured on the BFF
 - **WHEN** the author clicks **"Gerar prompt para arte"**
-- **THEN** the BFF calls DeepSeek (not OpenRouter) and fills **`#post-art-prompt`**
+- **THEN** the BFF calls DeepSeek (not OpenRouter) and fills **`#post-art-prompt`** with a moderation-oriented English prompt
 - **AND** saving the post does not persist the prompt
 
 #### Scenario: Button disabled without content
@@ -280,6 +275,8 @@ The content editor and art-prompt side panel **SHALL** use a **cohesive two-colu
 
 When **`#post-art-prompt`** is non-empty, **"Gerar capa"** **SHALL** call **`POST /bff/image-generation/generate-openrouter`** with that prompt and JWT. The BFF **SHALL** use **OpenRouter Images** only (not DeepSeek). On success, upload via **`POST /bff/uploads/cover`**, set **`cover_image`**, and show preview.
 
+When the provider **moderates** the prompt, the UI **SHALL** display the Portuguese message from the BFF (**«O prompt foi bloqueado pelo filtro de conteúdo do gerador de imagens. Edite o prompt e tente novamente.»**) in the art-prompt panel error area.
+
 #### Scenario: Author generates cover via OpenRouter and applies it to the post form
 
 - **GIVEN** a non-empty cover art prompt in the side panel
@@ -288,6 +285,13 @@ When **`#post-art-prompt`** is non-empty, **"Gerar capa"** **SHALL** call **`POS
 - **THEN** the BFF calls OpenRouter and returns `{ "image": "<base64>" }`
 - **AND** the frontend uploads the image and sets `cover_image` with a preview in the cover section
 - **AND** saving the post persists `cover_image`
+
+#### Scenario: Provider blocks prompt by content moderation
+
+- **GIVEN** OpenRouter / BFL rejects the prompt with a moderation error
+- **WHEN** the author clicks **"Gerar capa"**
+- **THEN** the art-prompt panel shows **«O prompt foi bloqueado pelo filtro de conteúdo do gerador de imagens. Edite o prompt e tente novamente.»**
+- **AND** the author can edit **`#post-art-prompt`** and retry
 
 #### Scenario: OpenRouter not configured on server
 

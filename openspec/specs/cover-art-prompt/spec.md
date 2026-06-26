@@ -8,24 +8,21 @@ Server-side generation of cover art prompts for the post edit form via DeepSeek 
 
 ### Requirement: JWT endpoint for DeepSeek cover art prompt generation in post form (SHALL)
 
-The BFF **SHALL** expose **`POST /bff/image-generation/generate-cover-art-prompt`** for **authenticated authors** (JWT required). The endpoint **SHALL** accept JSON `{ "content": "..." }` with non-empty `content` — the Markdown from **`#post-content`**. The BFF **SHALL** call the **DeepSeek API directly** at **`https://api.deepseek.com/chat/completions`** ( **not** via OpenRouter) using **`Integrations:DeepSeek:ApiKey`** / **`INTEGRATIONS__DEEPSEEK__APIKEY`** and model **`Integrations:DeepSeek:Model`** / **`DEEPSEEK__MODEL`** (default **`deepseek-chat`**). The BFF **SHALL** send a single **user** message:
+The BFF **SHALL** expose **`POST /bff/image-generation/generate-cover-art-prompt`** for **authenticated authors** (JWT required). The endpoint **SHALL** accept JSON `{ "content": "..." }` with non-empty `content` — the Markdown from **`#post-content`**. The BFF **SHALL** call the **DeepSeek API directly** at **`https://api.deepseek.com/chat/completions`** ( **not** via OpenRouter) using **`Integrations:DeepSeek:ApiKey`** / **`INTEGRATIONS__DEEPSEEK__APIKEY`** and model **`Integrations:DeepSeek:Model`** / **`DEEPSEEK__MODEL`** (default **`deepseek-chat`**).
 
-```text
-Com base na cena descrita abaixo, me ajude a montar um prompt que resuma a cena utilizando o estilo: Photographic, detailed, grimdark.
-{content}
-```
+The BFF **SHALL** send a **`system`** message with explicit **image-moderation-safe** rules and a **`user`** message derived from the post Markdown. The generated prompt **SHALL** be **one paragraph in English**, suitable for image APIs (e.g. Black Forest Labs / Flux via OpenRouter), with **photographic, detailed, grimdark atmospheric** style. The LLM **SHALL** summarize the scene visually and **SHALL NOT** include in the output: graphic gore or blood, open wounds, nudity or sexual content, minors, hate symbols, drugs, real-person or celebrity names, or weapons aimed at the viewer in a threatening pose. When the source scene is graphic, the LLM **SHALL** translate mood and setting suggestively rather than literally.
 
 On success, the BFF **SHALL** return **`{ "prompt": "<text>" }`** from **`choices[0].message.content`**. The frontend **SHALL** set this value in **`#post-art-prompt`**. The DeepSeek API key **SHALL NOT** be exposed to the browser. This endpoint **SHALL** power **"Gerar prompt para arte"** and **SHALL NOT** use OpenRouter.
 
 The BFF **SHALL** resolve the DeepSeek API key by checking **`Integrations:DeepSeek:ApiKey`** first; if that value is missing, null, or whitespace-only after trim, it **SHALL** fall back to **`DeepSeek:ApiKey`** (environment variable **`DEEPSEEK__APIKEY`**). An empty string placeholder in `appsettings.json` for the Integrations path **SHALL NOT** prevent the root/env key from being used. The same empty-then-fallback rule **SHALL** apply to the model setting (`Integrations:DeepSeek:Model` then `DeepSeek:Model`, default **`deepseek-chat`**).
 
-#### Scenario: Authenticated author generates art prompt via DeepSeek direct API
+#### Scenario: Authenticated author generates moderation-safe art prompt via DeepSeek
 
 - **GIVEN** `DEEPSEEK__APIKEY` is configured on the BFF
-- **WHEN** an authenticated author sends `POST /bff/image-generation/generate-cover-art-prompt` with `{ "content": "# Scene\n..." }`
-- **THEN** the BFF calls `https://api.deepseek.com/chat/completions` (not OpenRouter)
-- **AND** returns **200** with `{ "prompt": "..." }` for `#post-art-prompt`
-- **AND** the user message includes **Photographic, detailed, grimdark**
+- **WHEN** an authenticated author sends `POST /bff/image-generation/generate-cover-art-prompt` with RPG Markdown content
+- **THEN** the BFF calls DeepSeek with **system** moderation rules and a **user** message containing the scene
+- **AND** returns **200** with `{ "prompt": "..." }` in **English**
+- **AND** the prompt emphasizes atmosphere and composition rather than explicit gore or nudity
 
 #### Scenario: DeepSeek API key from env when Integrations placeholder is empty
 

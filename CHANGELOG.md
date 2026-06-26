@@ -4,11 +4,17 @@ Todas as alterações notáveis deste projeto estão documentadas aqui.
 
 O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e o projeto usa [versionamento semântico](https://semver.org/lang/pt-BR/).
 
-**Versão actual:** **2.6.7** (`frontend/package.json` — exibida no rodapé do site após build).
+**Versão actual:** **2.6.8** (`frontend/package.json` — exibida no rodapé do site após build).
 
 ## Histórico completo
 
-O histórico detalhado por release (v1.x → v2.6.7) está em **[docs/changelog/CHANGELOG.md](docs/changelog/CHANGELOG.md)**.
+O histórico detalhado por release (v1.x → v2.6.8) está em **[docs/changelog/CHANGELOG.md](docs/changelog/CHANGELOG.md)**.
+
+## [2.6.8] — 2026-06-15
+
+### Adicionado
+
+- **add-moderation-safe-cover-art-prompt:** Prompt DeepSeek com regras de moderação (system + user) para reduzir bloqueios BFL/Flux; erro **«Request Moderated»** mapeado para mensagem PT (`content_moderated`).
 
 ## [2.6.7] — 2026-06-26
 

@@ -19,6 +19,9 @@ public class OpenRouterImagesException : Exception
 public class OpenRouterImagesClient
 {
     public const string DefaultImageModel = "black-forest-labs/flux.2-klein-4b";
+    public const string ContentModeratedErrorCode = "content_moderated";
+    public const string ContentModeratedUserMessage =
+        "O prompt foi bloqueado pelo filtro de conteúdo do gerador de imagens. Edite o prompt e tente novamente.";
     private const string ImagesEndpoint = "https://openrouter.ai/api/v1/images";
 
     private readonly IHttpClientFactory _httpClientFactory;
@@ -108,8 +111,17 @@ public class OpenRouterImagesClient
         return null;
     }
 
+    public static bool IsModerationRejection(string? providerMessage) =>
+        providerMessage?.Contains("moderated", StringComparison.OrdinalIgnoreCase) == true;
+
+    public static string ResolveErrorCode(string userMessage) =>
+        userMessage == ContentModeratedUserMessage ? ContentModeratedErrorCode : "provider_error";
+
     public static string MapUserMessage(HttpStatusCode statusCode, string? providerMessage)
     {
+        if (IsModerationRejection(providerMessage))
+            return ContentModeratedUserMessage;
+
         return statusCode switch
         {
             HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden =>

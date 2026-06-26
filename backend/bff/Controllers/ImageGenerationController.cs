@@ -171,7 +171,7 @@ public class ImageGenerationController : ControllerBase
             var status = ex.StatusCode.HasValue ? (int)ex.StatusCode.Value : StatusCodes.Status502BadGateway;
             if (status is < 400 or > 599)
                 status = StatusCodes.Status502BadGateway;
-            return StatusCode(status, new { error = "provider_error", message = ex.Message });
+            return StatusCode(status, new { error = OpenRouterImagesClient.ResolveErrorCode(ex.Message), message = ex.Message });
         }
     }
 

@@ -383,6 +383,8 @@ const COVER_ART_ERROR_MESSAGES: Record<string, string> = {
   ...IMAGE_ERROR_MESSAGES,
   openrouter_not_configured: 'Geração de capa indisponível. Contacte o operador do blog.',
   deepseek_not_configured: 'Geração de prompt indisponível. Contacte o operador do blog.',
+  content_moderated:
+    'O prompt foi bloqueado pelo filtro de conteúdo do gerador de imagens. Edite o prompt e tente novamente.',
 };
 
 export type CloudflareVerifyResult = {

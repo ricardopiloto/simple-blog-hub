@@ -83,11 +83,20 @@ public class DeepSeekChatClientTests
     }
 
     [Fact]
-    public void BuildCoverArtUserMessage_includes_grimdark_template()
+    public void BuildCoverArtUserMessage_requests_english_grimdark_prompt()
     {
         var message = DeepSeekChatClient.BuildCoverArtUserMessage("O herói entra na taverna.");
-        Assert.Contains("Photographic, detailed, grimdark", message);
+        Assert.Contains("ONE image-generation prompt in English", message);
+        Assert.Contains("photographic, detailed, grimdark", message, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("O herói entra na taverna.", message);
+    }
+
+    [Fact]
+    public void CoverArtSystemMessage_includes_moderation_rules()
+    {
+        Assert.Contains("nudity", DeepSeekChatClient.CoverArtSystemMessage, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("gore", DeepSeekChatClient.CoverArtSystemMessage, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("single paragraph in English", DeepSeekChatClient.CoverArtSystemMessage, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -176,6 +185,26 @@ public class OpenRouterImagesClientTests
     {
         const string json = """{"error":{"code":400,"message":"Prompt is too long"}}""";
         Assert.Equal("Prompt is too long", OpenRouterImagesClient.TryParseErrorMessage(json));
+    }
+
+    [Fact]
+    public void MapUserMessage_maps_moderation_rejection_to_portuguese_hint()
+    {
+        var message = OpenRouterImagesClient.MapUserMessage(
+            HttpStatusCode.BadRequest,
+            "Black Forest Labs generation failed: Request Moderated");
+        Assert.Equal(OpenRouterImagesClient.ContentModeratedUserMessage, message);
+    }
+
+    [Fact]
+    public void ResolveErrorCode_returns_content_moderated_for_moderation_message()
+    {
+        Assert.Equal(
+            OpenRouterImagesClient.ContentModeratedErrorCode,
+            OpenRouterImagesClient.ResolveErrorCode(OpenRouterImagesClient.ContentModeratedUserMessage));
+        Assert.Equal(
+            "provider_error",
+            OpenRouterImagesClient.ResolveErrorCode("OpenRouter recusou o pedido: Prompt is too long"));
     }
 
     [Fact]

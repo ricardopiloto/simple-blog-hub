@@ -186,6 +186,14 @@ public class IntegrationsController : ControllerBase
             var status = ex.StatusCode.HasValue ? (int)ex.StatusCode.Value : StatusCodes.Status502BadGateway;
             if (status is < 400 or > 599)
                 status = StatusCodes.Status502BadGateway;
+            if (ex.Message == OpenRouterImagesClient.ContentModeratedUserMessage)
+            {
+                return StatusCode(status, new
+                {
+                    error = OpenRouterImagesClient.ContentModeratedErrorCode,
+                    message = ex.Message
+                });
+            }
             return StatusCode(status, new { error = ex.Message });
         }
 

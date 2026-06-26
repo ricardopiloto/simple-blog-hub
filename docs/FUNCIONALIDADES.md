@@ -2,7 +2,7 @@
 
 Documentação das capacidades do **1noDado RPG**, contratos das APIs expostas pelo BFF e visão da arquitectura.
 
-**Versão:** 2.6.6 · **Última actualização:** junho 2026
+**Versão:** 2.6.7 · **Última actualização:** junho 2026
 
 ---
 

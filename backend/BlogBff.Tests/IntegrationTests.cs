@@ -1,6 +1,8 @@
 using BlogBff.Helpers;
 using BlogBff.Models;
 using BlogBff.Services;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace BlogBff.Tests;
@@ -85,6 +87,70 @@ public class DeepSeekChatClientTests
         var message = DeepSeekChatClient.BuildCoverArtUserMessage("O herói entra na taverna.");
         Assert.Contains("Photographic, detailed, grimdark", message);
         Assert.Contains("O herói entra na taverna.", message);
+    }
+
+    [Fact]
+    public void GetConfiguredApiKey_falls_back_to_root_when_integrations_empty()
+    {
+        var client = CreateClient(new Dictionary<string, string?>
+        {
+            ["Integrations:DeepSeek:ApiKey"] = "",
+            ["DeepSeek:ApiKey"] = "sk-from-env",
+        });
+
+        Assert.Equal("sk-from-env", client.GetConfiguredApiKey());
+    }
+
+    [Fact]
+    public void GetConfiguredApiKey_prefers_integrations_when_both_set()
+    {
+        var client = CreateClient(new Dictionary<string, string?>
+        {
+            ["Integrations:DeepSeek:ApiKey"] = "sk-integrations",
+            ["DeepSeek:ApiKey"] = "sk-root",
+        });
+
+        Assert.Equal("sk-integrations", client.GetConfiguredApiKey());
+    }
+
+    [Fact]
+    public void GetConfiguredApiKey_returns_null_when_both_empty()
+    {
+        var client = CreateClient(new Dictionary<string, string?>
+        {
+            ["Integrations:DeepSeek:ApiKey"] = "",
+            ["DeepSeek:ApiKey"] = "",
+        });
+
+        Assert.True(string.IsNullOrEmpty(client.GetConfiguredApiKey()));
+    }
+
+    [Fact]
+    public void GetDefaultModel_falls_back_to_root_when_integrations_empty()
+    {
+        var client = CreateClient(new Dictionary<string, string?>
+        {
+            ["Integrations:DeepSeek:Model"] = "",
+            ["DeepSeek:Model"] = "deepseek-reasoner",
+        });
+
+        Assert.Equal("deepseek-reasoner", client.GetDefaultModel());
+    }
+
+    private static DeepSeekChatClient CreateClient(Dictionary<string, string?> settings)
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(settings)
+            .Build();
+        return new DeepSeekChatClient(
+            new StubHttpClientFactory(),
+            configuration,
+            NullLogger<DeepSeekChatClient>.Instance);
+    }
+
+    private sealed class StubHttpClientFactory : IHttpClientFactory
+    {
+        public HttpClient CreateClient(string name) => new();
     }
 }
 

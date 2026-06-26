@@ -35,15 +35,21 @@ public class DeepSeekChatClient
         _logger = logger;
     }
 
-    public string? GetConfiguredApiKey() =>
-        _configuration["Integrations:DeepSeek:ApiKey"]?.Trim()
-        ?? _configuration["DeepSeek:ApiKey"]?.Trim();
+    public string? GetConfiguredApiKey()
+    {
+        var integrationsKey = _configuration["Integrations:DeepSeek:ApiKey"]?.Trim();
+        if (!string.IsNullOrEmpty(integrationsKey))
+            return integrationsKey;
+        return _configuration["DeepSeek:ApiKey"]?.Trim();
+    }
 
     public string GetDefaultModel()
     {
-        var model = _configuration["Integrations:DeepSeek:Model"]?.Trim()
-            ?? _configuration["DeepSeek:Model"]?.Trim();
-        return string.IsNullOrWhiteSpace(model) ? DefaultModel : model;
+        var integrationsModel = _configuration["Integrations:DeepSeek:Model"]?.Trim();
+        if (!string.IsNullOrWhiteSpace(integrationsModel))
+            return integrationsModel;
+        var rootModel = _configuration["DeepSeek:Model"]?.Trim();
+        return string.IsNullOrWhiteSpace(rootModel) ? DefaultModel : rootModel;
     }
 
     public static string BuildCoverArtUserMessage(string content) =>

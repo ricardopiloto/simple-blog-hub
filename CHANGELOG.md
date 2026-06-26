@@ -4,11 +4,17 @@ Todas as alterações notáveis deste projeto estão documentadas aqui.
 
 O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e o projeto usa [versionamento semântico](https://semver.org/lang/pt-BR/).
 
-**Versão actual:** **2.6.6** (`frontend/package.json` — exibida no rodapé do site após build).
+**Versão actual:** **2.6.7** (`frontend/package.json` — exibida no rodapé do site após build).
 
 ## Histórico completo
 
-O histórico detalhado por release (v1.x → v2.6.6) está em **[docs/changelog/CHANGELOG.md](docs/changelog/CHANGELOG.md)**.
+O histórico detalhado por release (v1.x → v2.6.7) está em **[docs/changelog/CHANGELOG.md](docs/changelog/CHANGELOG.md)**.
+
+## [2.6.7] — 2026-06-26
+
+### Corrigido
+
+- **fix-deepseek-apikey-config-fallback:** `GetConfiguredApiKey()` faz fallback para `DEEPSEEK__APIKEY` quando `Integrations:DeepSeek:ApiKey` está vazio no `appsettings.json` (corrige **503** em produção com env configurada).
 
 ## [2.6.6] — 2026-06-15
 

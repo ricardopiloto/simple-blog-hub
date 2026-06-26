@@ -2,6 +2,11 @@
 
 Os releases são versionados por tag (ex.: `v1.9`, `v1.10`, `v2.0`). O resumo detalhado das changes OpenSpec aplicadas pode ser usado na mensagem do commit de release e está também na proposta da respetiva versão em `openspec/changes/`.
 
+## [2.6.7]
+
+- **fix-deepseek-apikey-config-fallback:** Corrigido fallback de `DEEPSEEK__APIKEY` quando `Integrations:DeepSeek:ApiKey` está vazio em `appsettings.json` (`??` não tratava string vazia → **503** «Gerar prompt para arte» em produção).
+- **Documentação e versão:** CHANGELOG [2.6.7]; nota de troubleshooting em [ATUALIZAR-2-6-3-PARA-2-6-6.md](../deploy/ATUALIZAR-2-6-3-PARA-2-6-6.md); versão **2.6.7**.
+
 ## [2.6.6]
 
 - **add-post-cover-art-prompt (DeepSeek):** **«Gerar prompt para arte»** via **DeepSeek API directa** (`POST /bff/image-generation/generate-cover-art-prompt`, `DEEPSEEK__APIKEY`); **«Gerar capa»** via **OpenRouter Images** (`generate-openrouter`); removido `buildCoverArtPrompt` client-side; layout do formulário em duas colunas alinhadas (labels, tabs/botões, editores).

@@ -226,6 +226,21 @@ OpenRouter mantém-se para **«Gerar capa»**; DeepSeek é só para o prompt.
 
 ---
 
+## Só da 2.6.6 para a 2.6.7 (bugfix DeepSeek)
+
+Se **«Gerar prompt para arte»** devolve **503** mesmo com `DEEPSEEK__APIKEY` em `bff.env` (versão **2.6.6**):
+
+1. `git pull` + `git checkout v2.6.7`
+2. `docker compose build bff --no-cache && docker compose up -d bff`
+3. Confirmar: `docker compose exec bff printenv | grep DEEPSEEK`
+4. Testar de novo no formulário de post
+
+**Causa (2.6.6):** placeholder vazio `Integrations:DeepSeek:ApiKey` em `appsettings.json` impedia o fallback para `DEEPSEEK__APIKEY`. Corrigido na **2.6.7**.
+
+**Sem** alterações em `bff.env`, frontend nem migrações SQL.
+
+---
+
 ## 6. Avisos importantes
 
 - **Chaves no BFF apenas:** `DEEPSEEK__APIKEY` e `INTEGRATIONS__OPENROUTER__APIKEY` **nunca** vão para o frontend nem para `api.env`.

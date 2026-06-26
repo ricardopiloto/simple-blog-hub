@@ -88,6 +88,7 @@ public class DeepSeekChatClientTests
         var message = DeepSeekChatClient.BuildCoverArtUserMessage("O herói entra na taverna.");
         Assert.Contains("ONE image-generation prompt in English", message);
         Assert.Contains("photographic, detailed, grimdark", message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Grimdark fantasy, Photographic", message);
         Assert.Contains("O herói entra na taverna.", message);
     }
 
@@ -219,5 +220,35 @@ public class OpenRouterImagesClientTests
     {
         var message = OpenRouterImagesClient.MapUserMessage(HttpStatusCode.PaymentRequired, null);
         Assert.Contains("Créditos", message);
+    }
+}
+
+public class CoverArtPromptFormatterTests
+{
+    [Fact]
+    public void EnsureStyleTags_appends_missing_tags()
+    {
+        var result = CoverArtPromptFormatter.EnsureStyleTags("A dark tavern");
+        Assert.Equal("A dark tavern, Grimdark fantasy, Photographic", result);
+    }
+
+    [Fact]
+    public void EnsureStyleTags_does_not_duplicate_existing_tags()
+    {
+        const string prompt = "Misty forest, Grimdark fantasy, Photographic";
+        Assert.Equal(prompt, CoverArtPromptFormatter.EnsureStyleTags(prompt));
+    }
+
+    [Fact]
+    public void EnsureStyleTags_appends_only_missing_tag_case_insensitive()
+    {
+        var result = CoverArtPromptFormatter.EnsureStyleTags("A scene, photographic lighting");
+        Assert.Equal("A scene, photographic lighting, Grimdark fantasy", result);
+    }
+
+    [Fact]
+    public void DefaultStyleSuffix_matches_required_tags()
+    {
+        Assert.Equal(", Grimdark fantasy, Photographic", CoverArtPromptFormatter.DefaultStyleSuffix);
     }
 }

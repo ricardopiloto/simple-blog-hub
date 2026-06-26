@@ -222,7 +222,7 @@ No formulário de **Novo post** e de **Editar post**, o campo **"História"** (t
 
 The **new post** and **edit post** forms **SHALL** include a button **"Gerar prompt para arte"** in the **Prompt para arte** panel (right column on desktop). The button **SHALL** be **disabled** when **`#post-content`** is empty (after trim). When clicked, the frontend **SHALL** send the current **content** to **`POST /bff/image-generation/generate-cover-art-prompt`** with a valid **JWT**. The BFF **SHALL** call the **DeepSeek API directly** (`https://api.deepseek.com/chat/completions`) — **not** OpenRouter — with **moderation-safe** system and user messages (see **cover-art-prompt** spec): output **one English paragraph** suitable for image generators, photographic detailed grimdark **atmosphere**, avoiding explicit gore, nudity, and other provider-sensitive content.
 
-The BFF **SHALL** return **`{ "prompt": "..." }`** and the frontend **SHALL** display it in **`#post-art-prompt`**. The prompt **SHALL NOT** be persisted to the database.
+The BFF **SHALL** return **`{ "prompt": "..." }`** normalized with **`Grimdark fantasy`** and **`Photographic`** style tags, and the frontend **SHALL** display it in **`#post-art-prompt`**. The prompt **SHALL NOT** be persisted to the database.
 
 The author **MAY** edit **`#post-art-prompt`** before **"Gerar capa"**. The frontend **SHALL** show loading on **"Gerar prompt para arte"** during the BFF call.
 
@@ -257,6 +257,13 @@ The content editor and art-prompt side panel **SHALL** use a **cohesive two-colu
 - **AND** the top edges of `#post-content` and `#post-art-prompt` align horizontally on the same grid row
 - **AND** helper text appears **below** each editor area
 
+#### Scenario: Author sees style tags in generated prompt
+
+- **GIVEN** non-empty Markdown in `#post-content`
+- **AND** `DEEPSEEK__APIKEY` is configured on the BFF
+- **WHEN** the author clicks **"Gerar prompt para arte"**
+- **THEN** `#post-art-prompt` is filled with a prompt that includes **`Grimdark fantasy`** and **`Photographic`**
+
 #### Scenario: Author generates prompt from post content via DeepSeek
 
 - **GIVEN** non-empty Markdown in `#post-content`
@@ -273,9 +280,15 @@ The content editor and art-prompt side panel **SHALL** use a **cohesive two-colu
 
 ### Requirement: Generate cover image from prompt via OpenRouter in post edit form (SHALL)
 
-When **`#post-art-prompt`** is non-empty, **"Gerar capa"** **SHALL** call **`POST /bff/image-generation/generate-openrouter`** with that prompt and JWT. The BFF **SHALL** use **OpenRouter Images** only (not DeepSeek). On success, upload via **`POST /bff/uploads/cover`**, set **`cover_image`**, and show preview.
+When **`#post-art-prompt`** is non-empty, **"Gerar capa"** **SHALL** call **`POST /bff/image-generation/generate-openrouter`** with that prompt and JWT. The BFF **SHALL** use **OpenRouter Images** only (not DeepSeek) and **SHALL** ensure **`Grimdark fantasy`** and **`Photographic`** are present in the prompt sent to OpenRouter (via **`EnsureStyleTags`**) even if the author removed them from the textarea. On success, upload via **`POST /bff/uploads/cover`**, set **`cover_image`**, and show preview.
 
 When the provider **moderates** the prompt, the UI **SHALL** display the Portuguese message from the BFF (**«O prompt foi bloqueado pelo filtro de conteúdo do gerador de imagens. Edite o prompt e tente novamente.»**) in the art-prompt panel error area.
+
+#### Scenario: Cover generation enforces style tags after manual edit
+
+- **GIVEN** the author removed `Photographic` from `#post-art-prompt`
+- **WHEN** the author clicks **"Gerar capa"**
+- **THEN** the BFF still sends a prompt containing **`Grimdark fantasy`** and **`Photographic`** to OpenRouter
 
 #### Scenario: Author generates cover via OpenRouter and applies it to the post form
 

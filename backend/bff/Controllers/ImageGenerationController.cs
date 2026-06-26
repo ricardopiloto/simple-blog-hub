@@ -162,7 +162,8 @@ public class ImageGenerationController : ControllerBase
 
         try
         {
-            var imageBase64 = await _openRouter.GenerateImageBase64Async(prompt, model: null, cancellationToken);
+            var styledPrompt = CoverArtPromptFormatter.EnsureStyleTags(prompt);
+            var imageBase64 = await _openRouter.GenerateImageBase64Async(styledPrompt, model: null, cancellationToken);
             return Ok(new { image = imageBase64 });
         }
         catch (OpenRouterImagesException ex)

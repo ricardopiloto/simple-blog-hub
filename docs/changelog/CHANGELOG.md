@@ -2,6 +2,11 @@
 
 Os releases são versionados por tag (ex.: `v1.9`, `v1.10`, `v2.0`). O resumo detalhado das changes OpenSpec aplicadas pode ser usado na mensagem do commit de release e está também na proposta da respetiva versão em `openspec/changes/`.
 
+## [2.6.9]
+
+- **enforce-cover-art-style-tags:** BFF garante tags **`Grimdark fantasy`** e **`Photographic`** em prompts de capa do formulário de post (`EnsureStyleTags` após DeepSeek e antes de OpenRouter); autor vê tags em `#post-art-prompt`; «Gerar capa» re-aplica tags em falta.
+- **Documentação e versão:** CHANGELOG [2.6.9]; FUNCIONALIDADES; versão **2.6.9**.
+
 ## [2.6.8]
 
 - **add-moderation-safe-cover-art-prompt:** **«Gerar prompt para arte»** envia ao DeepSeek mensagem **system** + **user** com regras para prompts em inglês compatíveis com moderação de imagem (grimdark atmosférico, sem gore/nudez explícitos). **«Gerar capa»** mapeia **Request Moderated** do OpenRouter/BFL para `content_moderated` e mensagem PT: *O prompt foi bloqueado pelo filtro de conteúdo do gerador de imagens. Edite o prompt e tente novamente.*

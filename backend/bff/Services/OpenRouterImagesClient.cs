@@ -74,15 +74,60 @@ public class OpenRouterImagesClient
         var body = await response.Content.ReadAsStringAsync(cancellationToken);
         if (!response.IsSuccessStatusCode)
         {
-            _logger.LogWarning("OpenRouter image generation failed with status {StatusCode}", response.StatusCode);
-            var message = response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden
-                ? "OpenRouter recusou o pedido. Verifique a chave de API."
-                : "Não foi possível gerar a imagem no OpenRouter. Tente novamente mais tarde.";
+            var providerMessage = TryParseErrorMessage(body);
+            _logger.LogWarning(
+                "OpenRouter image generation failed with status {StatusCode}. Response: {Body}",
+                response.StatusCode,
+                TruncateForLog(body, 800));
+            var message = MapUserMessage(response.StatusCode, providerMessage);
             throw new OpenRouterImagesException(message, response.StatusCode);
         }
 
         return ParseFirstImageBase64(body);
     }
+
+    public static string? TryParseErrorMessage(string responseBody)
+    {
+        if (string.IsNullOrWhiteSpace(responseBody))
+            return null;
+        try
+        {
+            using var doc = JsonDocument.Parse(responseBody);
+            if (doc.RootElement.TryGetProperty("error", out var error)
+                && error.TryGetProperty("message", out var message)
+                && message.ValueKind == JsonValueKind.String)
+            {
+                var text = message.GetString()?.Trim();
+                return string.IsNullOrEmpty(text) ? null : text;
+            }
+        }
+        catch (JsonException)
+        {
+            // ignore malformed error payloads
+        }
+        return null;
+    }
+
+    public static string MapUserMessage(HttpStatusCode statusCode, string? providerMessage)
+    {
+        return statusCode switch
+        {
+            HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden =>
+                "OpenRouter recusou o pedido. Verifique a chave de API.",
+            HttpStatusCode.PaymentRequired =>
+                "Créditos OpenRouter insuficientes. Adicione saldo na conta e tente novamente.",
+            HttpStatusCode.TooManyRequests =>
+                "Limite de pedidos OpenRouter atingido. Aguarde alguns minutos e tente novamente.",
+            HttpStatusCode.BadRequest when !string.IsNullOrWhiteSpace(providerMessage) =>
+                $"OpenRouter recusou o pedido: {providerMessage}",
+            _ when !string.IsNullOrWhiteSpace(providerMessage) =>
+                $"OpenRouter: {providerMessage}",
+            _ => "Não foi possível gerar a imagem no OpenRouter. Tente novamente mais tarde.",
+        };
+    }
+
+    private static string TruncateForLog(string text, int maxLength) =>
+        text.Length <= maxLength ? text : text[..maxLength] + "…";
 
     public static string ParseFirstImageBase64(string responseBody)
     {

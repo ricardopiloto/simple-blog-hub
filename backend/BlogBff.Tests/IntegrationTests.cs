@@ -1,3 +1,4 @@
+using System.Net;
 using BlogBff.Helpers;
 using BlogBff.Models;
 using BlogBff.Services;
@@ -168,5 +169,26 @@ public class OpenRouterImagesClientTests
     public void DefaultImageModel_matches_openrouter_flux_klein()
     {
         Assert.Equal("black-forest-labs/flux.2-klein-4b", OpenRouterImagesClient.DefaultImageModel);
+    }
+
+    [Fact]
+    public void TryParseErrorMessage_reads_error_message_field()
+    {
+        const string json = """{"error":{"code":400,"message":"Prompt is too long"}}""";
+        Assert.Equal("Prompt is too long", OpenRouterImagesClient.TryParseErrorMessage(json));
+    }
+
+    [Fact]
+    public void MapUserMessage_surfaces_provider_message_on_bad_request()
+    {
+        var message = OpenRouterImagesClient.MapUserMessage(HttpStatusCode.BadRequest, "Prompt is too long");
+        Assert.Contains("Prompt is too long", message);
+    }
+
+    [Fact]
+    public void MapUserMessage_maps_payment_required_to_credits_hint()
+    {
+        var message = OpenRouterImagesClient.MapUserMessage(HttpStatusCode.PaymentRequired, null);
+        Assert.Contains("Créditos", message);
     }
 }
